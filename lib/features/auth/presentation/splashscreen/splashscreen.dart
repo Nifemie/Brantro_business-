@@ -128,17 +128,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
 
     final scaleAnimation = Tween<double>(begin: 60.0, end: 120.0).animate(
-      CurvedAnimation(parent: scaleController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
     );
 
     final borderRadiusAnimation = Tween<double>(begin: 12.0, end: 60.0).animate(
-      CurvedAnimation(parent: scaleController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
     );
 
     final backgroundAnimation =
         ColorTween(
-          begin: const Color(0xFF000000),
-          end: const Color(0xFFF76301),
+          begin: const Color(0xFFFFFFFF),
+          end: const Color(0xFFFFFFFF),
         ).animate(
           CurvedAnimation(
             parent: backgroundController,
@@ -146,10 +146,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           ),
         );
 
-    final textOpacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: textController, curve: Curves.easeIn));
+    final textSlideAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: const Offset(0.0, 0.0),
+    ).animate(CurvedAnimation(parent: textController, curve: Curves.easeOut));
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -170,7 +170,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Logo animation
+                  // Logo animation with bounce
                   Container(
                     width: scaleAnimation.value,
                     height: scaleAnimation.value,
@@ -178,6 +178,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       borderRadius: BorderRadius.circular(
                         borderRadiusAnimation.value,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
                     child: Center(
                       child: ClipRRect(
@@ -193,18 +200,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                     ),
                   ),
-                  // App name fade-in
-                  Opacity(
-                    opacity: textOpacityAnimation.value,
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 16),
-                      child: Text(
-                        'Brantro',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'SF Pro',
+                  // App name slide-in from right with fade
+                  SlideTransition(
+                    position: textSlideAnimation,
+                    child: FadeTransition(
+                      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+                        CurvedAnimation(
+                          parent: textController,
+                          curve: Curves.easeOut,
+                        ),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 16),
+                        child: Text(
+                          'Brantro',
+                          style: TextStyle(
+                            color: Color(0xFFF06909),
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'SF Pro',
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
