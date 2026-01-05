@@ -71,7 +71,8 @@ final router = GoRouter(
           builder: (context, state) {
             final extra = (state.extra ?? {}) as Map;
             final email = extra['email']?.toString() ?? '';
-            return VerifyIdentityScreen(email: email);
+            final phoneNumber = extra['phoneNumber']?.toString() ?? '';
+            return VerifyIdentityScreen(email: email, phoneNumber: phoneNumber);
           },
         ),
         GoRoute(
@@ -82,14 +83,22 @@ final router = GoRouter(
         GoRoute(
           path: 'forgot-password-verification',
           name: 'forgot-password-verification',
-          builder: (context, state) => const ForgotPasswordVerificationScreen(),
+          builder: (context, state) {
+            final extra = (state.extra ?? {}) as Map;
+            final identity = extra['identity']?.toString() ?? '';
+            return ForgotPasswordVerificationScreen(identity: identity);
+          },
         ),
         GoRoute(
           path: 'reset-password',
           name: 'reset-password',
-          builder: (context, state) => const ResetPasswordScreen(),
+          builder: (context, state) {
+            final extra = (state.extra ?? {}) as Map;
+            final identity = extra['identity']?.toString() ?? '';
+            return ResetPasswordScreen(identity: identity);
+          },
         ),
-        
+
         // Shell Route for Bottom Navigation
         ShellRoute(
           builder: (context, state, child) {

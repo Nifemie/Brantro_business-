@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 /// All colors used throughout the application should be defined here
 class AppColors {
   // ==================== Primary Colors ====================
-  /// Main brand color (Orange) - Used for primary actions, buttons, and highlights
-  static const Color primaryColor = Color(0xFFF76301);
+  /// Main brand color (Deep Navy Blue) - Used for primary actions, buttons, and highlights
+  static const Color primaryColor = Color(0xFF003380);
   
-  /// Secondary brand color (Blue) - Used for alternative actions and accents
-  static const Color secondaryColor = Color(0xFF2196F3);
+  /// Secondary brand color (Orange) - Used for alternative actions and accents
+  static const Color secondaryColor = Color(0xFFFF6C2F);
 
   // ==================== Text Colors ====================
   /// Primary text color for main content

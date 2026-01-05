@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
-import '../../../../../controllers/re_useable/app_button.dart';
 import '../../../../../controllers/re_useable/role_card.dart';
 import '../../../../../core/constants/role_information.dart';
 
@@ -21,7 +20,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final List<String> roles = [
     'Advertiser',
     'Artist',
-    'Screen / Billboard',
     'Content Producer',
     'Influencer',
     'UGC Creator',
@@ -29,7 +27,7 @@ class _SignupScreenState extends State<SignupScreen> {
     'TV Station',
     'Radio Station',
     'Media House',
-    'Designer',
+    'Creatives',
     'Talent Manager',
   ];
 
@@ -291,73 +289,40 @@ class _SignupScreenState extends State<SignupScreen> {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12.h,
               crossAxisSpacing: 12.w,
-              childAspectRatio: 1.0,
+              childAspectRatio: 0.85,
               children: roles.map((role) {
                 final roleInfo = ROLE_INFORMATION[role]!;
                 final isSelected = selectedRole == role;
                 return GestureDetector(
-                  onTap: () => setState(() => selectedRole = role),
+                  onTap: () {
+                    setState(() => selectedRole = role);
+                    // Navigate immediately to role details
+                    context.push(
+                      '/role-details',
+                      extra: {'role': role, 'accountType': selectedAccountType},
+                    );
+                  },
                   child: RoleCard(
                     title: roleInfo.name,
                     description: roleInfo.description,
                     icon: roleInfo.icon,
-                    onSelect: () => setState(() => selectedRole = role),
+                    onSelect: () {
+                      setState(() => selectedRole = role);
+                      // Navigate immediately to role details
+                      context.push(
+                        '/role-details',
+                        extra: {
+                          'role': role,
+                          'accountType': selectedAccountType,
+                        },
+                      );
+                    },
                     isSelected: isSelected,
                   ),
                 );
               }).toList(),
             ),
             SizedBox(height: 24.h),
-
-            SizedBox(
-              width: double.infinity,
-              height: 56.h,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Determine navigation based on role and account type
-                  final isIndividualAdvertiser =
-                      selectedRole == 'Advertiser' &&
-                      selectedAccountType.toLowerCase().contains('personal');
-
-                  if (isIndividualAdvertiser) {
-                    // Skip role details and go directly to account details
-                    context.push(
-                      '/account-details',
-                      extra: {
-                        'role': selectedRole,
-                        'accountType': selectedAccountType,
-                        'roleData':
-                            {}, // Empty role data for individual advertiser
-                      },
-                    );
-                  } else {
-                    // Go to role details first
-                    context.push(
-                      '/role-details',
-                      extra: {
-                        'role': selectedRole,
-                        'accountType': selectedAccountType,
-                      },
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.rsp),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  "Continue",
-                  style: TextStyle(
-                    fontSize: 16.rsp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),

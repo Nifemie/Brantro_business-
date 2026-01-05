@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../../core/utils/color_utils.dart';
+import '../../../../../controllers/re_useable/app_color.dart';
+import '../../../../../controllers/re_useable/app_texts.dart';
 import '../../../../../core/utils/platform_responsive.dart';
-import '../reusable_card.dart';
+import '../../../../radio_station/logic/radio_stations_notifier.dart';
+import '../radio_station_card.dart';
 
-class RadioStationSection extends StatelessWidget {
+class RadioStationSection extends ConsumerStatefulWidget {
   const RadioStationSection({super.key});
 
   @override
+  ConsumerState<RadioStationSection> createState() =>
+      _RadioStationSectionState();
+}
+
+class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch radio stations on load
+    Future.microtask(() {
+      ref.read(radioStationsProvider.notifier).fetchRadioStations(0, 10);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final radioStationsState = ref.watch(radioStationsProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -19,21 +39,15 @@ class RadioStationSection extends StatelessWidget {
             children: [
               Text(
                 'Available Radio Stations',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: AppTexts.h4(color: AppColors.textPrimary),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  // TODO: Navigate to explore screen for radio stations
+                },
                 child: Text(
                   'View All',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.primaryColor,
-                  ),
+                  style: AppTexts.linkLarge(color: AppColors.primaryColor),
                 ),
               ),
             ],
@@ -41,36 +55,63 @@ class RadioStationSection extends StatelessWidget {
         ),
         SizedBox(height: 12.h),
         SizedBox(
-          height: 220.h,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: PlatformResponsive.symmetric(horizontal: 16),
-            children: [
-              ReusableCard(
-                imageUrl: 'assets/promotions/billboard1.jpg',
-                title: 'Radio Station 1',
-                rating: 4.5,
-                amount: 'Premium',
-                onTap: () {},
-              ),
-              SizedBox(width: 12.w),
-              ReusableCard(
-                imageUrl: 'assets/promotions/billboard2.jpg',
-                title: 'Radio Station 2',
-                rating: 4.3,
-                amount: 'Standard',
-                onTap: () {},
-              ),
-              SizedBox(width: 12.w),
-              ReusableCard(
-                imageUrl: 'assets/promotions/billboard3.jpg',
-                title: 'Radio Station 3',
-                rating: 4.6,
-                amount: 'Premium',
-                onTap: () {},
-              ),
-            ],
-          ),
+          height: 340.h,
+          child: radioStationsState.isLoading
+              ? Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryColor,
+                  ),
+                )
+              : radioStationsState.error != null
+              ? Center(
+                  child: Text(
+                    'Error loading radio stations',
+                    style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+                  ),
+                )
+              : radioStationsState.radioStations.isEmpty
+              ? Center(
+                  child: Text(
+                    'No radio stations available',
+                    style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+                  ),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: PlatformResponsive.symmetric(horizontal: 16),
+                  itemCount: radioStationsState.radioStations.length,
+                  itemBuilder: (context, index) {
+                    final station = radioStationsState.radioStations[index];
+                    final location = [
+                      station.city,
+                      station.state,
+                      station.country,
+                    ].where((e) => e != null).join(', ');
+
+                    return Padding(
+                      padding: EdgeInsets.only(right: 16.w),
+                      child: RadioStationCard(
+                        stationName:
+                            station.additionalInfo?.businessName ??
+                            station.name,
+                        location: location.isEmpty ? 'Unknown' : location,
+                        stationType:
+                            station.additionalInfo?.broadcastBand ?? 'FM',
+                        rating: station.averageRating,
+                        favorites: station.totalLikes,
+                        yearsOnAir:
+                            station.additionalInfo?.yearsOfOperation ?? 0,
+                        categories: station.additionalInfo?.contentFocus ?? [],
+                        onBookAdSlot: () {
+                          // TODO: Navigate to booking page
+                        },
+                        onViewProfile: () {
+                          // TODO: Navigate to profile page
+                        },
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );

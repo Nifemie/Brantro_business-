@@ -86,6 +86,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   isExpanded: true,
+                  dropdownColor: Colors.white,
                   hint: Text(
                     widget.hint ?? 'Select ${widget.label}',
                     style: TextStyle(

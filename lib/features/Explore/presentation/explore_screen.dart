@@ -1,94 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
 import '../../../controllers/re_useable/filter_bottom_sheet.dart';
 import '../../home/presentation/widgets/reusable_card.dart';
+import '../../home/presentation/widgets/influencer_card.dart';
+import '../../home/presentation/widgets/billboard_card.dart';
+import '../../home/presentation/widgets/artist_profile_card.dart';
+import '../../home/presentation/widgets/radio_station_card.dart';
+import '../../home/presentation/widgets/tv_station_card.dart';
+import '../../home/presentation/widgets/media_house_card.dart';
+import '../../home/presentation/widgets/digital_screen_card.dart';
+import '../../home/presentation/widgets/designer_card.dart';
+import '../../home/presentation/widgets/ugc_creator_card.dart';
+import '../../home/presentation/widgets/film_producer_card.dart';
+import '../../artist/logic/artists_notifier.dart';
+import '../../influencer/logic/influencers_notifier.dart';
+import '../../radio_station/logic/radio_stations_notifier.dart';
+import '../../tv_station/logic/tv_stations_notifier.dart';
+import '../../media_house/logic/media_houses_notifier.dart';
+import '../../creative/logic/creatives_notifier.dart';
+import '../../ugc_creator/logic/ugc_creators_notifier.dart';
 
-class ExploreScreen extends StatefulWidget {
+class ExploreScreen extends ConsumerStatefulWidget {
   final String? category;
 
-  const ExploreScreen({
-    super.key,
-    this.category,
-  });
+  const ExploreScreen({super.key, this.category});
 
   @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
+  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
+class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   String selectedSort = 'Recommended';
 
-  // Sample listings data
-  final List<Map<String, dynamic>> listings = [
-    {
-      'image': 'assets/promotions/Davido1.jpg',
-      'name': 'Davido - Instagram Influencer',
-      'category': 'Influencer',
-      'location': 'Lagos',
-      'price': '\$ 5,000',
-      'rating': 4.9,
-    },
-    {
-      'image': 'assets/promotions/billboard1.jpg',
-      'name': 'Cool FM 96.9 - Radio Station',
-      'category': 'Radio',
-      'location': 'Lagos',
-      'price': '\$ 2,500',
-      'rating': 4.7,
-    },
-    {
-      'image': 'assets/promotions/billboard2.jpg',
-      'name': 'Channels TV - Television',
-      'category': 'TV Station',
-      'location': 'Abuja',
-      'price': '\$ 8,000',
-      'rating': 4.8,
-    },
-    {
-      'image': 'assets/promotions/billboard3.jpg',
-      'name': 'Lekki Billboard - Outdoor',
-      'category': 'Billboard',
-      'location': 'Lagos',
-      'price': '\$ 15,000',
-      'rating': 4.6,
-    },
-    {
-      'image': 'assets/promotions/Davido1.jpg',
-      'name': 'Wizkid - Music Artist',
-      'category': 'Artist',
-      'location': 'Lagos',
-      'price': '\$ 10,000',
-      'rating': 5.0,
-    },
-    {
-      'image': 'assets/promotions/billboard1.jpg',
-      'name': 'Beat FM - Radio Station',
-      'category': 'Radio',
-      'location': 'Lagos',
-      'price': '\$ 3,000',
-      'rating': 4.5,
-    },
-    {
-      'image': 'assets/promotions/billboard2.jpg',
-      'name': 'NTA - National Television',
-      'category': 'TV Station',
-      'location': 'Abuja',
-      'price': '\$ 6,500',
-      'rating': 4.4,
-    },
-    {
-      'image': 'assets/promotions/billboard3.jpg',
-      'name': 'VI Billboard - Premium Outdoor',
-      'category': 'Billboard',
-      'location': 'Lagos',
-      'price': '\$ 20,000',
-      'rating': 4.7,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Fetch data based on category
+    if (widget.category?.toLowerCase().contains('artist') ?? false) {
+      Future.microtask(() {
+        ref.read(artistsProvider.notifier).fetchArtists();
+      });
+    } else if (widget.category?.toLowerCase().contains('influencer') ?? false) {
+      Future.microtask(() {
+        ref.read(influencersProvider.notifier).fetchInfluencers();
+      });
+    } else if (widget.category?.toLowerCase().contains('radio') ?? false) {
+      Future.microtask(() {
+        ref.read(radioStationsProvider.notifier).fetchRadioStations(0, 10);
+      });
+    } else if (widget.category?.toLowerCase().contains('tv') ?? false) {
+      Future.microtask(() {
+        ref.read(tvStationsProvider.notifier).fetchTvStations(0, 10);
+      });
+    } else if (widget.category?.toLowerCase().contains('media') ?? false) {
+      Future.microtask(() {
+        ref.read(mediaHousesProvider.notifier).fetchMediaHouses(0, 10);
+      });
+    } else if (widget.category?.toLowerCase().contains('designer') ?? false) {
+      Future.microtask(() {
+        ref.read(creativesProvider.notifier).fetchCreatives();
+      });
+    } else if (widget.category?.toLowerCase().contains('creative') ?? false) {
+      Future.microtask(() {
+        ref.read(creativesProvider.notifier).fetchCreatives();
+      });
+    } else if (widget.category?.toLowerCase().contains('ugc') ?? false) {
+      Future.microtask(() {
+        ref.read(ugcCreatorsProvider.notifier).fetchUgcCreators();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -98,17 +84,21 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   String? _getCategoryImage() {
     if (widget.category == null) return null;
-    
+
     final category = widget.category!.toLowerCase();
     if (category.contains('artist')) return 'assets/promotions/Davido1.jpg';
-    if (category.contains('billboard')) return 'assets/promotions/billboard1.jpg';
-    if (category.contains('tv') || category.contains('television')) return 'assets/promotions/billboard2.jpg';
+    if (category.contains('billboard'))
+      return 'assets/promotions/billboard1.jpg';
+    if (category.contains('tv') || category.contains('television'))
+      return 'assets/promotions/billboard2.jpg';
     if (category.contains('radio')) return 'assets/promotions/billboard3.jpg';
     if (category.contains('influencer')) return 'assets/promotions/Davido1.jpg';
     if (category.contains('media')) return 'assets/promotions/billboard2.jpg';
-    if (category.contains('digital') || category.contains('screen')) return 'assets/promotions/billboard3.jpg';
-    if (category.contains('designer') || category.contains('creative')) return 'assets/promotions/billboard1.jpg';
-    
+    if (category.contains('digital') || category.contains('screen'))
+      return 'assets/promotions/billboard3.jpg';
+    if (category.contains('designer') || category.contains('creative'))
+      return 'assets/promotions/billboard1.jpg';
+
     return 'assets/promotions/Davido1.jpg'; // Default
   }
 
@@ -132,6 +122,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       image: DecorationImage(
                         image: AssetImage(_getCategoryImage()!),
                         fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
                       ),
                     ),
                     child: Container(
@@ -143,6 +134,29 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             Colors.black.withOpacity(0.3),
                             Colors.black.withOpacity(0.7),
                           ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Back button
+                  Positioned(
+                    top: 16.h,
+                    left: 16.w,
+                    child: SafeArea(
+                      bottom: false,
+                      child: GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(8.w),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.4),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                       ),
                     ),
@@ -190,14 +204,40 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
 
-            // Scrollable listings grid
-            Expanded(
-              child: _buildListingsGrid(),
-            ),
+            // Scrollable content - show role-specific cards or regular listings
+            Expanded(child: _getContentWidget()),
           ],
         ),
       ),
     );
+  }
+
+  Widget _getContentWidget() {
+    final category = widget.category?.toLowerCase() ?? '';
+
+    if (category.contains('influencer')) {
+      return _buildInfluencersList();
+    } else if (category.contains('billboard')) {
+      return _buildBillboardsList();
+    } else if (category.contains('digital') || category.contains('screen')) {
+      return _buildDigitalScreensList();
+    } else if (category.contains('artist')) {
+      return _buildArtistsList();
+    } else if (category.contains('radio')) {
+      return _buildRadioStationsList();
+    } else if (category.contains('tv') || category.contains('television')) {
+      return _buildTvStationsList();
+    } else if (category.contains('media')) {
+      return _buildMediaHousesList();
+    } else if (category.contains('designer') || category.contains('creative')) {
+      return _buildDesignersList();
+    } else if (category.contains('ugc')) {
+      return _buildUgcCreatorsList();
+    } else if (category.contains('film') || category.contains('producer')) {
+      return _buildFilmProducersList();
+    } else {
+      return _buildListingsGrid();
+    }
   }
 
   Widget _buildSearchBar() {
@@ -206,10 +246,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       decoration: BoxDecoration(
         color: AppColors.grey100,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppColors.grey200,
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.grey200, width: 1),
       ),
       child: TextField(
         controller: _searchController,
@@ -217,14 +254,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
         decoration: InputDecoration(
           hintText: 'Search by name, location, platform…',
           hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-          prefixIcon: Icon(
-            Icons.search,
-            color: AppColors.grey400,
-            size: 24.sp,
-          ),
+          prefixIcon: Icon(Icons.search, color: AppColors.grey400, size: 24.sp),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: AppColors.grey400, size: 20.sp),
+                  icon: Icon(
+                    Icons.clear,
+                    color: AppColors.grey400,
+                    size: 20.sp,
+                  ),
                   onPressed: () {
                     setState(() {
                       _searchController.clear();
@@ -256,10 +293,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(
-                  color: AppColors.grey300,
-                  width: 1,
-                ),
+                border: Border.all(color: AppColors.grey300, width: 1),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -302,10 +336,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(
-                  color: AppColors.grey300,
-                  width: 1,
-                ),
+                border: Border.all(color: AppColors.grey300, width: 1),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -320,7 +351,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     ),
                   ),
                   SizedBox(width: 4.w),
-                  Icon(Icons.arrow_drop_down, color: AppColors.grey400, size: 20.sp),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: AppColors.grey400,
+                    size: 20.sp,
+                  ),
                 ],
               ),
             ),
@@ -336,34 +371,468 @@ class _ExploreScreenState extends State<ExploreScreen> {
       child: Text(
         value,
         style: AppTexts.bodyMedium(
-          color: selectedSort == value ? AppColors.primaryColor : AppColors.textPrimary,
+          color: selectedSort == value
+              ? AppColors.primaryColor
+              : AppColors.textPrimary,
         ),
       ),
     );
   }
 
   Widget _buildListingsGrid() {
-    return GridView.builder(
-      padding: EdgeInsets.all(16.w),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12.w,
-        mainAxisSpacing: 12.h,
-        childAspectRatio: 0.68,
+    return Center(
+      child: Text(
+        'Coming soon',
+        style: AppTexts.bodyMedium(color: AppColors.textPrimary),
       ),
-      itemCount: listings.length,
+    );
+  }
+
+  Widget _buildInfluencersList() {
+    final influencersState = ref.watch(influencersProvider);
+
+    if (influencersState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (influencersState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading influencers: ${influencersState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (influencersState.influencers.isEmpty) {
+      return Center(
+        child: Text(
+          'No influencers available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: influencersState.influencers.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
       itemBuilder: (context, index) {
-        final listing = listings[index];
-        return ReusableCard(
-          imageUrl: listing['image'],
-          title: listing['name'],
-          rating: listing['rating'],
-          amount: listing['price'],
-          onTap: () {
-            context.push('/product-details', extra: listing);
+        final influencer = influencersState.influencers[index];
+        final location = [
+          influencer.city,
+          influencer.state,
+          influencer.country,
+        ].where((e) => e != null).join(', ');
+
+        return InfluencerCard(
+          profileImage: influencer.avatarUrl ?? 'assets/promotions/Davido1.jpg',
+          name: influencer.additionalInfo?.displayName ?? influencer.name,
+          username: '@${influencer.name.toLowerCase().replaceAll(' ', '_')}',
+          location: location.isEmpty ? 'Unknown' : location,
+          platform:
+              influencer.additionalInfo?.primaryPlatform ?? 'Social Media',
+          rating: influencer.averageRating ?? 0.0,
+          likes: influencer.totalLikes ?? 0,
+          followers: 0,
+          onPortfolioTap: () {
+            // TODO: Navigate to portfolio
+          },
+          onViewSlotsTap: () {
+            // TODO: Navigate to view slots
           },
         );
       },
+    );
+  }
+
+  Widget _buildBillboardsList() {
+    return Center(
+      child: Text(
+        'Coming soon',
+        style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+      ),
+    );
+  }
+
+  Widget _buildArtistsList() {
+    final artistsState = ref.watch(artistsProvider);
+
+    if (artistsState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (artistsState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading artists: ${artistsState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (artistsState.artists.isEmpty) {
+      return Center(
+        child: Text(
+          'No artists available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: artistsState.artists.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final artist = artistsState.artists[index];
+        final location = [
+          artist.city,
+          artist.state,
+          artist.country,
+        ].where((e) => e != null).join(', ');
+
+        return ArtistProfileCard(
+          profileImage: artist.avatarUrl ?? 'assets/promotions/Davido1.jpg',
+          name: artist.additionalInfo?.stageName ?? artist.name,
+          location: location.isEmpty ? 'Unknown' : location,
+          tags: artist.additionalInfo?.genres ?? [],
+          rating: artist.averageRating,
+          likes: artist.totalLikes ?? 0,
+          works: artist.additionalInfo?.numberOfProductions ?? 0,
+          isFavorite: false,
+          onFavoriteTap: () {
+            // TODO: Handle favorite action
+          },
+          onViewSlotsTap: () {
+            // TODO: Navigate to ad slots page
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRadioStationsList() {
+    final radioStationsState = ref.watch(radioStationsProvider);
+
+    if (radioStationsState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (radioStationsState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading radio stations: ${radioStationsState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (radioStationsState.radioStations.isEmpty) {
+      return Center(
+        child: Text(
+          'No radio stations available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: radioStationsState.radioStations.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final station = radioStationsState.radioStations[index];
+        final location = [
+          station.city,
+          station.state,
+          station.country,
+        ].where((e) => e != null).join(', ');
+
+        return RadioStationCard(
+          stationName: station.additionalInfo?.businessName ?? station.name,
+          location: location.isEmpty ? 'Unknown' : location,
+          stationType: station.additionalInfo?.broadcastBand ?? 'FM',
+          rating: station.averageRating,
+          favorites: station.totalLikes,
+          yearsOnAir: station.additionalInfo?.yearsOfOperation ?? 0,
+          categories: station.additionalInfo?.contentFocus ?? [],
+          onBookAdSlot: () {
+            // TODO: Navigate to booking page
+          },
+          onViewProfile: () {
+            // TODO: Navigate to profile page
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTvStationsList() {
+    final tvStationsState = ref.watch(tvStationsProvider);
+
+    if (tvStationsState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (tvStationsState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading TV stations: ${tvStationsState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (tvStationsState.tvStations.isEmpty) {
+      return Center(
+        child: Text(
+          'No TV stations available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: tvStationsState.tvStations.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final station = tvStationsState.tvStations[index];
+        final location = [
+          station.city,
+          station.state,
+          station.country,
+        ].where((e) => e != null).join(', ');
+
+        return TvStationCard(
+          stationName: station.additionalInfo?.businessName ?? station.name,
+          location: location.isEmpty ? 'Unknown' : location,
+          stationType: station.additionalInfo?.broadcastType ?? 'Cable',
+          isFree: station.additionalInfo?.channelType == 'Free',
+          isLive: true,
+          rating: station.averageRating,
+          favorites: station.totalLikes,
+          yearsOnAir: station.additionalInfo?.yearsOfOperation ?? 0,
+          categories: station.additionalInfo?.contentFocus ?? [],
+          broadcastArea: (station.additionalInfo?.operatingRegions ?? []).join(
+            ', ',
+          ),
+          onViewRates: () {
+            // TODO: Navigate to rates page
+          },
+          onViewProfile: () {
+            // TODO: Navigate to profile page
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMediaHousesList() {
+    final mediaHousesState = ref.watch(mediaHousesProvider);
+
+    if (mediaHousesState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (mediaHousesState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading media houses: ${mediaHousesState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (mediaHousesState.mediaHouses.isEmpty) {
+      return Center(
+        child: Text(
+          'No media houses available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: mediaHousesState.mediaHouses.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final mediaHouse = mediaHousesState.mediaHouses[index];
+        final location = [
+          mediaHouse.city,
+          mediaHouse.state,
+          mediaHouse.country,
+        ].where((e) => e != null).join(', ');
+
+        return MediaHouseCard(
+          mediaHouseName:
+              mediaHouse.additionalInfo?.businessName ?? mediaHouse.name,
+          location: location.isEmpty ? 'Unknown' : location,
+          mediaTypes: mediaHouse.additionalInfo?.mediaTypes ?? [],
+          rating: mediaHouse.averageRating,
+          favorites: mediaHouse.totalLikes,
+          yearsActive: mediaHouse.additionalInfo?.yearsOfOperation ?? 0,
+          categories: mediaHouse.additionalInfo?.contentFocus ?? [],
+          coverageArea: (mediaHouse.additionalInfo?.operatingRegions ?? [])
+              .join(', '),
+          reach:
+              '${(mediaHouse.additionalInfo?.estimatedMonthlyReach ?? 0) / 1000000}M /month',
+          onPlatformTap: () {
+            // TODO: Navigate to platform page
+          },
+          onViewAdSlots: () {
+            // TODO: Navigate to ad slots page
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDigitalScreensList() {
+    return Center(
+      child: Text(
+        'Coming soon',
+        style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+      ),
+    );
+  }
+
+  Widget _buildDesignersList() {
+    final creativesState = ref.watch(creativesProvider);
+
+    if (creativesState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (creativesState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading creatives: ${creativesState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (creativesState.creatives.isEmpty) {
+      return Center(
+        child: Text(
+          'No creatives available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: creativesState.creatives.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final creative = creativesState.creatives[index];
+        final location = [
+          creative.city,
+          creative.state,
+          creative.country,
+        ].where((e) => e != null).join(', ');
+
+        return DesignerCard(
+          profileImage: creative.avatarUrl ?? 'assets/promotions/Davido1.jpg',
+          name: creative.additionalInfo?.displayName ?? creative.name,
+          location: location.isEmpty ? 'Unknown' : location,
+          specialization: creative.additionalInfo?.specialization ?? '',
+          yearsExperience: creative.additionalInfo?.yearsOfExperience ?? 0,
+          likes: creative.totalLikes,
+          followers: creative.additionalInfo?.numberOfProjects ?? 0,
+          onViewPortfolio: () {
+            // TODO: Navigate to portfolio page
+          },
+          onViewServices: () {
+            // TODO: Navigate to services page
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildUgcCreatorsList() {
+    final ugcCreatorsState = ref.watch(ugcCreatorsProvider);
+
+    if (ugcCreatorsState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (ugcCreatorsState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading UGC creators: ${ugcCreatorsState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (ugcCreatorsState.ugcCreators.isEmpty) {
+      return Center(
+        child: Text(
+          'No UGC creators available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: ugcCreatorsState.ugcCreators.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final creator = ugcCreatorsState.ugcCreators[index];
+        final location = [
+          creator.city,
+          creator.state,
+          creator.country,
+        ].where((e) => e != null).join(', ');
+
+        return UgcCreatorCard(
+          profileImage: creator.avatarUrl ?? 'assets/promotions/Davido1.jpg',
+          name: creator.additionalInfo?.displayName ?? creator.name,
+          location: location.isEmpty ? 'Unknown' : location,
+          workType:
+              creator.additionalInfo?.availabilityType ?? 'Campaign Based',
+          categories: creator.additionalInfo?.niches ?? [],
+          skills: creator.additionalInfo?.contentStyle ?? [],
+          contentType: (creator.additionalInfo?.contentFormats ?? []).join(
+            ', ',
+          ),
+          rating: creator.averageRating,
+          likes: creator.totalLikes,
+          onViewServices: () {
+            // TODO: Handle view services
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFilmProducersList() {
+    return Center(
+      child: Text(
+        'Coming soon',
+        style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+      ),
     );
   }
 }

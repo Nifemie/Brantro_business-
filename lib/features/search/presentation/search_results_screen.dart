@@ -9,10 +9,7 @@ import '../../home/presentation/widgets/reusable_card.dart';
 class SearchResultsScreen extends StatefulWidget {
   final String searchQuery;
 
-  const SearchResultsScreen({
-    super.key,
-    required this.searchQuery,
-  });
+  const SearchResultsScreen({super.key, required this.searchQuery});
 
   @override
   State<SearchResultsScreen> createState() => _SearchResultsScreenState();
@@ -145,11 +142,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         decoration: InputDecoration(
           hintText: 'Search product',
           hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-          prefixIcon: Icon(
-            Icons.search,
-            color: AppColors.grey400,
-            size: 20.sp,
-          ),
+          prefixIcon: Icon(Icons.search, color: AppColors.grey400, size: 20.sp),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 12.h),
         ),
@@ -162,7 +155,6 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       context,
       onApplyFilters: (filters) {
         // TODO: Apply filters to product list
-        print('Filters applied: $filters');
       },
     );
   }

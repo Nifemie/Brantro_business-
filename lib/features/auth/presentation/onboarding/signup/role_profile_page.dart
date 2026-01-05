@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
+import '../../../logic/auth_notifiers.dart';
+import '../../../data/models/signup_request.dart';
 
-class RoleProfilePage extends StatelessWidget {
+class RoleProfilePage extends ConsumerWidget {
   final String role;
   final Map<String, dynamic> profileData;
 
@@ -15,7 +18,7 @@ class RoleProfilePage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -52,7 +55,7 @@ class RoleProfilePage extends StatelessWidget {
               SizedBox(height: 32.h),
 
               // Action Buttons
-              _buildActionButtons(context),
+              _buildActionButtons(context, ref),
             ],
           ),
         ),
@@ -387,17 +390,26 @@ class RoleProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authNotifierProvider);
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
           height: 56.h,
           child: ElevatedButton(
-            onPressed: () {
-              // TODO: Save profile and navigate to next screen
-              context.push('/signin');
-            },
+            onPressed: authState.isInitialLoading
+                ? null
+                : () async {
+                    if (role == 'Artist') {
+                      await _handleArtistSignup(context, ref);
+                    } else {
+                      // TODO: Handle other roles
+                      context.push('/signin');
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
               foregroundColor: Colors.white,
@@ -406,10 +418,22 @@ class RoleProfilePage extends StatelessWidget {
               ),
               elevation: 0,
             ),
-            child: Text(
-              'Confirm & Continue',
-              style: TextStyle(fontSize: 16.rsp, fontWeight: FontWeight.bold),
-            ),
+            child: authState.isInitialLoading
+                ? SizedBox(
+                    height: 20.h,
+                    width: 20.w,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    'Confirm & Continue',
+                    style: TextStyle(
+                      fontSize: 16.rsp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ),
         SizedBox(height: 12.h),
@@ -433,6 +457,79 @@ class RoleProfilePage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _handleArtistSignup(BuildContext context, WidgetRef ref) async {
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+
+    try {
+      // Build ArtistInfo from profileData
+      final artistInfo = ArtistInfo(
+        stageName: profileData['stageName'] ?? '',
+        primaryProfession: profileData['profession'] ?? '',
+        specialization: profileData['specialization'] ?? '',
+        genres: List<String>.from(profileData['genre'] ?? []),
+        yearsOfExperience:
+            int.tryParse(profileData['yearsOfExperience']?.toString() ?? '0') ??
+            0,
+        numberOfProductions:
+            int.tryParse(
+              profileData['numberOfProductions']?.toString() ?? '0',
+            ) ??
+            0,
+        availabilityType: profileData['availability'] ?? '',
+        portfolioLink: profileData['portfolioLink'],
+        managementType: profileData['whoManagesYou'] ?? 'SELF',
+      );
+
+      // Build SignUpRequest
+      final signUpRequest = SignUpRequest(
+        role: 'ARTIST',
+        authProvider: 'INTERNAL',
+        accountType: 'individual',
+        artistInfo: artistInfo,
+        name: profileData['name'] ?? '',
+        emailAddress: profileData['email'] ?? '',
+        phoneNumber: profileData['phoneNumber'] ?? '',
+        password: profileData['password'] ?? '',
+        country: 'Nigeria',
+        state: profileData['state'] ?? '',
+        city: profileData['city'] ?? '',
+        address: profileData['address'] ?? '',
+      );
+
+      // Call signup
+      await authNotifier.signupUser(signUpRequest);
+
+      // Check if mounted before navigation
+      if (!context.mounted) return;
+
+      // Check result
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isDataAvailable) {
+        // Success - navigate to signin
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.message ?? 'Signup successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.push('/signin');
+      } else if (authState.message != null) {
+        // Error - show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.message!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   IconData _getRoleIcon() {

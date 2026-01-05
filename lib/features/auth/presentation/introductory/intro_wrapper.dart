@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:brantro/controllers/re_useable/app_color.dart';
 
 class IntroWrapper extends StatefulWidget {
   const IntroWrapper({super.key});
@@ -16,10 +17,11 @@ class _IntroWrapperState extends State<IntroWrapper> {
   Timer? _timer;
 
   final List<String> _backgroundImages = [
-    'assets/promotions/billboard2.jpg',
-    'assets/promotions/radio1.jpg',
-    'assets/promotions/billboardxx.jpg',
-    'assets/promotions/radio2.png',
+    'assets/promotions/intro1.jpg',
+    'assets/promotions/intro2.jpg',
+    'assets/promotions/intro3.jpg',
+    'assets/promotions/intro4.jpg',
+    'assets/promotions/intro5.jpg',
   ];
 
   @override
@@ -71,6 +73,7 @@ class _IntroWrapperState extends State<IntroWrapper> {
                   Image.asset(
                     _backgroundImages[index],
                     fit: BoxFit.cover,
+                    height: double.infinity,
                     semanticLabel: 'Welcome background $index',
                   ),
                   Container(
@@ -142,7 +145,7 @@ class _IntroWrapperState extends State<IntroWrapper> {
                     child: ElevatedButton(
                       onPressed: () => context.push('/signup'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppColors.secondaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -166,7 +169,10 @@ class _IntroWrapperState extends State<IntroWrapper> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () => context.push('/signin'),
+                      onPressed: () {
+                        print('DEBUG: User tapped Log In button');
+                        context.push('/signin');
+                      },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white, width: 1.5),
                         padding: const EdgeInsets.symmetric(vertical: 16),

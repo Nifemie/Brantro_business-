@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/app_messanger.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../controllers/re_useable/app_button.dart';
+import '../../../logic/auth_notifiers.dart';
+import '../../../data/models/reset_password_request.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+class ResetPasswordScreen extends ConsumerStatefulWidget {
+  final String identity;
+  const ResetPasswordScreen({required this.identity, super.key});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -28,26 +33,32 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final password = _passwordController.text.trim();
 
     try {
-      // TODO: Replace with your actual reset password API call
-      // Example:
-      // final response = await AuthService.resetPassword(
-      //   username: username,
-      //   password: password,
-      //   confirmPassword: password,
-      // );
+      final request = ResetPasswordRequest(
+        identity: widget.identity,
+        newPassword: password,
+      );
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      await ref.read(authNotifierProvider.notifier).resetPassword(request);
 
       if (!mounted) return;
 
-      AppMessenger.show(
-        context,
-        type: MessageType.success,
-        message: 'Password changed successfully',
-      );
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isDataAvailable) {
+        AppMessenger.show(
+          context,
+          type: MessageType.success,
+          message: authState.message ?? 'Password changed successfully',
+        );
 
-      context.pushReplacement('/signin');
+        // Navigate to signin
+        context.pushReplacement('/signin');
+      } else if (authState.message != null) {
+        AppMessenger.show(
+          context,
+          type: MessageType.error,
+          message: authState.message!,
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       AppMessenger.show(

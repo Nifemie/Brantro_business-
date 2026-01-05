@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
 import '../../../../../controllers/re_useable/app_button.dart';
 import '../../../../../core/constants/form_constants.dart';
+import '../../../../../core/constants/location_constants.dart';
 import '../../../../../controllers/re_useable/custom_dropdown_field.dart';
 import '../../../../../controllers/re_useable/custom_multiselect_dropdown_field.dart';
 import '../../../../../controllers/re_useable/account_type_tab.dart';
+import '../../../logic/auth_notifiers.dart';
+import '../../../data/models/signup_request.dart';
+import '../../../../../core/constants/enum.dart';
 
-class RoleDetailsScreen extends StatefulWidget {
+class RoleDetailsScreen extends ConsumerStatefulWidget {
   final String role;
   final String accountType;
 
@@ -20,14 +25,15 @@ class RoleDetailsScreen extends StatefulWidget {
   });
 
   @override
-  State<RoleDetailsScreen> createState() => _RoleDetailsScreenState();
+  ConsumerState<RoleDetailsScreen> createState() => _RoleDetailsScreenState();
 }
 
-class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
+class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _controllers = {};
   bool _isLoading = false;
   late String _selectedAccountType;
+  String? _selectedState; // Track selected state for city dropdown
 
   @override
   void initState() {
@@ -106,12 +112,6 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'required': true,
           },
           {
-            'name': 'managerContact',
-            'label': 'Manager Contact (Optional)',
-            'type': 'text',
-            'hint': '+234XXXXXXXXXX',
-          },
-          {
             'name': 'whoManagesYou',
             'label': 'Who Manages You?',
             'type': 'dropdown',
@@ -125,66 +125,131 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'type': 'text',
             'hint': 'https://yourportfolio.com',
           },
-          {
-            'name': 'bio',
-            'label': 'Bio',
-            'type': 'text',
-            'hint': 'Tell us about yourself',
-            'maxLines': 3,
-          },
         ];
 
       case 'Advertiser':
-        return [
-          {
-            'name': 'businessName',
-            'label': 'Business Name',
-            'type': 'text',
-            'hint': 'Enter business name',
-          },
-          {
-            'name': 'industry',
-            'label': 'Industry',
-            'type': 'dropdown',
-            'hint': 'Select your industry',
-            'options': ADVERTISER_BUSINESS_INDUSTRIES
-                .map((industry) => {'label': industry, 'value': industry})
-                .toList(),
-          },
-          {
-            'name': 'businessAdress',
-            'label': 'Business Address',
-            'type': 'text',
-            'hint': 'Enter business address',
-          },
-          {
-            'name': 'businessWebsite',
-            'label': 'Business Website',
-            'type': 'text',
-            'hint': 'https://yourcompany.com',
-          },
-          {
-            'name': 'businessTelephoneNumber',
-            'label': 'Business Telephone Number',
-            'type': 'text',
-            'hint': '+234XXXXXXXXXX',
-            'isRequired': true,
-          },
-          {
-            'name': 'tinNumber',
-            'label': 'TIN Number',
-            'type': 'text',
-            'hint': 'Enter your Tax Identification Number',
-            'isRequired': true,
-          },
-          {
-            'name': 'businessRegistrationNumber',
-            'label': 'Business Registration (RC) Number',
-            'type': 'text',
-            'hint': 'e.g., RC123456',
-            'isRequired': true,
-          },
-        ];
+        // Check if it's Individual or Business account type
+        if (_selectedAccountType.toLowerCase().contains('personal') ||
+            _selectedAccountType.toLowerCase().contains('individual')) {
+          // Individual Advertiser - Personal information
+          return [
+            {
+              'name': 'fullName',
+              'label': 'Full Name',
+              'type': 'text',
+              'hint': 'Enter your full name',
+              'required': true,
+            },
+            {
+              'name': 'email',
+              'label': 'Email Address',
+              'type': 'text',
+              'hint': 'Enter your email address',
+              'required': true,
+            },
+            {
+              'name': 'phoneNumber',
+              'label': 'Phone Number',
+              'type': 'text',
+              'hint': '+234XXXXXXXXXX',
+              'required': true,
+            },
+            {
+              'name': 'state',
+              'label': 'State',
+              'type': 'dropdown',
+              'hint': 'Select an option',
+              'options': OPERATING_REGIONS_OPTIONS,
+              'required': true,
+            },
+            {
+              'name': 'city',
+              'label': 'City / Local Government',
+              'type': 'dropdown',
+              'hint': _selectedState == null
+                  ? 'Select a state first'
+                  : 'Select a city',
+              'options':
+                  _selectedState != null &&
+                      CITIES_BY_STATE.containsKey(_selectedState)
+                  ? CITIES_BY_STATE[_selectedState]!
+                        .map((city) => {'label': city, 'value': city})
+                        .toList()
+                  : <Map<String, String>>[],
+              'required': true,
+              'dependsOn': 'state',
+            },
+            {
+              'name': 'streetAddress',
+              'label': 'Street Address',
+              'type': 'text',
+              'hint': 'House number and street name',
+              'required': true,
+            },
+            {
+              'name': 'password',
+              'label': 'Password',
+              'type': 'password',
+              'hint': 'Enter your password',
+              'required': true,
+            },
+          ];
+        } else {
+          // Business Advertiser - Business information
+          return [
+            {
+              'name': 'businessName',
+              'label': 'Business Name',
+              'type': 'text',
+              'hint': 'Enter business name',
+              'required': true,
+            },
+            {
+              'name': 'businessRegistrationNumber',
+              'label': 'Business Registration (RC) Number',
+              'type': 'text',
+              'hint': 'e.g., RC123456',
+              'required': true,
+            },
+            {
+              'name': 'tinNumber',
+              'label': 'TIN Number',
+              'type': 'text',
+              'hint': 'Enter your Tax Identification Number',
+              'required': true,
+            },
+            {
+              'name': 'industry',
+              'label': 'Industry',
+              'type': 'dropdown',
+              'hint': 'Select your industry',
+              'options': ADVERTISER_BUSINESS_INDUSTRIES
+                  .map((industry) => {'label': industry, 'value': industry})
+                  .toList(),
+              'required': true,
+            },
+            {
+              'name': 'businessTelephoneNumber',
+              'label': 'Business Telephone Number',
+              'type': 'text',
+              'hint': '+234XXXXXXXXXX',
+              'required': true,
+            },
+            {
+              'name': 'businessWebsite',
+              'label': 'Website (Optional)',
+              'type': 'text',
+              'hint': 'https://yourcompany.com',
+            },
+            {
+              'name': 'businessAddress',
+              'label': 'Business Address',
+              'type': 'text',
+              'hint': 'Enter business address',
+              'required': true,
+            },
+          ];
+        }
 
       case 'Screen / Billboard':
         return [
@@ -315,7 +380,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
               'hint': 'https://yourportfolio.com',
             },
             {
-              'name': 'availability',
+              'name': 'availabilityType',
               'label': 'Availability',
               'type': 'dropdown',
               'hint': 'Select your availability',
@@ -341,7 +406,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
               'required': true,
             },
             {
-              'name': 'website',
+              'name': 'businessWebsite',
               'label': 'Website (Optional)',
               'type': 'text',
               'hint': 'https://yourcompany.com',
@@ -355,10 +420,18 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
               'required': true,
             },
             {
-              'name': 'businessRegistrationNumber',
-              'label': 'Business Registration (RC) Number',
+              'name': 'idType',
+              'label': 'ID Type',
+              'type': 'dropdown',
+              'hint': 'Select ID type',
+              'options': ID_TYPE_OPTIONS,
+              'required': true,
+            },
+            {
+              'name': 'idNumber',
+              'label': 'ID Number',
               'type': 'text',
-              'hint': 'e.g., RC123456',
+              'hint': 'Enter your ID number',
               'required': true,
             },
             {
@@ -388,14 +461,6 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
               'type': 'text',
               'hint': 'https://yourportfolio.com',
             },
-            {
-              'name': 'availability',
-              'label': 'Availability',
-              'type': 'dropdown',
-              'hint': 'Select your availability',
-              'options': AVAILABILITY_OPTIONS,
-              'required': true,
-            },
           ];
         }
 
@@ -415,59 +480,54 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'options': INFLUENCER_PLATFORMS,
           },
           {
+            'name': 'contentCategory',
+            'label': 'Content Category',
+            'type': 'dropdown',
+            'hint': 'Select content category',
+            'options': INFLUENCER_CONTENT_CATEGORIES,
+          },
+          {
             'name': 'niche',
             'label': 'Niche',
             'type': 'dropdown',
             'hint': 'Select your niche',
-            'options': INFLUENCER_CONTENT_CATEGORIES,
+            'options':
+                INFLUENCER_CONTENT_CATEGORIES, // Using same options or should exist distinct ones? Assuming same for now or text.
           },
           {
-            'name': 'contentFormat',
-            'label': 'Content Format',
-            'type': 'dropdown',
-            'hint': 'Select your content format',
+            'name': 'contentFormats',
+            'label': 'Content Formats',
+            'type': 'multiselect',
+            'hint': 'Select content formats',
             'options': CONTENT_FORMAT_OPTIONS,
           },
           {
-            'name': 'estimatedReach',
-            'label': 'Estimated Reach',
+            'name': 'audienceSizeRange',
+            'label': 'Audience Size Range',
             'type': 'dropdown',
             'hint': 'Select your audience size',
             'options': AUDIENCE_SIZE_OPTIONS,
-          },
-          {
-            'name': 'location',
-            'label': 'Location (State)',
-            'type': 'dropdown',
-            'hint': 'Select your state',
-            'options': OPERATING_REGIONS_OPTIONS,
           },
           {
             'name': 'averageEngagementRate',
             'label': 'Average Engagement Rate (%)',
             'type': 'text',
             'hint': 'e.g., 5.5',
+            'isNumber': true,
           },
           {
-            'name': 'portfolioMediaKitLink',
-            'label': 'Portfolio / Media Kit Link',
+            'name': 'portfolioLink',
+            'label': 'Portfolio Link (Optional)',
             'type': 'text',
-            'hint': 'https://yourlink.com',
+            'hint': 'https://yourportfolio.com',
           },
           {
-            'name': 'availability',
+            'name': 'availabilityType',
             'label': 'Availability',
             'type': 'dropdown',
             'hint': 'Select your availability',
             'options': AVAILABILITY_OPTIONS,
             'required': true,
-          },
-          {
-            'name': 'bio',
-            'label': 'Bio',
-            'type': 'text',
-            'hint': 'Your bio or tagline',
-            'maxLines': 2,
           },
         ];
 
@@ -485,7 +545,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'label': 'Content Style',
             'type': 'multiselect',
             'hint': 'Select content styles',
-            'options': INFLUENCER_CONTENT_CATEGORIES,
+            'options': UGC_CONTENT_STYLE_OPTIONS,
             'required': true,
           },
           {
@@ -493,7 +553,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'label': 'Niches',
             'type': 'multiselect',
             'hint': 'Select niches',
-            'options': INFLUENCER_NICHES,
+            'options': UGC_NICHE_OPTIONS,
             'required': true,
           },
           {
@@ -518,7 +578,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'hint': 'https://yourportfolio.com',
           },
           {
-            'name': 'availability',
+            'name': 'availabilityType',
             'label': 'Availability',
             'type': 'dropdown',
             'hint': 'Select your availability',
@@ -532,39 +592,82 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
           {
             'name': 'businessName',
             'label': 'Business Name',
+            'type': 'text',
             'hint': 'Enter business name',
+            'required': true,
+          },
+          {
+            'name': 'permitNumber',
+            'label': 'Permit Number',
+            'type': 'text',
+            'hint': 'e.g., PERMIT2024001',
+            'required': true,
           },
           {
             'name': 'businessAddress',
             'label': 'Business Address',
+            'type': 'text',
             'hint': 'Enter business address',
+            'required': true,
+          },
+          {
+            'name': 'businessWebsite',
+            'label': 'Business Website (Optional)',
+            'type': 'text',
+            'hint': 'https://yourcompany.com',
           },
           {
             'name': 'industry',
             'label': 'Industry',
-            'hint': 'e.g., Outdoor Advertising',
+            'type': 'dropdown',
+            'hint': 'Select industry',
+            'options': HOST_INDUSTRY_OPTIONS,
+            'required': true,
           },
           {
-            'name': 'telephoneNumber',
-            'label': 'Telephone Number',
-            'hint': '+234XXXXXXXXXX',
+            'name': 'operatingCities',
+            'label': 'Operating Cities',
+            'type': 'multiselect',
+            'hint': 'Select operating cities',
+            'options':
+                OPERATING_REGIONS_OPTIONS, // Assuming regions/cities are similar lists
+            'required': true,
           },
           {
-            'name': 'businessWebsite',
-            'label': 'Business Website',
-            'hint': 'https://yourcompany.com',
+            'name': 'yearsOfOperation',
+            'label': 'Years of Operation (Optional)',
+            'type': 'dropdown',
+            'hint': 'Select years of operation',
+            'options': YEARS_OF_EXPERIENCE_OPTIONS,
           },
           {
-            'name': 'signagePermitNumber',
-            'label': 'Signage Permit Number',
-            'hint': 'e.g., FCTA-LED-2025-009',
+            'name': 'idType',
+            'label': 'ID Type',
+            'type': 'dropdown',
+            'hint': 'Select ID Type',
+            'options': ID_TYPE_OPTIONS,
+            'required': true,
+          },
+          {
+            'name': 'idNumber',
+            'label': 'ID Number',
+            'type': 'text',
+            'hint': 'Enter ID Number',
+            'required': true,
+          },
+          {
+            'name': 'tinNumber',
+            'label': 'TIN Number',
+            'type': 'text',
+            'hint': 'Enter TIN Number',
+            'required': true,
           },
         ];
 
       case 'TV Station':
         return [
           {
-            'name': 'stationName',
+            'name': 'businessName',
             'label': 'TV Station Name',
             'type': 'text',
             'hint': 'Enter station name',
@@ -592,14 +695,14 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'required': true,
           },
           {
-            'name': 'telephoneNumber',
+            'name': 'contactPhone',
             'label': 'Telephone Number',
             'type': 'text',
             'hint': '+234XXXXXXXXXX',
             'required': true,
           },
           {
-            'name': 'website',
+            'name': 'businessWebsite',
             'label': 'Website (Optional)',
             'type': 'text',
             'hint': 'https://yourwebsite.com',
@@ -647,14 +750,14 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'name': 'averageDailyViewership',
             'label': 'Average Daily Viewership (Optional)',
             'type': 'text',
-            'hint': 'e.g., 500000',
+            'hint': 'e.g., 2000000',
           },
         ];
 
       case 'Radio Station':
         return [
           {
-            'name': 'stationName',
+            'name': 'businessName',
             'label': 'Radio Station Name',
             'type': 'text',
             'hint': 'Enter station name',
@@ -671,7 +774,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'name': 'rcNumber',
             'label': 'RC Number',
             'type': 'text',
-            'hint': 'e.g., RC567890',
+            'hint': 'e.g., RC456789',
             'required': true,
           },
           {
@@ -689,7 +792,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'required': true,
           },
           {
-            'name': 'website',
+            'name': 'businessWebsite',
             'label': 'Website (Optional)',
             'type': 'text',
             'hint': 'https://yourwebsite.com',
@@ -744,7 +847,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
       case 'Media House':
         return [
           {
-            'name': 'mediaHouseName',
+            'name': 'businessName',
             'label': 'Media House Name',
             'type': 'text',
             'hint': 'Enter media house name',
@@ -779,7 +882,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
             'required': true,
           },
           {
-            'name': 'website',
+            'name': 'businessWebsite',
             'label': 'Website (Optional)',
             'type': 'text',
             'hint': 'https://yourwebsite.com',
@@ -823,7 +926,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
           },
         ];
 
-      case 'Designer':
+      case 'Creatives':
         return [
           {
             'name': 'displayName',
@@ -835,57 +938,53 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
           {
             'name': 'creativeType',
             'label': 'Creative Type',
-            'type': 'dropdown',
-            'hint': 'Select your creative type',
-            'options': CREATIVE_TYPE_OPTIONS,
+            'type': 'text',
+            'hint': 'e.g., Motion Designer, Graphic Designer, UI/UX Designer',
             'required': true,
           },
           {
             'name': 'specialization',
             'label': 'Specialization',
-            'type': 'dropdown',
-            'hint': 'Select specialization',
-            'options': CREATIVE_SPECIALIZATION_OPTIONS,
+            'type': 'text',
+            'hint': 'e.g., Motion Graphics & Animation',
             'required': true,
           },
           {
             'name': 'skills',
-            'label': 'Skills',
-            'type': 'multiselect',
-            'hint': 'Select skills',
-            'options': CREATIVE_SKILLS_OPTIONS,
+            'label': 'Skills (Comma Separated)',
+            'type': 'text',
+            'hint': 'e.g., Motion Graphics, 3D Animation, VFX',
             'required': true,
           },
           {
             'name': 'toolsUsed',
-            'label': 'Tools Used',
-            'type': 'multiselect',
-            'hint': 'Select tools',
-            'options': CREATIVE_TOOLS_OPTIONS,
+            'label': 'Tools Used (Comma Separated)',
+            'type': 'text',
+            'hint': 'e.g., Adobe After Effects, Cinema 4D, Blender',
             'required': true,
           },
           {
             'name': 'yearsOfExperience',
             'label': 'Years of Experience',
             'type': 'dropdown',
-            'hint': 'Select years',
+            'hint': 'Select an option',
             'options': YEARS_OF_EXPERIENCE_OPTIONS,
           },
           {
             'name': 'numberOfProjects',
             'label': 'Number of Projects',
             'type': 'dropdown',
-            'hint': 'Select number of projects',
+            'hint': 'Select an option',
             'options': NUMBER_OF_PRODUCTIONS_OPTIONS,
           },
           {
             'name': 'portfolioLink',
-            'label': 'Portfolio Link (Optional)',
+            'label': 'Portfolio Link',
             'type': 'text',
             'hint': 'https://yourportfolio.com',
           },
           {
-            'name': 'availability',
+            'name': 'availabilityType',
             'label': 'Availability',
             'type': 'dropdown',
             'hint': 'Select your availability',
@@ -1016,21 +1115,91 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
         formData[key] = controller.text;
       });
 
-      // Simulate API call
-      Future.delayed(const Duration(milliseconds: 500)).then((_) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-          // Navigate to account details page with role data
-          context.push(
-            '/account-details',
-            extra: {
-              'role': widget.role,
-              'accountType': widget.accountType,
-              'roleData': formData,
-            },
-          );
-        }
-      });
+      // For individual advertisers, handle signup directly
+      if (widget.role == 'Advertiser' &&
+          (_selectedAccountType.toLowerCase().contains('personal') ||
+              _selectedAccountType.toLowerCase().contains('individual'))) {
+        _handleIndividualAdvertiserSignup(formData);
+      } else {
+        // For other roles/business advertisers, navigate to account details
+        // Simulate API call
+        Future.delayed(const Duration(milliseconds: 500)).then((_) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            context.push(
+              '/account-details',
+              extra: {
+                'role': widget.role,
+                'accountType': widget.accountType,
+                'roleData': formData,
+              },
+            );
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _handleIndividualAdvertiserSignup(
+    Map<String, dynamic> formData,
+  ) async {
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+
+    // For individual advertisers, advertiserInfo is null - they only provide personal info
+    final signUpRequest = SignUpRequest(
+      role: UserRole.ADVERTISER.value,
+      authProvider: AuthProvider.INTERNAL.value,
+      accountType: AccountType.INDIVIDUAL.value,
+      advertiserInfo: null,
+      name: formData['fullName'] ?? '',
+      emailAddress: formData['email'] ?? '',
+      phoneNumber: formData['phoneNumber'] ?? '',
+      password: formData['password'] ?? '',
+      country: 'Nigeria',
+      state: formData['state'],
+      city: formData['city'],
+      address: formData['streetAddress'],
+    );
+
+    await authNotifier.signupUser(signUpRequest);
+    await _handleSignupResponse(formData);
+  }
+
+  Future<void> _handleSignupResponse(Map<String, dynamic> formData) async {
+    if (!mounted) return;
+
+    final authState = ref.read(authNotifierProvider);
+
+    if (authState.isDataAvailable) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authState.message ?? 'Account created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Navigate to verification screen with email and phone number
+      if (mounted) {
+        context.push(
+          '/verify-identity',
+          extra: {
+            'email': formData['email'],
+            'phoneNumber': formData['phoneNumber'],
+          },
+        );
+      }
+    } else if (authState.message != null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authState.message!),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -1040,6 +1209,15 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
       // For now, we'll add them to the form state
       setState(() {
         _controllers[fieldName] = TextEditingController(text: value);
+
+        // If state field changed, update selected state and clear city
+        if (fieldName == 'state') {
+          _selectedState = value;
+          // Clear city selection when state changes
+          if (_controllers.containsKey('city')) {
+            _controllers['city']?.clear();
+          }
+        }
       });
     }
   }
@@ -1098,19 +1276,27 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
                 ),
                 SizedBox(height: 32.h),
 
-                // Account Type Tabs
-                AccountTypeTab(
-                  selectedType: _selectedAccountType,
-                  onTypeChanged: (newType) {
-                    setState(() {
-                      _selectedAccountType = newType;
-                      // Clear existing controllers when switching account type
-                      _controllers.clear();
-                      _initializeControllers();
-                    });
-                  },
-                ),
-                SizedBox(height: 32.h),
+                if (widget.role.toUpperCase() != 'HOST' &&
+                    widget.role.toUpperCase() != 'MEDIA HOUSE' &&
+                    widget.role.toUpperCase() != 'RADIO STATION' &&
+                    widget.role.toUpperCase() != 'INFLUENCER' &&
+                    widget.role.toUpperCase() != 'DESIGNER' &&
+                    widget.role.toUpperCase() != 'UGC CREATOR' &&
+                    widget.role.toUpperCase() != 'ARTIST') ...[
+                  AccountTypeTab(
+                    selectedType: _selectedAccountType,
+                    onTypeChanged: (newType) {
+                      setState(() {
+                        _selectedAccountType = newType;
+                        _selectedState = null; // Reset selected state
+                        // Clear existing controllers when switching account type
+                        _controllers.clear();
+                        _initializeControllers();
+                      });
+                    },
+                  ),
+                  SizedBox(height: 32.h),
+                ],
 
                 // Dynamic Form Fields
                 ...fields.map((field) {
@@ -1142,6 +1328,8 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
                       ),
                     );
                   } else {
+                    // Text or password field
+                    final isPassword = fieldType == 'password';
                     return Padding(
                       padding: EdgeInsets.only(bottom: 16.h),
                       child: _buildTextField(
@@ -1149,7 +1337,11 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
                         label: field['label'] as String,
                         hint: field['hint'] as String?,
                         maxLines: field['maxLines'] as int? ?? 1,
-                        isRequired: field['isRequired'] as bool? ?? true,
+                        isRequired:
+                            field['isRequired'] as bool? ??
+                            field['required'] as bool? ??
+                            true,
+                        isPassword: isPassword,
                       ),
                     );
                   }
@@ -1204,6 +1396,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
     required String? hint,
     int maxLines = 1,
     bool isRequired = true,
+    bool isPassword = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1236,6 +1429,7 @@ class _RoleDetailsScreenState extends State<RoleDetailsScreen> {
           controller: controller,
           maxLines: maxLines,
           minLines: maxLines == 1 ? 1 : maxLines,
+          obscureText: isPassword,
           decoration: _inputDecoration(hint),
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {

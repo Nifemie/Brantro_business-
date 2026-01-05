@@ -1,132 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
+import '../../../../artist/logic/artists_notifier.dart';
+import '../artist_profile_card.dart';
 
-class ArtistCard extends StatelessWidget {
-  final String imageUrl;
-  final String artistName;
-  final String category;
-  final VoidCallback? onTap;
-
-  const ArtistCard({
-    super.key,
-    required this.imageUrl,
-    required this.artistName,
-    required this.category,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 140.w,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(
-            color: Colors.grey.shade200,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(8.r),
-                topRight: Radius.circular(8.r),
-              ),
-              child: imageUrl.startsWith('http')
-                  ? Image.network(
-                      imageUrl,
-                      width: 140.w,
-                      height: 140.h,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 140.w,
-                          height: 140.h,
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.grey[400],
-                              size: 40,
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : Image.asset(
-                      imageUrl,
-                      width: 140.w,
-                      height: 140.h,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 140.w,
-                          height: 140.h,
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.grey[400],
-                              size: 40,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            // Info
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 6.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    artistName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    category,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 9.sp, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ArtistSection extends StatelessWidget {
+class ArtistSection extends ConsumerStatefulWidget {
   const ArtistSection({super.key});
 
   @override
+  ConsumerState<ArtistSection> createState() => _ArtistSectionState();
+}
+
+class _ArtistSectionState extends ConsumerState<ArtistSection> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch artists on init (public endpoint - no auth required)
+    Future.microtask(() {
+      ref.read(artistsProvider.notifier).fetchArtists(page: 1, limit: 10);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final artistsState = ref.watch(artistsProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -152,42 +52,94 @@ class ArtistSection extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     color: AppColors.primaryColor,
                   ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 12.h),
+            if (artistsState.isLoading)
+              SizedBox(
+                height: 380.h,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (artistsState.error != null)
+              SizedBox(
+                height: 380.h,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      SizedBox(height: 12.h),
+                      Text(
+                        'Error loading artists',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Text(
+                          artistsState.error ?? '',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      ElevatedButton(
+                        onPressed: () {
+                          ref
+                              .read(artistsProvider.notifier)
+                              .fetchArtists(page: 1, limit: 10);
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (artistsState.artists.isEmpty)
+              SizedBox(
+                height: 380.h,
+                child: Center(child: Text('No artists found')),
+              )
+            else
+              SizedBox(
+                height: 380.h,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: PlatformResponsive.symmetric(horizontal: 16),
+                  children: artistsState.artists.map((artist) {
+                    return Padding(
+                      padding: EdgeInsets.only(right: 16.w),
+                      child: SizedBox(
+                        width: 280.w,
+                        child: ArtistProfileCard(
+                          profileImage:
+                              artist.avatarUrl ??
+                              'assets/promotions/Davido1.jpg',
+                          name: artist.additionalInfo?.stageName ?? artist.name,
+                          location:
+                              '${artist.city ?? ''}, ${artist.country ?? ''}',
+                          tags: artist.additionalInfo?.genres ?? [],
+                          rating: artist.averageRating ?? 0.0,
+                          likes: artist.totalLikes ?? 0,
+                          works:
+                              artist.additionalInfo?.numberOfProductions ?? 0,
+                          isFavorite: false,
+                          onFavoriteTap: () {},
+                          onViewSlotsTap: () {},
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
-            ],
-          ),
-        ),
-        SizedBox(height: 12.h),
-        SizedBox(
-          height: 220.h,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: PlatformResponsive.symmetric(horizontal: 16),
-            children: [
-              ArtistCard(
-                imageUrl: 'assets/promotions/Davido1.jpg',
-                artistName: 'John Artist',
-                category: 'Digital Artist',
-                onTap: () {},
-              ),
-              SizedBox(width: 12.w),
-              ArtistCard(
-                imageUrl: 'assets/promotions/Davido1.jpg',
-                artistName: 'Sarah Creator',
-                category: 'Content Creator',
-                onTap: () {},
-              ),
-              SizedBox(width: 12.w),
-              ArtistCard(
-                imageUrl: 'assets/promotions/Davido1.jpg',
-                artistName: 'Mike Designer',
-                category: 'UI Designer',
-                onTap: () {},
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+
+        ],
+      );
   }
 }

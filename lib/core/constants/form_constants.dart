@@ -69,22 +69,21 @@ const List<Map<String, String>> AVAILABILITY_OPTIONS = [
   {"label": "Campaign Based", "value": "Campaign Based"},
 ];
 
-const List<Map<String, String>> YEARS_OF_EXPERIENCE_OPTIONS = [
-  {"label": "0 – 2 Years", "value": "0-2"},
-  {"label": "3 – 5 Years", "value": "3-5"},
-  {"label": "6 – 10 Years", "value": "6-10"},
-  {"label": "11 – 15 Years", "value": "11-15"},
-  {"label": "16 – 20 Years", "value": "16-20"},
-  {"label": "20+ Years", "value": "20+"},
+final List<Map<String, String>> YEARS_OF_EXPERIENCE_OPTIONS = [
+  ...List.generate(60, (index) {
+    final years = index + 1;
+    final label = years == 1 ? "1 Year" : "$years Years";
+    return {"label": label, "value": "$years"};
+  }),
+  {"label": "60+ Years", "value": "60+"},
 ];
 
-const List<Map<String, String>> NUMBER_OF_PRODUCTIONS_OPTIONS = [
-  {"label": "1 – 5 Productions", "value": "1-5"},
-  {"label": "6 – 10 Productions", "value": "6-10"},
-  {"label": "11 – 20 Productions", "value": "11-20"},
-  {"label": "21 – 50 Productions", "value": "21-50"},
-  {"label": "51 – 100 Productions", "value": "51-100"},
-  {"label": "100+ Productions", "value": "100+"},
+final List<Map<String, String>> NUMBER_OF_PRODUCTIONS_OPTIONS = [
+  ...List.generate(500, (index) {
+    final number = index + 1;
+    return {"label": "$number", "value": "$number"};
+  }),
+  {"label": "500+", "value": "500+"},
 ];
 
 // ===============================
@@ -235,13 +234,12 @@ const List<Map<String, String>> PRODUCER_SERVICE_TYPE_OPTIONS = [
   {"label": "Commercial & Brand Videos", "value": "Commercial & Brand Videos"},
 ];
 
-const List<Map<String, String>> PRODUCER_PRODUCTION_COUNT_OPTIONS = [
-  {"label": "1 – 5 Productions", "value": "1-5"},
-  {"label": "6 – 10 Productions", "value": "6-10"},
-  {"label": "11 – 20 Productions", "value": "11-20"},
-  {"label": "21 – 50 Productions", "value": "21-50"},
-  {"label": "51 – 100 Productions", "value": "51-100"},
-  {"label": "Over 100 Productions", "value": "100+"},
+final List<Map<String, String>> PRODUCER_PRODUCTION_COUNT_OPTIONS = [
+  ...List.generate(500, (index) {
+    final number = index + 1;
+    return {"label": "$number", "value": "$number"};
+  }),
+  {"label": "500+", "value": "500+"},
 ];
 
 const List<Map<String, String>> PRODUCER_SPECIALIZATION_OPTIONS = [
@@ -460,10 +458,21 @@ const List<Map<String, String>> TALENT_CATEGORY_OPTIONS = [
   {"label": "UGC Creators", "value": "UGC Creators"},
 ];
 
-const List<Map<String, String>> TALENTS_MANAGED_COUNT_OPTIONS = [
-  {"label": "1 – 5 Talents", "value": "1-5"},
-  {"label": "6 – 10 Talents", "value": "6-10"},
-  {"label": "11 – 20 Talents", "value": "11-20"},
-  {"label": "21 – 50 Talents", "value": "21-50"},
-  {"label": "50+ Talents", "value": "50+"},
+final List<Map<String, String>> TALENTS_MANAGED_COUNT_OPTIONS = [
+  ...List.generate(500, (index) {
+    final number = index + 1;
+    return {"label": "$number", "value": "$number"};
+  }),
+  {"label": "500+", "value": "500+"},
+];
+
+// ===============================
+// Identity Constants
+// ===============================
+const List<Map<String, String>> ID_TYPE_OPTIONS = [
+  {"label": "CAC", "value": "CAC"},
+  {"label": "NIN", "value": "NIN"},
+  {"label": "International Passport", "value": "International Passport"},
+  {"label": "Driver's License", "value": "Driver's License"},
+  {"label": "Voters Card", "value": "Voters Card"},
 ];

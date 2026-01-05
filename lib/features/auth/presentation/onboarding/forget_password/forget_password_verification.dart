@@ -1,24 +1,33 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/app_messanger.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../controllers/re_useable/app_button.dart';
+import '../../../logic/auth_notifiers.dart';
+import '../../../data/models/verify_otp_request.dart';
+import '../../../data/models/validate_account_request.dart';
 
-class ForgotPasswordVerificationScreen extends StatefulWidget {
-  const ForgotPasswordVerificationScreen({super.key});
+class ForgotPasswordVerificationScreen extends ConsumerStatefulWidget {
+  final String identity;
+  const ForgotPasswordVerificationScreen({required this.identity, super.key});
 
   @override
-  State<ForgotPasswordVerificationScreen> createState() =>
+  ConsumerState<ForgotPasswordVerificationScreen> createState() =>
       _ForgotPasswordVerificationScreenState();
 }
 
 class _ForgotPasswordVerificationScreenState
-    extends State<ForgotPasswordVerificationScreen> {
+    extends ConsumerState<ForgotPasswordVerificationScreen> {
   bool _isLoading = false;
   int _resendTimer = 30;
   Timer? _timer;
   String _otp = '';
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
 
   void _startResendTimer() {
     _timer?.cancel();
@@ -36,6 +45,9 @@ class _ForgotPasswordVerificationScreenState
   }
 
   Future<void> _verifyOtp() async {
+    // Collect OTP from all controllers
+    _otp = _otpControllers.map((controller) => controller.text).join();
+
     if (_otp.length != 6) {
       AppMessenger.show(
         context,
@@ -48,26 +60,28 @@ class _ForgotPasswordVerificationScreenState
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Replace with your actual OTP verification API call
-      // Example:
-      // final response = await AuthService.verifyOtp(
-      //   username: username,
-      //   otpCode: _otp,
-      // );
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      final request = VerifyOtpRequest(identity: widget.identity, otp: _otp);
+      await ref.read(authNotifierProvider.notifier).verifyAccount(request);
 
       if (!mounted) return;
 
-      AppMessenger.show(
-        context,
-        type: MessageType.success,
-        message: 'OTP verified successfully',
-      );
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isDataAvailable) {
+        AppMessenger.show(
+          context,
+          type: MessageType.success,
+          message: authState.message ?? 'OTP verified successfully',
+        );
 
-      // Navigate to reset password
-      context.push('/reset-password');
+        // Navigate to reset password
+        context.push('/reset-password', extra: {'identity': widget.identity});
+      } else if (authState.message != null) {
+        AppMessenger.show(
+          context,
+          type: MessageType.error,
+          message: authState.message!,
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       AppMessenger.show(
@@ -84,13 +98,14 @@ class _ForgotPasswordVerificationScreenState
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Replace with your actual resend OTP API call
-      // Example:
-      // final username = await SessionService.getUsername();
-      // final response = await AuthService.resendOtp(username);
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      // Call validateEmail to resend OTP (forgot password flow)
+      // Determine if identity is email or phone
+      final isEmail = widget.identity.contains('@');
+      final request = ValidateAccountRequest(
+        email: isEmail ? widget.identity : null,
+        phoneNumber: !isEmail ? widget.identity : null,
+      );
+      await ref.read(authNotifierProvider.notifier).validateEmail(request);
 
       if (!mounted) return;
 
@@ -122,6 +137,9 @@ class _ForgotPasswordVerificationScreenState
   @override
   void dispose() {
     _timer?.cancel();
+    for (var controller in _otpControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -147,7 +165,7 @@ class _ForgotPasswordVerificationScreenState
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter the code we sent to your email.',
+                'Enter the code we sent to ${widget.identity}.',
                 style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 textAlign: TextAlign.center,
               ),
@@ -211,6 +229,7 @@ class _ForgotPasswordVerificationScreenState
           width: 50,
           height: 60,
           child: TextField(
+            controller: _otpControllers[index],
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
             maxLength: 1,
@@ -233,9 +252,6 @@ class _ForgotPasswordVerificationScreenState
             ),
             onChanged: (value) {
               if (value.isNotEmpty) {
-                setState(() {
-                  _otp = _otp.replaceRange(index, index + 1, value);
-                });
                 if (index < 5) {
                   FocusScope.of(context).nextFocus();
                 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:brantro/features/auth/logic/auth_notifiers.dart';
+import 'package:brantro/features/auth/data/models/login_request.dart';
 import 'package:brantro/core/utils/app_messanger.dart';
 import 'package:brantro/core/utils/device_utils.dart';
 import 'package:brantro/core/utils/color_utils.dart';
@@ -29,31 +31,36 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      try {
-        // TODO: Replace with your actual login API call
-        // Example:
-        // final response = await AuthService.login(
-        //   username: _usernameController.text.trim(),
-        //   password: _passwordController.text.trim(),
-        // );
+      final request = LoginRequest(
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
 
-        // For now, just simulate a successful login
-        await Future.delayed(const Duration(seconds: 2));
+      await ref.read(authNotifierProvider.notifier).login(request);
+      
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-        if (!mounted) return;
+      final authState = ref.read(authNotifierProvider);
 
+      if (authState.isDataAvailable) {
+        if (authState.message != null && authState.message!.isNotEmpty) {
+           AppMessenger.show(
+            context,
+            message: authState.message!,
+            type: MessageType.success,
+          );
+        }
+        
         // On success, navigate to home
-        context.pushReplacement('/');
-      } catch (e) {
-        if (!mounted) return;
+        context.pushReplacement('/home');
+      } else if (authState.message != null) {
         setState(() => _hasIncorrectCred = true);
         AppMessenger.show(
           context,
-          message: e.toString(),
+          message: authState.message!,
           type: MessageType.error,
         );
-      } finally {
-        setState(() => _isLoading = false);
       }
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../core/utils/color_utils.dart';
 
 /// Role card widget for grid display
 class RoleCard extends StatelessWidget {
@@ -27,16 +28,16 @@ class RoleCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
           side: BorderSide(
-            color: isSelected ? Colors.blue.shade600 : Colors.grey.shade200,
+            color: isSelected ? AppColors.primaryColor : Colors.grey.shade200,
             width: isSelected ? 2 : 1,
           ),
         ),
-        color: isSelected ? Colors.blue.shade50 : Colors.white,
+        color: isSelected ? AppColors.primaryColor.withOpacity(0.05) : Colors.white,
         child: Padding(
           padding: EdgeInsets.all(10.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Icon in circular background
@@ -44,14 +45,14 @@ class RoleCard extends StatelessWidget {
                 width: 45.w,
                 height: 45.w,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
+                  color: AppColors.primaryColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Icon(icon, size: 24.sp, color: Colors.blue.shade600),
+                  child: Icon(icon, size: 24.sp, color: AppColors.primaryColor),
                 ),
               ),
-              SizedBox(height: 8.h),
+              SizedBox(height: 12.h),
 
               // Title
               Flexible(
@@ -67,7 +68,7 @@ class RoleCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              SizedBox(height: 4.h),
+              SizedBox(height: 6.h),
 
               // Description
               Flexible(
@@ -79,27 +80,8 @@ class RoleCard extends StatelessWidget {
                     color: Colors.grey.shade600,
                     height: 1.2,
                   ),
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(height: 8.h),
-
-              // Select button
-              TextButton(
-                onPressed: onSelect,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 0.h),
-                  minimumSize: Size(0, 24.h),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'Select →',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blue.shade600,
-                  ),
                 ),
               ),
             ],

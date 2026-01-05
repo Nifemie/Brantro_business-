@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:brantro/core/utils/color_utils.dart'; // Add import
 
 class PrimaryButton extends StatelessWidget {
   final String text;
@@ -100,7 +101,7 @@ class FullWidthButton extends StatelessWidget {
       width: MediaQuery.of(context).size.width,
       height: 50,
       decoration: BoxDecoration(
-        color: isEnabled ? const Color(0xFF2196F3) : const Color(0xFFE5E7EB),
+        color: isEnabled ? AppColors.primaryColor : const Color(0xFFE5E7EB),
         borderRadius: BorderRadius.circular(24),
       ),
       child: TextButton(

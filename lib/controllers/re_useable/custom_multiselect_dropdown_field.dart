@@ -133,6 +133,7 @@ class _CustomMultiselectDropdownFieldState
                     DropdownButton<String>(
                       isExpanded: true,
                       underline: SizedBox(),
+                      dropdownColor: Colors.white,
                       hint: Text(
                         'Add more...',
                         style: TextStyle(

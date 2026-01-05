@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../controllers/re_useable/app_color.dart';
 import 'search_bar_widget.dart';
 
 class HeaderPromoWidget extends StatefulWidget {
@@ -23,18 +24,19 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1B4EAD), Color(0xFF21899C)],
+          colors: [
+            AppColors.primaryColor,
+            AppColors.primaryColor.withOpacity(0.8),
+          ],
         ),
       ),
       child: SafeArea(
         bottom: false,
-        child: Column(
-          children: [_buildSearchAndActionsRow(), _buildPromoCarousel()],
-        ),
+        child: Column(children: [_buildPromoCarousel()]),
       ),
     );
   }

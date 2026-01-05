@@ -1,19 +1,29 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sms_autofill/sms_autofill.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:brantro/features/auth/logic/auth_notifiers.dart';
+import 'package:brantro/features/auth/data/models/verify_otp_request.dart';
+import 'package:brantro/features/auth/data/models/validate_account_request.dart';
 import 'package:brantro/core/utils/color_utils.dart';
 import '../../../../../controllers/re_useable/app_button.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 
-class VerifyIdentityScreen extends StatefulWidget {
+class VerifyIdentityScreen extends ConsumerStatefulWidget {
   final String email;
-  const VerifyIdentityScreen({required this.email, super.key});
+  final String phoneNumber;
+  const VerifyIdentityScreen({
+    required this.email,
+    required this.phoneNumber,
+    super.key,
+  });
 
   @override
-  State<VerifyIdentityScreen> createState() => _VerifyIdentityScreenState();
+  ConsumerState<VerifyIdentityScreen> createState() =>
+      _VerifyIdentityScreenState();
 }
 
-class _VerifyIdentityScreenState extends State<VerifyIdentityScreen>
+class _VerifyIdentityScreenState extends ConsumerState<VerifyIdentityScreen>
     with CodeAutoFill {
   bool _isLoading = false;
   int _resendTimer = 30;
@@ -45,15 +55,49 @@ class _VerifyIdentityScreenState extends State<VerifyIdentityScreen>
       return;
     }
 
+    setState(() => _isLoading = true);
+
+    final request = VerifyOtpRequest(identity: widget.email, otp: _otp);
+
+    await ref.read(authNotifierProvider.notifier).verifyAccount(request);
+
     if (mounted) {
-      context.go('/signin');
+      setState(() => _isLoading = false);
+
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isDataAvailable) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.message ?? 'Verification successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Navigate to success or signin or home.
+        // Assuming we go to signin or home. Let's go to signin based on context.
+        context.go('/signin');
+      } else if (authState.message != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.message!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _resendOtp() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Implement backend resend OTP
+      // Trigger validateEmail to resend OTP via email and SMS
+      final validateRequest = ValidateAccountRequest(
+        email: widget.email,
+        phoneNumber: widget.phoneNumber,
+      );
+      await ref
+          .read(authNotifierProvider.notifier)
+          .validateEmail(validateRequest);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Verification code sent to your email.')),
       );
@@ -82,6 +126,18 @@ class _VerifyIdentityScreenState extends State<VerifyIdentityScreen>
     super.initState();
     _startResendTimer();
     listenForCode(); // listens for autofill/paste
+    _sendOtpOnLoad(); // Trigger OTP send when screen loads
+  }
+
+  Future<void> _sendOtpOnLoad() async {
+    // Trigger validateEmail to send OTP when screen loads
+    final validateRequest = ValidateAccountRequest(
+      email: widget.email,
+      phoneNumber: widget.phoneNumber,
+    );
+    await ref
+        .read(authNotifierProvider.notifier)
+        .validateEmail(validateRequest);
   }
 
   @override
@@ -139,45 +195,47 @@ class _VerifyIdentityScreenState extends State<VerifyIdentityScreen>
                 currentCode: _otp,
                 onCodeChanged: (code) {
                   setState(() => _otp = code ?? '');
+                  if ((code?.length ?? 0) == 6) {
+                    _verifyEmail();
+                  }
                 },
               ),
 
               const SizedBox(height: 40),
 
-              // Didn't receive the code
-              Wrap(
-                alignment: WrapAlignment.center,
-                children: [
-                  Text(
-                    "Didn't receive the code? ",
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                  ),
-                  GestureDetector(
-                    onTap: _resendTimer == 0 ? _resendOtp : null,
-                    child: Text(
-                      _isLoading
-                          ? 'Sending...'
-                          : _resendTimer == 0
-                          ? 'Resend'
-                          : 'Resend in $_resendTimer seconds',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: _resendTimer == 0
-                            ? const Color(0xFF2196F3)
-                            : Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
+              // ✅ Verify Button
+              FullWidthButton(
+                text: 'Verify Email',
+                onPressed: _otp.length == 6 ? _verifyEmail : null,
+                isLoading: _isLoading,
+                isEnabled: _otp.length == 6,
+              ),
+              const SizedBox(height: 24),
+
+              // Resend Code
+              Center(
+                child: TextButton(
+                  onPressed: _resendTimer == 0 ? _resendOtp : null,
+                  child: RichText(
+                    text: TextSpan(
+                      text: "Didn't receive code? ",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: _resendTimer == 0
+                              ? 'Resend Code'
+                              : 'Resend in $_resendTimer s',
+                          style: TextStyle(
+                            color: _resendTimer == 0
+                                ? AppColors.primaryColor
+                                : Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-
-              const SizedBox(height: 48),
-
-              FullWidthButton(
-                text: 'Continue',
-                isLoading: _isLoading,
-                onPressed: _verifyEmail,
+                ),
               ),
             ],
           ),

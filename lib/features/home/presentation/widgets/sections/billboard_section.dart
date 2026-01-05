@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
-import '../reusable_card.dart';
+import '../billboard_card.dart';
 
 class BillboardSection extends StatelessWidget {
   const BillboardSection({super.key});
@@ -41,33 +41,69 @@ class BillboardSection extends StatelessWidget {
         ),
         SizedBox(height: 12.h),
         SizedBox(
-          height: 220.h,
+          height: 500.h,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: PlatformResponsive.symmetric(horizontal: 16),
             children: [
-              ReusableCard(
-                imageUrl: 'assets/promotions/billboard1.jpg',
-                title: 'Billboard Space 1',
-                rating: 4.8,
-                amount: 'Rp 5.000.000',
-                onTap: () {},
+              SizedBox(
+                width: 300.w,
+                child: BillboardCard(
+                  imageUrl: 'assets/promotions/billboard1.jpg',
+                  category: 'Prime Location',
+                  location: 'Lekki, Lagos',
+                  title: 'High-Traffic Billboard',
+                  subtitle: 'Perfect for brand visibility',
+                  tags: const ['Prime', 'High Traffic', 'Day & Night'],
+                  additionalInfo: '50,000+ daily impressions',
+                  rating: 4.8,
+                  ratedBy: '245 reviews',
+                  price: '₦250,000',
+                  priceUnit: 'per month',
+                  likes: 324,
+                  onLikeTap: () {},
+                  onBookTap: () {},
+                ),
               ),
-              SizedBox(width: 12.w),
-              ReusableCard(
-                imageUrl: 'assets/promotions/billboard2.jpg',
-                title: 'Billboard Space 2',
-                rating: 4.6,
-                amount: 'Rp 4.500.000',
-                onTap: () {},
+              SizedBox(width: 16.w),
+              SizedBox(
+                width: 300.w,
+                child: BillboardCard(
+                  imageUrl: 'assets/promotions/billboard2.jpg',
+                  category: 'Business Area',
+                  location: 'Victoria Island, Lagos',
+                  title: 'Corporate District Billboard',
+                  subtitle: 'B2B audience targeting',
+                  tags: const ['Corporate', 'CBD', 'High Visibility'],
+                  additionalInfo: '75,000+ daily impressions',
+                  rating: 4.6,
+                  ratedBy: '189 reviews',
+                  price: '₦300,000',
+                  priceUnit: 'per month',
+                  likes: 287,
+                  onLikeTap: () {},
+                  onBookTap: () {},
+                ),
               ),
-              SizedBox(width: 12.w),
-              ReusableCard(
-                imageUrl: 'assets/promotions/billboard3.jpg',
-                title: 'Billboard Space 3',
-                rating: 4.7,
-                amount: 'Rp 4.800.000',
-                onTap: () {},
+              SizedBox(width: 16.w),
+              SizedBox(
+                width: 300.w,
+                child: BillboardCard(
+                  imageUrl: 'assets/promotions/billboard3.jpg',
+                  category: 'Highway',
+                  location: 'Ikorodu Road, Lagos',
+                  title: 'Expressway Billboard',
+                  subtitle: 'Maximum reach and coverage',
+                  tags: const ['Highway', 'High Speed Traffic', '24/7'],
+                  additionalInfo: '100,000+ daily impressions',
+                  rating: 4.7,
+                  ratedBy: '312 reviews',
+                  price: '₦350,000',
+                  priceUnit: 'per month',
+                  likes: 451,
+                  onLikeTap: () {},
+                  onBookTap: () {},
+                ),
               ),
             ],
           ),

@@ -9,14 +9,16 @@ class CategoryWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = [
-      {'icon': '�', 'label': 'Influencers'},
+      {'icon': '👤', 'label': 'Influencers'},
       {'icon': '🎨', 'label': 'Artists'},
-      {'icon': '�', 'label': 'Radio\nStations'},
-      {'icon': '�', 'label': 'TV\nStations'},
+      {'icon': '📻', 'label': 'Radio\nStations'},
+      {'icon': '📺', 'label': 'TV\nStations'},
       {'icon': '📰', 'label': 'Media\nHouses'},
       {'icon': '💻', 'label': 'Digital\nScreens'},
       {'icon': '🪧', 'label': 'Billboards'},
-      {'icon': '✨', 'label': 'Designers /\nCreatives'},
+      {'icon': '✨', 'label': 'Designers \nCreatives'},
+      {'icon': '🎬', 'label': 'UGC\nCreator'},
+      {'icon': '🎥', 'label': 'Film\nProducer'},
     ];
 
     return Column(
