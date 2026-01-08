@@ -16,6 +16,7 @@ import '../../home/presentation/widgets/digital_screen_card.dart';
 import '../../home/presentation/widgets/designer_card.dart';
 import '../../home/presentation/widgets/ugc_creator_card.dart';
 import '../../home/presentation/widgets/film_producer_card.dart';
+import '../../home/presentation/widgets/producer_card.dart';
 import '../../artist/logic/artists_notifier.dart';
 import '../../influencer/logic/influencers_notifier.dart';
 import '../../radio_station/logic/radio_stations_notifier.dart';
@@ -23,6 +24,7 @@ import '../../tv_station/logic/tv_stations_notifier.dart';
 import '../../media_house/logic/media_houses_notifier.dart';
 import '../../creative/logic/creatives_notifier.dart';
 import '../../ugc_creator/logic/ugc_creators_notifier.dart';
+import '../../producer/logic/producers_notifier.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   final String? category;
@@ -72,6 +74,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     } else if (widget.category?.toLowerCase().contains('ugc') ?? false) {
       Future.microtask(() {
         ref.read(ugcCreatorsProvider.notifier).fetchUgcCreators();
+      });
+    } else if ((widget.category?.toLowerCase().contains('film') ?? false) ||
+               (widget.category?.toLowerCase().contains('producer') ?? false)) {
+      Future.microtask(() {
+        ref.read(producersProvider.notifier).fetchProducers();
       });
     }
   }
@@ -828,11 +835,56 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   Widget _buildFilmProducersList() {
-    return Center(
-      child: Text(
-        'Coming soon',
-        style: AppTexts.bodyMedium(color: AppColors.textPrimary),
-      ),
+    final producersState = ref.watch(producersProvider);
+
+    if (producersState.isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      );
+    }
+
+    if (producersState.error != null) {
+      return Center(
+        child: Text(
+          'Error loading producers: ${producersState.error}',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    if (producersState.producers.isEmpty) {
+      return Center(
+        child: Text(
+          'No producers available',
+          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(16.w),
+      itemCount: producersState.producers.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16.h),
+      itemBuilder: (context, index) {
+        final producer = producersState.producers[index];
+        final location = [
+          producer.city,
+          producer.state,
+          producer.country,
+        ].where((e) => e != null).join(', ');
+
+        return ProducerCard(
+          avatarUrl: producer.avatarUrl ?? 'assets/promotions/Davido1.jpg',
+          name: producer.additionalInfo?.businessName ?? producer.name,
+          location: location.isEmpty ? 'Unknown' : location,
+          rating: producer.averageRating,
+          likes: producer.totalLikes ?? 0,
+          productions: producer.additionalInfo?.numberOfProductions ?? 0,
+          onViewAdSlotsTap: () {
+            // TODO: Navigate to ad slots page
+          },
+        );
+      },
     );
   }
 }

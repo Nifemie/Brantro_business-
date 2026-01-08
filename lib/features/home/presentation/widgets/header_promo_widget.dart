@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -14,9 +15,32 @@ class HeaderPromoWidget extends StatefulWidget {
 
 class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
   final PageController _promoController = PageController();
+  Timer? _autoPlayTimer;
+  int _currentPage = 0;
+  static const int _totalPages = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_promoController.hasClients) {
+        _currentPage = (_currentPage + 1) % _totalPages;
+        _promoController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _autoPlayTimer?.cancel();
     _promoController.dispose();
     super.dispose();
   }
@@ -103,7 +127,21 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
           height: 320.h, // Fixed height for the carousel
           child: PageView(
             controller: _promoController,
-            children: [_buildPromoContent()],
+            children: [
+              _buildPromoContent(
+                title: 'Your Brand\nEverywhere in\nNigeria.',
+                buttonText: 'Explore Advertisement Options',
+              ),
+              _buildPromoContent(
+                title: 'Connect With\nTop Artists\nToday.',
+                buttonText: 'Browse Artists',
+                imagePath: 'assets/promotions/ayra2-removebg-preview.png',
+              ),
+              _buildPromoContent(
+                title: 'Reach Millions\nAcross Nigeria\nNow.',
+                buttonText: 'Get Started',
+              ),
+            ],
           ),
         ),
         Padding(
@@ -123,83 +161,107 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
     );
   }
 
-  Widget _buildPromoContent() {
+  Widget _buildPromoContent({
+    required String title,
+    required String buttonText,
+    String? imagePath,
+  }) {
+    // Split title into lines
+    final lines = title.split('\n');
+    final firstLine = lines.isNotEmpty ? lines[0] : '';
+    final remainingLines = lines.length > 1 ? lines.sublist(1).join('\n') : '';
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Row(
         children: [
-          // LEFT SIDE: TEXT (Wrapped in FittedBox to prevent any overflow)
+          // LEFT SIDE: TEXT
           Expanded(
-            flex: 6,
+            flex: imagePath != null ? 5 : 6,
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Credit Card Promo',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Sale up to',
-                    style: TextStyle(color: Colors.white, fontSize: 13.sp),
-                  ),
-                  // TYPOGRAPHY FOR "40% OFF"
+                  // Main headline with orange and white text
                   RichText(
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: '40',
+                          text: '$firstLine\n',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 52.sp,
+                            fontSize: 26.sp,
                             fontWeight: FontWeight.bold,
+                            color: const Color(0xFFFF6B35), // Orange color
+                            height: 1.2,
                           ),
                         ),
-                        WidgetSpan(
-                          child: Transform.translate(
-                            offset: const Offset(2, -20), // Moves % higher up
-                            child: Text(
-                              '%',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        if (remainingLines.isNotEmpty)
+                          TextSpan(
+                            text: remainingLines,
+                            style: TextStyle(
+                              fontSize: 26.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              height: 1.2,
                             ),
                           ),
-                        ),
-                        TextSpan(
-                          text: ' OFF',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 26.sp,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Pay with credit card and get\nthe discount',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 11.sp,
-                      height: 1.2,
+                  SizedBox(height: 20.h),
+                  // CTA Button
+                  ElevatedButton(
+                    onPressed: () {
+                      // TODO: Navigate based on button text
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6B35), // Orange
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25.r),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 12.h,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.arrow_forward, size: 16.sp),
+                        SizedBox(width: 8.w),
+                        Text(
+                          buttonText,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
           ),
+          // RIGHT SIDE: IMAGE (if provided)
+          if (imagePath != null) ...[
+            SizedBox(width: 16.w),
+            Expanded(
+              flex: 4,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12.r),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  height: 270.h,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

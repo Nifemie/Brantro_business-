@@ -16,6 +16,7 @@ import '../widgets/sections/artist_section.dart';
 import '../widgets/sections/radio_station_section.dart';
 import '../widgets/sections/tv_station_section.dart';
 import '../widgets/sections/content_producer_section.dart';
+import '../widgets/sections/producer_section.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -77,6 +78,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     SizedBox(height: 24.h),
                     // Content Producer Section
                     const ContentProducerSection(),
+                    SizedBox(height: 24.h),
+                    // Producer Section
+                    const ProducerSection(),
                     SizedBox(height: 24.h),
                     // Artist Section
                     const ArtistSection(),

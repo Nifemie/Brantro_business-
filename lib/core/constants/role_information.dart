@@ -67,6 +67,11 @@ const Map<String, RoleInfo> ROLE_INFORMATION = {
     description: 'Publish content across multiple media platforms.',
     icon: Icons.newspaper,
   ),
+  'Creatives': RoleInfo(
+    name: 'Creatives',
+    description: 'Showcase your creative work and collaborate with brands.',
+    icon: Icons.brush,
+  ),
   'Designer': RoleInfo(
     name: 'Designer',
     description: 'Offer creative design services and portfolio showcase.',

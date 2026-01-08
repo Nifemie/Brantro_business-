@@ -2,12 +2,14 @@ import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/data/data_state.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/service/session_service.dart';
 import '../data/auth_repository.dart';
 import '../data/models/signup_request.dart';
 import '../data/models/validate_account_request.dart';
 import '../data/models/verify_otp_request.dart';
 import '../data/models/user_model.dart';
 import '../data/models/login_request.dart';
+import '../data/models/login_response.dart';
 import '../data/models/forgot_password_request.dart';
 import '../data/models/reset_password_request.dart';
 
@@ -132,6 +134,12 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
 
     try {
       final response = await _repository.login(request);
+
+      // Save session data to SessionService
+      if (response.user != null && response.accessToken != null) {
+        await SessionService.saveSession(response);
+        log('[AuthNotifier] Session saved successfully');
+      }
 
       state = state.copyWith(
         isInitialLoading: false,

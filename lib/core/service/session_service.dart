@@ -24,16 +24,19 @@ class SessionService {
   // Save login session
   static Future<void> saveSession(dynamic response) async {
     final prefs = await SharedPreferences.getInstance();
-    // TODO: Uncomment when LoginResponse model is created
-    // await prefs.setString(_userDetailsKey, jsonEncode(response.user.toJson()));
-    // await prefs.setString(_usernameKey, response.user.email);
-    // await prefs.setString(_userFullnameKey, response.user.fullname);
-    // await prefs.setString(_userActualUsernameKey, response.user.username);
-    // await prefs.setString(_userPhoneNumberKey, response.user.phoneNumber ?? '');
-    // //save token if any
-    // if (response.accessToken != null) {
-    //   await prefs.setString(_userAccessToken, response.accessToken!);
-    // }
+    
+    // Save user details
+    if (response.user != null) {
+      await prefs.setString(_userDetailsKey, jsonEncode(response.user.toJson()));
+      await prefs.setString(_usernameKey, response.user.emailAddress ?? '');
+      await prefs.setString(_userFullnameKey, response.user.name ?? '');
+      await prefs.setString(_userPhoneNumberKey, response.user.phoneNumber ?? '');
+    }
+    
+    // Save access token if available
+    if (response.accessToken != null) {
+      await prefs.setString(_userAccessToken, response.accessToken!);
+    }
   }
 
   static Future<String?> getAccessToken() async {

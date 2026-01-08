@@ -16,6 +16,7 @@ import 'package:brantro/features/search/presentation/search_results_screen.dart'
 import 'package:brantro/features/Explore/presentation/explore_screen.dart';
 import 'package:brantro/features/main_shell.dart';
 import 'package:brantro/features/product/presentation/product_details_screen.dart';
+import 'package:brantro/features/account/presentation/user_account.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -117,6 +118,11 @@ final router = GoRouter(
                 final category = state.uri.queryParameters['category'];
                 return ExploreScreen(category: category);
               },
+            ),
+            GoRoute(
+              path: 'account',
+              name: 'account',
+              builder: (context, state) => const UserAccount(),
             ),
             // Placeholder routes for other tabs can be added here
           ],

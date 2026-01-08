@@ -8,6 +8,7 @@ import 'package:brantro/core/utils/app_messanger.dart';
 import 'package:brantro/core/utils/device_utils.dart';
 import 'package:brantro/core/utils/color_utils.dart';
 import 'package:brantro/controllers/re_useable/app_button.dart';
+import 'package:brantro/core/service/session_service.dart';
 import '../../../../../core/utils/platform_responsive.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -44,16 +45,32 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       final authState = ref.read(authNotifierProvider);
 
       if (authState.isDataAvailable) {
-        if (authState.message != null && authState.message!.isNotEmpty) {
-           AppMessenger.show(
-            context,
-            message: authState.message!,
-            type: MessageType.success,
-          );
-        }
-        
         // On success, navigate to home
         context.pushReplacement('/home');
+        
+        // Show welcome message after navigation
+        Future.delayed(const Duration(milliseconds: 500), () async {
+          if (!mounted) return;
+          
+          // Get user's name from session
+          final userName = await SessionService.getUserFullname() ?? 
+                          await SessionService.getUsername() ?? 
+                          'User';
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome back, $userName!'),
+              backgroundColor: AppColors.primaryColor,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: 80.h, // Position above bottom nav
+                left: 16.w,
+                right: 16.w,
+              ),
+            ),
+          );
+        });
       } else if (authState.message != null) {
         setState(() => _hasIncorrectCred = true);
         AppMessenger.show(

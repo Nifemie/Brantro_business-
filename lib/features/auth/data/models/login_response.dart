@@ -18,14 +18,18 @@ class LoginResponse {
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
-    dynamic data = json['data'];
+    // The actual response has a 'payload' object containing user and accessToken
+    dynamic payload = json['payload'] ?? json['data'];
+    
     return LoginResponse(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      user: data != null ? UserModel.fromJson(data) : null,
-      accessToken: data != null ? data['accessToken'] : null,
-      refreshToken: data != null ? data['refreshToken'] : null,
-      expiresIn: data != null ? data['expiresIn'] : null,
+      user: payload != null && payload['user'] != null 
+          ? UserModel.fromJson(payload['user']) 
+          : null,
+      accessToken: payload != null ? payload['accessToken'] : null,
+      refreshToken: payload != null ? payload['refreshToken'] : null,
+      expiresIn: payload != null ? payload['expiresIn'] : null,
     );
   }
 
@@ -33,8 +37,8 @@ class LoginResponse {
     return {
       'success': success,
       'message': message,
-      'data': {
-        if (user != null) ...user!.toJson(),
+      'payload': {
+        if (user != null) 'user': user!.toJson(),
         if (accessToken != null) 'accessToken': accessToken,
         if (refreshToken != null) 'refreshToken': refreshToken,
         if (expiresIn != null) 'expiresIn': expiresIn,

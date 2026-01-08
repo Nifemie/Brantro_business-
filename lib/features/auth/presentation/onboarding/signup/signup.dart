@@ -28,6 +28,7 @@ class _SignupScreenState extends State<SignupScreen> {
     'Radio Station',
     'Media House',
     'Creatives',
+    'Designer',
     'Talent Manager',
   ];
 
