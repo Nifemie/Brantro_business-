@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/service/session_service.dart';
 
 // Provider for animation controllers
 final splashAnimationProvider =
@@ -110,8 +111,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   Future<void> _checkSession() async {
     if (!mounted) return;
-    // For now, navigate to intro screen
-    context.pushReplacement('/intro');
+    
+    // Check if user is logged in
+    final isLoggedIn = await SessionService.isLoggedIn();
+    
+    if (isLoggedIn) {
+      // Redirect to home if authenticated
+      context.pushReplacement('/home');
+    } else {
+      // Redirect to intro if not authenticated
+      context.pushReplacement('/intro');
+    }
   }
 
   @override

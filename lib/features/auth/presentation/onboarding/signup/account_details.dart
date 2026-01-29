@@ -665,7 +665,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     }
 
     final signUpRequest = SignUpRequest(
-      role: UserRole.ADVERTISER.value,
+      role: 'USER', // Backend requires USER for all roles
       authProvider: AuthProvider.INTERNAL.value,
       accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
       advertiserInfo: advertiserInfo,

@@ -136,7 +136,13 @@ class InfluencerCard extends StatelessWidget {
             ),
             child: CircleAvatar(
               radius: 30.r,
-              backgroundImage: AssetImage(profileImage),
+              backgroundImage: profileImage.isNotEmpty && 
+                               !profileImage.startsWith('assets/')
+                  ? NetworkImage(profileImage) as ImageProvider
+                  : profileImage.isNotEmpty
+                      ? AssetImage(profileImage)
+                      : null,
+              backgroundColor: AppColors.grey200,
               child: profileImage.isEmpty
                   ? Icon(Icons.person, size: 30.sp, color: AppColors.grey400)
                   : null,

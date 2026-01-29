@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../controllers/re_useable/app_texts.dart';
 import '../../../../../core/utils/platform_responsive.dart';
+import '../../../../../core/widgets/skeleton_loading.dart';
 import '../../../../media_house/logic/media_houses_notifier.dart';
 import '../media_house_card.dart';
 
@@ -52,15 +53,16 @@ class _MediaHouseSectionState extends ConsumerState<MediaHouseSection> {
           ),
         ),
         SizedBox(height: 12.h),
-        SizedBox(
+        mediaHousesState.isLoading
+            ? SkeletonHorizontalList(
+                cardWidth: 320.w,
+                cardHeight: 360.h,
+                itemCount: 3,
+                isProfileCard: true,
+              )
+            : SizedBox(
           height: 360.h,
-          child: mediaHousesState.isLoading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryColor,
-                  ),
-                )
-              : mediaHousesState.error != null
+          child: mediaHousesState.error != null
               ? Center(
                   child: Text(
                     'Error loading media houses',

@@ -323,8 +323,8 @@ class RadioStationCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 12.h),
             ),
             child: Text(
-              'Book Ad Slot',
-              style: AppTexts.bodyMedium(
+            'View Rates',
+            style: AppTexts.bodyMedium(
                 color: Colors.white,
               ).copyWith(fontWeight: FontWeight.w600),
             ),

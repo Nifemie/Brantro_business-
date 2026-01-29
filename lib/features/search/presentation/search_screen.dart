@@ -13,7 +13,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  
+
   // Sample data for last seen products
   final List<String> lastSeenProducts = [
     'assets/promotions/billboard1.jpg',
@@ -26,11 +26,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Sample data for last searches
   List<String> lastSearches = [
-    'adidas shirt',
-    'led tv',
-    'apple mac',
-    'iphone',
-    'asus',
+    'billboards',
+    'artists',
+    'influencers',
+    'radio stations',
+    'tv stations',
   ];
 
   @override
@@ -64,12 +64,12 @@ class _SearchScreenState extends State<SearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 16.h),
-            
+
             // Last Seen Section
             _buildLastSeenSection(),
-            
+
             SizedBox(height: 24.h),
-            
+
             // Last Search Section
             _buildLastSearchSection(),
           ],
@@ -96,13 +96,9 @@ class _SearchScreenState extends State<SearchScreen> {
           }
         },
         decoration: InputDecoration(
-          hintText: 'Search product',
+          hintText: 'Search ad slots & users',
           hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-          prefixIcon: Icon(
-            Icons.search,
-            color: AppColors.grey400,
-            size: 20.sp,
-          ),
+          prefixIcon: Icon(Icons.search, color: AppColors.grey400, size: 20.sp),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 12.h),
         ),
@@ -193,11 +189,7 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
         child: Row(
           children: [
-            Icon(
-              Icons.access_time,
-              color: AppColors.grey400,
-              size: 20.sp,
-            ),
+            Icon(Icons.access_time, color: AppColors.grey400, size: 20.sp),
             SizedBox(width: 12.w),
             Expanded(
               child: Text(
@@ -206,11 +198,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             IconButton(
-              icon: Icon(
-                Icons.close,
-                color: AppColors.grey400,
-                size: 20.sp,
-              ),
+              icon: Icon(Icons.close, color: AppColors.grey400, size: 20.sp),
               onPressed: onRemove,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

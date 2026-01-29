@@ -35,10 +35,10 @@ class MainShell extends StatelessWidget {
               context.go('/explore');
               break;
             case 2:
-              // context.go('/campaigns');
+              context.go('/campaigns');
               break;
             case 3:
-              // context.go('/wallet');
+              context.go('/wallet');
               break;
             case 4:
               context.go('/account');

@@ -19,6 +19,7 @@ class BillboardCard extends StatelessWidget {
   final int likes;
   final VoidCallback? onLikeTap;
   final VoidCallback? onBookTap;
+  final VoidCallback? onViewDetailsTap;
 
   const BillboardCard({
     super.key,
@@ -36,6 +37,7 @@ class BillboardCard extends StatelessWidget {
     this.likes = 0,
     this.onLikeTap,
     this.onBookTap,
+    this.onViewDetailsTap,
   });
 
   @override
@@ -88,6 +90,9 @@ class BillboardCard extends StatelessWidget {
   }
 
   Widget _buildImageSection() {
+    // Check if imageUrl is a network URL or asset path
+    final isNetworkImage = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+    
     return Stack(
       children: [
         // Billboard image
@@ -100,7 +105,9 @@ class BillboardCard extends StatelessWidget {
               topRight: Radius.circular(12.r),
             ),
             image: DecorationImage(
-              image: AssetImage(imageUrl),
+              image: isNetworkImage 
+                  ? NetworkImage(imageUrl) as ImageProvider
+                  : AssetImage(imageUrl),
               fit: BoxFit.cover,
             ),
           ),
@@ -226,7 +233,7 @@ class BillboardCard extends StatelessWidget {
             ).copyWith(fontWeight: FontWeight.w500),
           ),
         );
-      }).toList(),
+      }).toList().cast<Widget>(),
     );
   }
 
@@ -308,26 +315,53 @@ class BillboardCard extends StatelessWidget {
   }
 
   Widget _buildBookButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onBookTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.r),
+    return Row(
+      children: [
+        // View Details button (outlined)
+        Expanded(
+          child: OutlinedButton(
+            onPressed: onViewDetailsTap,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.secondaryColor,
+              side: BorderSide(color: AppColors.secondaryColor, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+            ),
+            child: Text(
+              'View Details',
+              style: AppTexts.bodyMedium(
+                color: AppColors.secondaryColor,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
           ),
-          padding: EdgeInsets.symmetric(vertical: 14.h),
         ),
-        child: Text(
-          'Book This Billboard',
-          style: AppTexts.bodyLarge(
-            color: Colors.white,
-          ).copyWith(fontWeight: FontWeight.w600),
+        
+        SizedBox(width: 12.w),
+        
+        // View Slots button (filled)
+        Expanded(
+          child: ElevatedButton(
+            onPressed: onBookTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+            ),
+            child: Text(
+              'View Slots',
+              style: AppTexts.bodyMedium(
+                color: Colors.white,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

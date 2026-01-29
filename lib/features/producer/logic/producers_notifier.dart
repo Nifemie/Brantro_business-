@@ -1,8 +1,9 @@
 import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/data_state.dart';
+import '../../../core/network/api_client.dart';
 import '../data/producer_repository.dart';
 import '../data/models/producer_model.dart';
-import '../../../core/network/api_client.dart';
 
 final apiClientProvider = Provider((ref) => ApiClient());
 
@@ -11,14 +12,19 @@ final producerRepositoryProvider = Provider((ref) {
   return ProducerRepository(apiClient);
 });
 
-class ProducersNotifier extends StateNotifier<ProducersState> {
+class ProducersNotifier extends StateNotifier<DataState<ProducerModel>> {
   final ProducerRepository _repository;
 
-  ProducersNotifier(this._repository) : super(const ProducersState.initial());
+  ProducersNotifier(this._repository) : super(DataState.initial());
 
   Future<void> fetchProducers({int page = 1, int limit = 10}) async {
     log('[ProducersNotifier] Fetching producers with page=$page, limit=$limit');
-    state = state.copyWith(isLoading: true, error: null);
+    
+    state = state.copyWith(
+      isInitialLoading: true,
+      message: null,
+      isDataAvailable: false,
+    );
 
     try {
       final response = await _repository.getProducers(page: page, limit: limit);
@@ -27,60 +33,37 @@ class ProducersNotifier extends StateNotifier<ProducersState> {
       );
 
       state = state.copyWith(
-        isLoading: false,
-        producers: response.payload.producers,
+        isInitialLoading: false,
+        isDataAvailable: true,
+        data: response.payload.producers,
         currentPage: response.payload.currentPage,
         totalPages: response.payload.totalPages,
+        message: null,
       );
-    } catch (e) {
-      log('[ProducersNotifier] Error fetching producers: $e');
-      state = state.copyWith(isLoading: false, error: e.toString());
+    } catch (e, stack) {
+      log('[ProducersNotifier] Error fetching producers: $e\n$stack');
+      state = state.copyWith(
+        isInitialLoading: false,
+        isDataAvailable: false,
+        message: e.toString().replaceAll('Exception: ', ''),
+      );
     }
   }
-}
 
-class ProducersState {
-  final bool isLoading;
-  final List<ProducerModel> producers;
-  final String? error;
-  final int currentPage;
-  final int totalPages;
+  /// Clear any error messages
+  void clearMessage() {
+    state = state.copyWith(message: null);
+  }
 
-  const ProducersState({
-    required this.isLoading,
-    required this.producers,
-    this.error,
-    required this.currentPage,
-    required this.totalPages,
-  });
-
-  const ProducersState.initial()
-    : isLoading = false,
-      producers = const [],
-      error = null,
-      currentPage = 0,
-      totalPages = 0;
-
-  ProducersState copyWith({
-    bool? isLoading,
-    List<ProducerModel>? producers,
-    String? error,
-    int? currentPage,
-    int? totalPages,
-  }) {
-    return ProducersState(
-      isLoading: isLoading ?? this.isLoading,
-      producers: producers ?? this.producers,
-      error: error,
-      currentPage: currentPage ?? this.currentPage,
-      totalPages: totalPages ?? this.totalPages,
-    );
+  /// Reset state to initial
+  void reset() {
+    state = DataState.initial();
   }
 }
 
-final producersProvider = StateNotifierProvider<ProducersNotifier, ProducersState>((
-  ref,
-) {
-  final repository = ref.watch(producerRepositoryProvider);
-  return ProducersNotifier(repository);
-});
+final producersProvider = StateNotifierProvider<ProducersNotifier, DataState<ProducerModel>>(
+  (ref) {
+    final repository = ref.watch(producerRepositoryProvider);
+    return ProducersNotifier(repository);
+  },
+);

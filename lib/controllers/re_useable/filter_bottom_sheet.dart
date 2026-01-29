@@ -29,10 +29,9 @@ class FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
+  String? selectedRole;
+  String? selectedCategory;
   String selectedSort = 'Relevant Product';
-  String selectedFilter1 = 'Filter 1';
-  String selectedFilter2 = 'Filter 1';
-  String selectedFilter3 = 'Filter 1';
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +39,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -66,22 +66,40 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           ),
 
           // Scrollable content
-          Expanded(
+          Flexible(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Filter title
-                  Text(
-                    'Filter',
-                    style: AppTexts.h3(color: AppColors.textPrimary),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Filter',
+                        style: AppTexts.h3(color: AppColors.textPrimary),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedRole = null;
+                            selectedCategory = null;
+                            selectedSort = 'Relevant Product';
+                          });
+                        },
+                        child: Text(
+                          'Reset',
+                          style: AppTexts.bodyMedium(color: Colors.red),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 20.h),
 
                   // Sort section
                   Text(
-                    'Sort',
+                    'Sort By',
                     style: AppTexts.h4(color: AppColors.textPrimary),
                   ),
                   SizedBox(height: 12.h),
@@ -89,28 +107,22 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     spacing: 8.w,
                     runSpacing: 8.h,
                     children: [
-                      _buildFilterChip('Relevant Product', selectedSort == 'Relevant Product', () {
+                      _buildFilterChip('Relevant', selectedSort == 'Relevant Product', () {
                         setState(() => selectedSort = 'Relevant Product');
                       }),
                       _buildFilterChip('Review', selectedSort == 'Review', () {
                         setState(() => selectedSort = 'Review');
                       }),
-                      _buildFilterChip('Newest Product', selectedSort == 'Newest Product', () {
+                      _buildFilterChip('Newest', selectedSort == 'Newest Product', () {
                         setState(() => selectedSort = 'Newest Product');
                       }),
-                      _buildFilterChip('Highest Price', selectedSort == 'Highest Price', () {
-                        setState(() => selectedSort = 'Highest Price');
-                      }),
-                      _buildFilterChip('Lowest Price', selectedSort == 'Lowest Price', () {
-                        setState(() => selectedSort = 'Lowest Price');
-                      }),
                     ],
                   ),
                   SizedBox(height: 20.h),
 
-                  // Other Filter 1
+                  // Roles Section
                   Text(
-                    'Other Filter 1',
+                    'User Roles',
                     style: AppTexts.h4(color: AppColors.textPrimary),
                   ),
                   SizedBox(height: 12.h),
@@ -118,25 +130,27 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     spacing: 8.w,
                     runSpacing: 8.h,
                     children: [
-                      _buildFilterChip('Filter 1', selectedFilter1 == 'Filter 1', () {
-                        setState(() => selectedFilter1 = 'Filter 1');
-                      }),
-                      _buildFilterChip('Filter 2', selectedFilter1 == 'Filter 2', () {
-                        setState(() => selectedFilter1 = 'Filter 2');
-                      }),
-                      _buildFilterChip('Filter 3', selectedFilter1 == 'Filter 3', () {
-                        setState(() => selectedFilter1 = 'Filter 3');
-                      }),
-                      _buildFilterChip('Filter 4', selectedFilter1 == 'Filter 4', () {
-                        setState(() => selectedFilter1 = 'Filter 4');
-                      }),
-                    ],
+                      'ARTIST',
+                      'INFLUENCER',
+                      'PRODUCER',
+                      'UGC_CREATOR',
+                      'DESIGNER',
+                      'TALENT_MANAGER',
+                    ].map((role) {
+                      return _buildFilterChip(
+                        role.replaceAll('_', ' '),
+                        selectedRole == role,
+                        () {
+                          setState(() => selectedRole = (selectedRole == role ? null : role));
+                        },
+                      );
+                    }).toList(),
                   ),
                   SizedBox(height: 20.h),
 
-                  // Other Filter 2
+                  // Ad Slot Categories
                   Text(
-                    'Other Filter 2',
+                    'Ad Slot Categories',
                     style: AppTexts.h4(color: AppColors.textPrimary),
                   ),
                   SizedBox(height: 12.h),
@@ -144,60 +158,58 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     spacing: 8.w,
                     runSpacing: 8.h,
                     children: [
-                      _buildFilterChip('Filter 1', selectedFilter2 == 'Filter 1', () {
-                        setState(() => selectedFilter2 = 'Filter 1');
-                      }),
-                      _buildFilterChip('Filter 2', selectedFilter2 == 'Filter 2', () {
-                        setState(() => selectedFilter2 = 'Filter 2');
-                      }),
-                      _buildFilterChip('Filter 3', selectedFilter2 == 'Filter 3', () {
-                        setState(() => selectedFilter2 = 'Filter 3');
-                      }),
-                      _buildFilterChip('Filter 4', selectedFilter2 == 'Filter 4', () {
-                        setState(() => selectedFilter2 = 'Filter 4');
-                      }),
-                      _buildFilterChip('Filter 5', selectedFilter2 == 'Filter 5', () {
-                        setState(() => selectedFilter2 = 'Filter 5');
-                      }),
-                      _buildFilterChip('Filter 6', selectedFilter2 == 'Filter 6', () {
-                        setState(() => selectedFilter2 = 'Filter 6');
-                      }),
-                      _buildFilterChip('Filter 7', selectedFilter2 == 'Filter 7', () {
-                        setState(() => selectedFilter2 = 'Filter 7');
-                      }),
-                    ],
+                      'BILLBOARD',
+                      'TV_STATION',
+                      'RADIO_STATION',
+                      'DIGITAL_SCREEN',
+                      'SOCIAL_MEDIA',
+                    ].map((cat) {
+                      return _buildFilterChip(
+                        cat.replaceAll('_', ' '),
+                        selectedCategory == cat,
+                        () {
+                          setState(() => selectedCategory = (selectedCategory == cat ? null : cat));
+                        },
+                      );
+                    }).toList(),
                   ),
-                  SizedBox(height: 20.h),
-
-                  // Other Filter 3
-                  Text(
-                    'Other Filter 3',
-                    style: AppTexts.h4(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 12.h),
-                  Wrap(
-                    spacing: 8.w,
-                    runSpacing: 8.h,
-                    children: [
-                      _buildFilterChip('Filter 1', selectedFilter3 == 'Filter 1', () {
-                        setState(() => selectedFilter3 = 'Filter 1');
-                      }),
-                      _buildFilterChip('Filter 2', selectedFilter3 == 'Filter 2', () {
-                        setState(() => selectedFilter3 = 'Filter 2');
-                      }),
-                      _buildFilterChip('Filter 3', selectedFilter3 == 'Filter 3', () {
-                        setState(() => selectedFilter3 = 'Filter 3');
-                      }),
-                      _buildFilterChip('Filter 4', selectedFilter3 == 'Filter 4', () {
-                        setState(() => selectedFilter3 = 'Filter 4');
-                      }),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
+                  SizedBox(height: 30.h),
                 ],
               ),
             ),
           ),
+
+          // Action Button
+          Padding(
+            padding: EdgeInsets.all(16.w),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (widget.onApplyFilters != null) {
+                    widget.onApplyFilters!({
+                      'role': selectedRole,
+                      'category': selectedCategory,
+                      'sort': selectedSort,
+                    });
+                  }
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+                child: Text(
+                  'Apply Filter',
+                  style: AppTexts.bodyLarge(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 10.h),
         ],
       ),
     );

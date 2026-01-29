@@ -19,6 +19,9 @@ class CategoryWidget extends StatelessWidget {
       {'icon': '✨', 'label': 'Designers \nCreatives'},
       {'icon': '🎬', 'label': 'UGC\nCreator'},
       {'icon': '🎥', 'label': 'Film\nProducer'},
+      {'icon': '✅', 'label': 'Vetting'},
+      {'icon': '🛠️', 'label': 'Digital\nServices'},
+      {'icon': '📝', 'label': 'Templates'},
     ];
 
     return Column(
@@ -63,8 +66,18 @@ class CategoryWidget extends StatelessWidget {
     return Builder(
       builder: (context) => GestureDetector(
         onTap: () {
-          // Navigate to Explore screen with category filter
-          context.push('/explore?category=$label');
+          // Handle special categories
+          if (label == 'Vetting') {
+            context.push('/vetting');
+          } else if (label.contains('Digital') && label.contains('Services')) {
+            context.push('/services');
+           } else if (label.contains('Templates')) {
+            context.push('/template');
+
+          } else {
+            // Navigate to Explore screen with category filter
+            context.push('/explore?category=$label');
+          }
         },
       child: Column(
         mainAxisSize: MainAxisSize.min,

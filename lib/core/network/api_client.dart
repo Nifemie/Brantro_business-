@@ -92,6 +92,7 @@ class ApiClient {
       '/auth/login',
       '/user/forgot-password',
       '/user/list', // Public endpoint - artists list accessible to all users
+      '/message', // Public endpoint - contact us accessible to all users
     ];
 
     return !publicEndpoints.any((endpoint) => path.contains(endpoint));

@@ -67,27 +67,37 @@ class FlashSaleSection extends StatelessWidget {
           padding: PlatformResponsive.symmetric(horizontal: 16),
           child: Row(
             children: [
-              // Billboard Card
-              SizedBox(
-                width: 300.w,
-                child: BillboardCard(
-                  imageUrl: 'assets/promotions/billboard1.jpg',
-                  category: 'Flash Deal',
-                  location: 'Lekki, Lagos',
-                  title: 'Premium Billboard',
-                  subtitle: 'High-traffic location',
-                  tags: const ['Prime', 'Limited Time'],
-                  additionalInfo: 'Limited time offer - 40% off',
-                  rating: 4.8,
-                  ratedBy: '120 reviews',
-                  price: '₦150,000',
-                  priceUnit: 'per month',
-                  likes: 156,
-                  onLikeTap: () {},
-                  onBookTap: () {},
-                ),
-              ),
-              SizedBox(width: 16.w),
+              // Artist Profile Card - Commented out
+              // SizedBox(
+              //   width: 280.w,
+              //   child: ArtistProfileCard(
+              //     profileImage: 'assets/promotions/billboard3.jpg',
+              //     name: 'Creative Studios',
+              //     location: 'Abuja, Nigeria',
+              //     tags: const ['Video Production', 'Advertising', 'Promo'],
+              //     rating: 4.9,
+              //     likes: 234,
+              //     works: 28,
+              //     isFavorite: false,
+              //     onFavoriteTap: () {},
+              //     onViewSlotsTap: () {},
+              //   ),
+              // ),
+              // SizedBox(width: 16.w),
+              // Film Producer Card - Commented out
+              // SizedBox(
+              //   width: 280.w,
+              //   child: FilmProducerCard(
+              //     profileImage: 'assets/promotions/billboard2.jpg',
+              //     name: 'Alex Productions',
+              //     location: 'Victoria Island, Lagos',
+              //     rating: 4.6,
+              //     likes: 123,
+              //     productions: 15,
+              //     onViewAdSlots: () {},
+              //   ),
+              // ),
+              // SizedBox(width: 16.w),
               // TV Station Card
               SizedBox(
                 width: 320.w,
@@ -107,36 +117,45 @@ class FlashSaleSection extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 16.w),
-              // Film Producer Card
+              // Radio Station Card
               SizedBox(
-                width: 280.w,
-                child: FilmProducerCard(
-                  profileImage: 'assets/promotions/billboard2.jpg',
-                  name: 'Alex Productions',
-                  location: 'Victoria Island, Lagos',
-                  rating: 4.6,
-                  likes: 123,
-                  productions: 15,
-                  onViewAdSlots: () {},
+                width: 320.w,
+                child: TvStationCard(
+                  stationName: 'Cool FM Lagos',
+                  location: 'Lagos, Nigeria',
+                  stationType: 'FM Radio',
+                  isFree: true,
+                  isLive: true,
+                  rating: 4.8,
+                  favorites: 1200,
+                  yearsOnAir: 15,
+                  categories: ['Music', 'Entertainment', 'Talk'],
+                  broadcastArea: 'Lagos Metro',
+                  onViewRates: () {},
+                  onViewProfile: () {},
                 ),
               ),
-              SizedBox(width: 16.w),
-              // Artist Profile Card
-              SizedBox(
-                width: 280.w,
-                child: ArtistProfileCard(
-                  profileImage: 'assets/promotions/billboard3.jpg',
-                  name: 'Creative Studios',
-                  location: 'Abuja, Nigeria',
-                  tags: const ['Video Production', 'Advertising', 'Promo'],
-                  rating: 4.9,
-                  likes: 234,
-                  works: 28,
-                  isFavorite: false,
-                  onFavoriteTap: () {},
-                  onViewSlotsTap: () {},
-                ),
-              ),
+              // Commented out Billboard Card
+              // SizedBox(width: 16.w),
+              // SizedBox(
+              //   width: 300.w,
+              //   child: BillboardCard(
+              //     imageUrl: 'assets/promotions/billboard1.jpg',
+              //     category: 'Flash Deal',
+              //     location: 'Lekki, Lagos',
+              //     title: 'Premium Billboard',
+              //     subtitle: 'High-traffic location',
+              //     tags: const ['Prime', 'Limited Time'],
+              //     additionalInfo: 'Limited time offer - 40% off',
+              //     rating: 4.8,
+              //     ratedBy: '120 reviews',
+              //     price: '₦150,000',
+              //     priceUnit: 'per month',
+              //     likes: 156,
+              //     onLikeTap: () {},
+              //     onBookTap: () {},
+              //   ),
+              // ),
             ],
           ),
         ),

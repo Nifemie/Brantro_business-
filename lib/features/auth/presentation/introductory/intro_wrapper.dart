@@ -197,7 +197,7 @@ class _IntroWrapperState extends State<IntroWrapper> {
                   SizedBox(
                     width: double.infinity,
                     child: TextButton(
-                      onPressed: () => context.push('/home'),
+                      onPressed: () => context.go('/home'),
                       child: const Text(
                         'Continue as Guest',
                         style: TextStyle(

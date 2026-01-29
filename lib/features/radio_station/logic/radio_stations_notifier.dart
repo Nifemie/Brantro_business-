@@ -1,8 +1,9 @@
+import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/data_state.dart';
 import '../../../core/network/api_client.dart';
 import '../data/models/radio_station_model.dart';
 import '../data/radio_station_repository.dart';
-import '../data/models/radio_station_response.dart';
 
 // API Client provider
 final apiClientProvider = Provider((ref) => ApiClient());
@@ -13,75 +14,60 @@ final radioStationRepositoryProvider = Provider((ref) {
   return RadioStationRepository(apiClient);
 });
 
-// State class
-class RadioStationsState {
-  final bool isLoading;
-  final List<RadioStationModel> radioStations;
-  final String? error;
-  final int currentPage;
-  final int totalPages;
-
-  RadioStationsState({
-    required this.isLoading,
-    required this.radioStations,
-    this.error,
-    required this.currentPage,
-    required this.totalPages,
-  });
-
-  RadioStationsState copyWith({
-    bool? isLoading,
-    List<RadioStationModel>? radioStations,
-    String? error,
-    int? currentPage,
-    int? totalPages,
-  }) {
-    return RadioStationsState(
-      isLoading: isLoading ?? this.isLoading,
-      radioStations: radioStations ?? this.radioStations,
-      error: error ?? this.error,
-      currentPage: currentPage ?? this.currentPage,
-      totalPages: totalPages ?? this.totalPages,
-    );
-  }
-}
-
 // Notifier class
-class RadioStationsNotifier extends StateNotifier<RadioStationsState> {
+class RadioStationsNotifier extends StateNotifier<DataState<RadioStationModel>> {
   final RadioStationRepository repository;
 
-  RadioStationsNotifier(this.repository)
-    : super(
-        RadioStationsState(
-          isLoading: false,
-          radioStations: [],
-          currentPage: 0,
-          totalPages: 0,
-        ),
-      );
+  RadioStationsNotifier(this.repository) : super(DataState.initial());
 
   Future<void> fetchRadioStations(int page, int limit) async {
-    state = state.copyWith(isLoading: true, error: null);
+    log('[RadioStationsNotifier] Fetching radio stations with page=$page, limit=$limit');
+    
+    state = state.copyWith(
+      isInitialLoading: true,
+      message: null,
+      isDataAvailable: false,
+    );
+
     try {
       final response = await repository.getRadioStations(
         page: page,
         limit: limit,
       );
+      log('[RadioStationsNotifier] Successfully fetched ${response.page.length} radio stations');
+      
       state = state.copyWith(
-        isLoading: false,
-        radioStations: response.page,
+        isInitialLoading: false,
+        isDataAvailable: true,
+        data: response.page,
         currentPage: response.currentPage,
         totalPages: response.totalPages,
+        message: null,
       );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+    } catch (e, stack) {
+      log('[RadioStationsNotifier] Error fetching radio stations: $e\n$stack');
+      state = state.copyWith(
+        isInitialLoading: false,
+        isDataAvailable: false,
+        message: e.toString().replaceAll('Exception: ', ''),
+      );
     }
+  }
+
+  /// Clear any error messages
+  void clearMessage() {
+    state = state.copyWith(message: null);
+  }
+
+  /// Reset state to initial
+  void reset() {
+    state = DataState.initial();
   }
 }
 
 // Provider
 final radioStationsProvider =
-    StateNotifierProvider<RadioStationsNotifier, RadioStationsState>((ref) {
+    StateNotifierProvider<RadioStationsNotifier, DataState<RadioStationModel>>((ref) {
       final repository = ref.watch(radioStationRepositoryProvider);
       return RadioStationsNotifier(repository);
     });

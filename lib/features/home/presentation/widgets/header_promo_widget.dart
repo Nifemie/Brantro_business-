@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
+import '../../../../controllers/re_useable/filter_bottom_sheet.dart';
 import 'search_bar_widget.dart';
 
 class HeaderPromoWidget extends StatefulWidget {
@@ -17,7 +18,7 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
   final PageController _promoController = PageController();
   Timer? _autoPlayTimer;
   int _currentPage = 0;
-  static const int _totalPages = 3;
+  static const int _totalPages = 5;
 
   @override
   void initState() {
@@ -80,7 +81,12 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
             ),
           ),
           SizedBox(width: 12.w),
-          Icon(Icons.mail_outline, color: Colors.white, size: 24.sp),
+          GestureDetector(
+            onTap: () {
+              FilterBottomSheet.show(context);
+            },
+            child: Icon(Icons.tune, color: Colors.white, size: 24.sp),
+          ),
           SizedBox(width: 12.w),
           _buildNotificationIcon(),
         ],
@@ -141,6 +147,16 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
                 title: 'Reach Millions\nAcross Nigeria\nNow.',
                 buttonText: 'Get Started',
               ),
+              _buildPromoContent(
+                title: 'Secure &\nVerified\nServices.',
+                buttonText: 'Vetting Available',
+                onTap: () => context.push('/vetting'),
+              ),
+              _buildPromoContent(
+                title: 'Free Design\nTemplates\nAvailable.',
+                buttonText: 'Browse Templates',
+                onTap: () => context.push('/template'),
+              ),
             ],
           ),
         ),
@@ -148,7 +164,7 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
           padding: EdgeInsets.only(bottom: 12.h),
           child: SmoothPageIndicator(
             controller: _promoController,
-            count: 3,
+            count: 5,
             effect: ExpandingDotsEffect(
               activeDotColor: Colors.white,
               dotColor: Colors.white.withOpacity(0.5),
@@ -165,6 +181,7 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
     required String title,
     required String buttonText,
     String? imagePath,
+    VoidCallback? onTap,
   }) {
     // Split title into lines
     final lines = title.split('\n');
@@ -213,33 +230,42 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
                   SizedBox(height: 20.h),
                   // CTA Button
                   ElevatedButton(
-                    onPressed: () {
-                      // TODO: Navigate based on button text
+                    onPressed: onTap ?? () {
+                      // Navigate based on button text
+                      if (buttonText == 'Explore Advertisement Options') {
+                        context.push('/explore');
+                      } else if (buttonText == 'Browse Artists') {
+                        context.push('/explore?category=Artists');
+                      } else if (buttonText == 'Get Started') {
+                        context.push('/explore');
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF6B35), // Orange
                       foregroundColor: Colors.white,
-                      elevation: 0,
+                      elevation: 4,
+                      shadowColor: const Color(0xFFFF6B35).withOpacity(0.4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25.r),
                       ),
                       padding: EdgeInsets.symmetric(
-                        horizontal: 24.w,
-                        vertical: 12.h,
+                        horizontal: 32.w,
+                        vertical: 14.h,
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.arrow_forward, size: 16.sp),
-                        SizedBox(width: 8.w),
                         Text(
                           buttonText,
                           style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
+                        SizedBox(width: 8.w),
+                        Icon(Icons.arrow_forward_rounded, size: 18.sp),
                       ],
                     ),
                   ),

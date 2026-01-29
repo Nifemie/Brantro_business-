@@ -16,6 +16,16 @@ class UserModel {
   final ArtistInfo? artistInfo;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  
+  // Additional fields from backend
+  final String? alias;
+  final String? bio;
+  final String? avatarUrl;
+  final bool? isVerified;
+  final String? status;
+  final int? averageRating;
+  final int? totalLikes;
+  final DateTime? lastLoginAt;
 
   UserModel({
     required this.id,
@@ -33,6 +43,14 @@ class UserModel {
     this.artistInfo,
     this.createdAt,
     this.updatedAt,
+    this.alias,
+    this.bio,
+    this.avatarUrl,
+    this.isVerified,
+    this.status,
+    this.averageRating,
+    this.totalLikes,
+    this.lastLoginAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +75,16 @@ class UserModel {
           : null,
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt']) 
+          : null,
+      alias: json['alias'],
+      bio: json['bio'],
+      avatarUrl: json['avatarUrl'],
+      isVerified: json['isVerified'],
+      status: json['status'],
+      averageRating: json['averageRating'],
+      totalLikes: json['totalLikes'],
+      lastLoginAt: json['lastLoginAt'] != null
+          ? DateTime.parse(json['lastLoginAt'])
           : null,
     );
   }

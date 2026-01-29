@@ -1,84 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
 import '../../../controllers/re_useable/filter_bottom_sheet.dart';
-import '../../home/presentation/widgets/reusable_card.dart';
+import '../../../core/widgets/skeleton_loading.dart';
+import '../../home/presentation/widgets/ad_slot_card.dart';
+import '../../home/presentation/widgets/artist_profile_card.dart';
+import '../../ad_slot/logic/ad_slot_notifier.dart';
+import '../../artist/logic/artists_notifier.dart';
 
-class SearchResultsScreen extends StatefulWidget {
+class SearchResultsScreen extends ConsumerStatefulWidget {
   final String searchQuery;
 
   const SearchResultsScreen({super.key, required this.searchQuery});
 
   @override
-  State<SearchResultsScreen> createState() => _SearchResultsScreenState();
+  ConsumerState<SearchResultsScreen> createState() =>
+      _SearchResultsScreenState();
 }
 
-class _SearchResultsScreenState extends State<SearchResultsScreen> {
-  final TextEditingController _searchController = TextEditingController();
+class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen>
+    with SingleTickerProviderStateMixin {
+  late TextEditingController _searchController;
+  late TabController _tabController;
 
-  // Sample product data
-  final List<Map<String, dynamic>> products = [
-    {
-      'image': 'assets/promotions/billboard1.jpg',
-      'name': 'iPhone 7 Plus / 7+ 128GB',
-      'price': '\$ 433',
-      'rating': 4.5,
-      'location': 'Brooklyn',
-      'reviews': 129,
-    },
-    {
-      'image': 'assets/promotions/billboard2.jpg',
-      'name': 'iWO 8 Smart Watch Apple iWatch Mirror For Android',
-      'price': '\$ 62',
-      'rating': 4.0,
-      'reviews': 92,
-    },
-    {
-      'image': 'assets/promotions/billboard3.jpg',
-      'name': 'New iMac 2017 MNEA2 5K Retina /3.5GHZ/i5/8GB/',
-      'price': '\$ 1,643',
-      'rating': 5.0,
-      'reviews': 2,
-    },
-    {
-      'image': 'assets/promotions/Davido1.jpg',
-      'name': 'APPLE AIRPODS PRO WITH WIRELESS CHARGING',
-      'price': '\$ 219',
-      'rating': 4.5,
-      'reviews': 934,
-    },
-    {
-      'image': 'assets/promotions/billboard1.jpg',
-      'name': 'Apple TV 4K',
-      'price': '\$ 179',
-      'rating': 4.8,
-      'reviews': 456,
-    },
-    {
-      'image': 'assets/promotions/billboard2.jpg',
-      'name': 'MacBook Pro 16"',
-      'price': '\$ 2,399',
-      'rating': 4.9,
-      'reviews': 1234,
-    },
-  ];
+  Map<String, dynamic> _filters = {};
 
   @override
   void initState() {
     super.initState();
-    _searchController.text = widget.searchQuery;
+    _searchController = TextEditingController(text: widget.searchQuery);
+    _tabController = TabController(length: 2, vsync: this);
+    
+    // Trigger search with the query for both ad slots and users
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _performSearch(widget.searchQuery);
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
+  }
+
+  void _performSearch(String query) {
+    if (query.isNotEmpty) {
+      // Search ad slots
+      ref.read(adSlotProvider.notifier).searchAdSlots(query: query);
+      
+      // Search users (applying role filter if selected)
+      ref.read(artistsProvider.notifier).searchUsers(
+        query: query,
+        role: _filters['role'],
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final adSlotState = ref.watch(adSlotProvider);
+    final usersState = ref.watch(artistsProvider);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
@@ -93,36 +79,36 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         titleSpacing: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.tune, color: AppColors.textPrimary),
+            icon: Icon(
+              Icons.tune, 
+              color: _filters.isNotEmpty && (_filters['role'] != null || _filters['category'] != null)
+                  ? AppColors.primaryColor 
+                  : AppColors.textPrimary,
+            ),
             onPressed: () {
               _showFilterModal(context);
             },
           ),
         ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12.w,
-            mainAxisSpacing: 12.h,
-            childAspectRatio: 0.68,
-          ),
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return ReusableCard(
-              imageUrl: product['image'],
-              title: product['name'],
-              rating: product['rating'],
-              amount: product['price'],
-              onTap: () {
-                // TODO: Navigate to product details
-              },
-            );
-          },
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primaryColor,
+          unselectedLabelColor: AppColors.grey600,
+          indicatorColor: AppColors.primaryColor,
+          tabs: const [
+            Tab(text: 'Ad Slots'),
+            Tab(text: 'Users'),
+          ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // Ad Slots Tab
+          _buildAdSlotsTab(adSlotState),
+          // Users Tab
+          _buildUsersTab(usersState),
+        ],
       ),
     );
   }
@@ -130,31 +116,207 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   Widget _buildSearchBar() {
     return Container(
       height: 45.h,
-      margin: EdgeInsets.only(right: 8.w),
+      margin: EdgeInsets.only(right: 16.w),
       decoration: BoxDecoration(
         color: AppColors.grey100,
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: TextField(
         controller: _searchController,
-        readOnly: true,
         style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+        textAlignVertical: TextAlignVertical.center,
+        onSubmitted: (value) {
+          _performSearch(value);
+        },
         decoration: InputDecoration(
-          hintText: 'Search product',
+          hintText: 'Search ad slots & users',
           hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-          prefixIcon: Icon(Icons.search, color: AppColors.grey400, size: 20.sp),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+          prefixIcon: Icon(Icons.search, color: AppColors.grey400),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12.w,
+            vertical: 12.h,
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildAdSlotsTab(adSlotState) {
+    if (adSlotState.isInitialLoading) {
+      return SizedBox(
+        height: 480.h,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.all(16.w),
+          itemCount: 3,
+          itemBuilder: (context, index) => SkeletonCampaignCard(
+            width: 320.w,
+            height: 480.h,
+          ),
+        ),
+      );
+    }
+
+    if (adSlotState.message != null && !adSlotState.isDataAvailable) {
+      return _buildErrorState('Error loading ad slots');
+    }
+
+    final adSlots = adSlotState.data ?? [];
+    
+    // Client-side filtering for ad slots by category if selected
+    final filteredSlots = _filters['category'] != null
+        ? adSlots.where((slot) => slot.partnerType.toUpperCase() == _filters['category']).toList()
+        : adSlots;
+
+    if (filteredSlots.isEmpty) {
+      return _buildEmptyState('No ad slots found');
+    }
+
+    return _buildAdSlotsList(filteredSlots);
+  }
+
+  Widget _buildUsersTab(usersState) {
+    if (usersState.isInitialLoading) {
+      return ListView.builder(
+        padding: EdgeInsets.all(16.w),
+        itemCount: 3,
+        itemBuilder: (context, index) => SkeletonListItem(),
+      );
+    }
+
+    if (usersState.message != null && !usersState.isDataAvailable) {
+      return _buildErrorState('Error loading users');
+    }
+
+    final users = usersState.data ?? [];
+    if (users.isEmpty) {
+      return _buildEmptyState('No users found');
+    }
+
+    return _buildUsersList(users);
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
+          SizedBox(height: 16.h),
+          Text(message, style: AppTexts.h4()),
+          SizedBox(height: 8.h),
+          Text(
+            'Please try again',
+            style: AppTexts.bodySmall(color: AppColors.grey600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 48.sp, color: AppColors.grey400),
+          SizedBox(height: 16.h),
+          Text(message, style: AppTexts.h4()),
+          SizedBox(height: 8.h),
+          Text(
+            'Try searching with different keywords',
+            style: AppTexts.bodySmall(color: AppColors.grey600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdSlotsList(List adSlots) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Results for "${_searchController.text}"', style: AppTexts.h4()),
+          SizedBox(height: 16.h),
+          SizedBox(
+            height: 480.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: adSlots.length,
+              itemBuilder: (context, index) {
+                final adSlot = adSlots[index];
+                return AdSlotCard(
+                  sellerName: adSlot.sellerName,
+                  sellerType: adSlot.partnerType,
+                  campaignTitle: adSlot.title,
+                  category: adSlot.primaryPlatform?.name ?? adSlot.partnerType,
+                  subcategory: adSlot.primaryPlatform?.handle ?? '',
+                  features: adSlot.features,
+                  location: adSlot.location,
+                  reach: adSlot.audienceSize,
+                  price: adSlot.formattedPrice,
+                  sellerImage: adSlot.sellerAvatar,
+                  adSlotId: adSlot.id.toString(),
+                  onViewSlot: () {
+                    context.push('/ad-slot-details/${adSlot.id}', extra: adSlot);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUsersList(List users) {
+    return ListView.builder(
+      padding: EdgeInsets.all(16.w),
+      itemCount: users.length,
+      itemBuilder: (context, index) {
+        final artist = users[index];
+        final locationList = [
+          artist.city,
+          artist.state,
+        ].where((e) => e != null && e.toString().isNotEmpty).toList();
+        final location = locationList.isEmpty ? (artist.country ?? 'Unknown') : locationList.join(', ');
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: 16.h),
+          child: ArtistProfileCard(
+            userId: artist.id,
+            profileImage: artist.avatarUrl ?? '',
+            name: artist.additionalInfo?.stageName ?? artist.name,
+            location: location,
+            tags: artist.additionalInfo?.genres ?? [],
+            rating: artist.averageRating,
+            likes: artist.totalLikes ?? 0,
+            works: artist.additionalInfo?.numberOfProductions ?? 0,
+            onFavoriteTap: () {
+              // TODO: Handle favorite
+            },
+            onViewSlotsTap: () {
+              // Handled internally by the card
+            },
+          ),
+        );
+      },
+    );
+  }
+
+
+
   void _showFilterModal(BuildContext context) {
     FilterBottomSheet.show(
       context,
       onApplyFilters: (filters) {
-        // TODO: Apply filters to product list
+        setState(() {
+          _filters = filters;
+        });
+        _performSearch(_searchController.text);
       },
     );
   }

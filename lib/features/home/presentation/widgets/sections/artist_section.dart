@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
+import '../../../../../core/widgets/skeleton_loading.dart';
 import '../../../../artist/logic/artists_notifier.dart';
 import '../artist_profile_card.dart';
 
@@ -44,7 +46,9 @@ class _ArtistSectionState extends ConsumerState<ArtistSection> {
                 ),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  context.push('/explore?category=Artists');
+                },
                 child: Text(
                   'View All',
                   style: TextStyle(
@@ -58,12 +62,14 @@ class _ArtistSectionState extends ConsumerState<ArtistSection> {
               ),
             ),
             SizedBox(height: 12.h),
-            if (artistsState.isLoading)
-              SizedBox(
-                height: 380.h,
-                child: Center(child: CircularProgressIndicator()),
+            if (artistsState.isInitialLoading)
+              SkeletonHorizontalList(
+                cardWidth: 320.w,
+                cardHeight: 380.h,
+                itemCount: 3,
+                isProfileCard: true,
               )
-            else if (artistsState.error != null)
+            else if (artistsState.message != null && !artistsState.isDataAvailable)
               SizedBox(
                 height: 380.h,
                 child: Center(
@@ -83,7 +89,7 @@ class _ArtistSectionState extends ConsumerState<ArtistSection> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Text(
-                          artistsState.error ?? '',
+                          artistsState.message ?? '',
                           textAlign: TextAlign.center,
                           style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                         ),
@@ -101,7 +107,7 @@ class _ArtistSectionState extends ConsumerState<ArtistSection> {
                   ),
                 ),
               )
-            else if (artistsState.artists.isEmpty)
+            else if ((artistsState.data ?? []).isEmpty)
               SizedBox(
                 height: 380.h,
                 child: Center(child: Text('No artists found')),
@@ -112,12 +118,13 @@ class _ArtistSectionState extends ConsumerState<ArtistSection> {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: PlatformResponsive.symmetric(horizontal: 16),
-                  children: artistsState.artists.map((artist) {
+                  children: (artistsState.data ?? []).map((artist) {
                     return Padding(
                       padding: EdgeInsets.only(right: 16.w),
                       child: SizedBox(
-                        width: 280.w,
+                        width: 320.w,
                         child: ArtistProfileCard(
+                          userId: artist.id,
                           profileImage:
                               artist.avatarUrl ??
                               'assets/promotions/Davido1.jpg',

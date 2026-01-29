@@ -88,6 +88,16 @@ class SessionService {
     return isLogged;
   }
 
+  // Clear session data without navigation (for guest mode)
+  static Future<void> clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userDetailsKey);
+    await prefs.remove(_userAccessToken);
+    await prefs.remove(_usernameKey);
+    await prefs.remove(_userFullnameKey);
+    await prefs.remove(_userPhoneNumberKey);
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userDetailsKey);

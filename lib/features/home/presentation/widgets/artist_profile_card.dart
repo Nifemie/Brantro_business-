@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 
 /// Artist profile card widget for explore section (new compact design)
 class ArtistProfileCard extends StatelessWidget {
+  final int userId;
   final String profileImage;
   final String name;
   final String location;
@@ -18,6 +20,7 @@ class ArtistProfileCard extends StatelessWidget {
 
   const ArtistProfileCard({
     super.key,
+    required this.userId,
     required this.profileImage,
     required this.name,
     required this.location,
@@ -161,7 +164,11 @@ class ArtistProfileCard extends StatelessWidget {
             ),
             child: CircleAvatar(
               radius: 30.r,
-              backgroundImage: AssetImage(profileImage),
+              backgroundImage: profileImage.isNotEmpty
+                  ? (profileImage.startsWith('http')
+                      ? NetworkImage(profileImage) as ImageProvider
+                      : AssetImage(profileImage))
+                  : null,
               child: profileImage.isEmpty
                   ? Icon(Icons.person, size: 30.sp, color: AppColors.grey400)
                   : null,
@@ -230,7 +237,7 @@ class ArtistProfileCard extends StatelessWidget {
             ).copyWith(fontWeight: FontWeight.w500),
           ),
         );
-      }).toList(),
+      }).toList().cast<Widget>(),
     );
   }
 
@@ -296,28 +303,45 @@ class ArtistProfileCard extends StatelessWidget {
   Widget _buildActionButton() {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: onViewSlotsTap,
-        icon: Icon(
-          Icons.calendar_today,
-          size: 16.sp,
-          color: Colors.white,
-        ),
-        label: Text(
-          'View Ad Slots',
-          style: AppTexts.bodyMedium(
-            color: Colors.white,
-          ).copyWith(fontWeight: FontWeight.w600),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          padding: EdgeInsets.symmetric(vertical: 12.h),
-        ),
+      child: Builder(
+        builder: (context) {
+          return ElevatedButton.icon(
+            onPressed: () {
+              // Navigate to artist ad slots screen using push instead of goNamed
+              context.push(
+                '/artist-ad-slots/${userId}',
+                extra: {
+                  'sellerName': name,
+                  'sellerAvatar': profileImage,
+                  'sellerType': 'Artist',
+                },
+              );
+              
+              // Also call the callback if provided
+              onViewSlotsTap?.call();
+            },
+            icon: Icon(
+              Icons.calendar_today,
+              size: 16.sp,
+              color: Colors.white,
+            ),
+            label: Text(
+              'View Ad Slots',
+              style: AppTexts.bodyMedium(
+                color: Colors.white,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+            ),
+          );
+        }
       ),
     );
   }

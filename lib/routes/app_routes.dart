@@ -17,6 +17,42 @@ import 'package:brantro/features/Explore/presentation/explore_screen.dart';
 import 'package:brantro/features/main_shell.dart';
 import 'package:brantro/features/product/presentation/product_details_screen.dart';
 import 'package:brantro/features/account/presentation/user_account.dart';
+import 'package:brantro/features/account/presentation/help_support_screen.dart';
+import 'package:brantro/features/account/presentation/contact_us_screen.dart';
+import 'package:brantro/features/campaign/presentation/campaigns_screen.dart';
+import 'package:brantro/features/ad_slot/presentation/screens/create_ad_slot_screen.dart';
+import 'package:brantro/features/ad_slot/presentation/screens/seller_ad_slots_screen.dart';
+import 'package:brantro/features/ad_slot/presentation/screens/ad_slot_details_screen.dart';
+import 'package:brantro/features/ad_slot/data/models/ad_slot_model.dart';
+import 'package:brantro/features/vetting/presentation/screens/vetting_details_screen.dart';
+import 'package:brantro/features/vetting/data/models/vetting_model.dart';
+import 'package:brantro/features/KYC/presentation/kyc_landing_screen.dart';
+import 'package:brantro/features/KYC/presentation/kyc_form_screen.dart';
+import 'package:brantro/features/KYC/presentation/kyc_submission_screen.dart';
+import 'package:brantro/features/KYC/presentation/kyc_status_screen.dart';
+import 'package:brantro/features/KYC/presentation/kyc_verification_screen.dart';
+import 'package:brantro/features/KYC/presentation/face_verification_screen.dart';
+import 'package:brantro/features/KYC/presentation/kyc_gate_screen.dart';
+import 'package:brantro/features/billboard/data/models/billboard_model.dart';
+import 'package:brantro/features/billboard/presentation/screens/asset_details_screen.dart';
+import 'package:brantro/features/KYC/data/kyc_models.dart';
+import 'package:brantro/features/Digital_services/presentation/screens/services_listing_screen.dart';
+import 'package:brantro/features/Digital_services/presentation/screens/service_details_screen.dart';
+import 'package:brantro/features/wallet/presentation/wallet_screen.dart';
+import 'package:brantro/features/wallet/presentation/transaction_history_screen.dart';
+import 'package:brantro/features/vetting/presentation/screens/vetting_listing_screen.dart';
+import 'package:brantro/features/campaign/presentation/campaigns_listing_screen.dart';
+import 'package:brantro/features/profile/presentation/view_profile_screen.dart';
+import 'package:brantro/features/account/presentation/settings_screen.dart';
+import 'package:brantro/features/account/presentation/profile_details_screen.dart';
+import 'package:brantro/features/account/presentation/edit_profile_screen.dart';
+import 'package:brantro/features/template/presentation/screens/template_listing_screen.dart';
+import 'package:brantro/features/template/presentation/screens/template_details_screen.dart';
+import 'package:brantro/features/creatives/presentation/screens/creatives_listing_screen.dart';
+import 'package:brantro/features/creatives/presentation/screens/creative_detail_screen.dart';
+import 'package:brantro/features/cart/presentation/screens/checkout_screen.dart';
+import 'package:brantro/features/cart/presentation/screens/service_setup_screen.dart';
+import 'package:brantro/features/Digital_services/data/models/service_model.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -120,11 +156,20 @@ final router = GoRouter(
               },
             ),
             GoRoute(
+              path: 'campaigns',
+              name: 'campaigns',
+              builder: (context, state) => const CampaignsScreen(),
+            ),
+            GoRoute(
               path: 'account',
               name: 'account',
               builder: (context, state) => const UserAccount(),
             ),
-            // Placeholder routes for other tabs can be added here
+            GoRoute(
+              path: 'wallet',
+              name: 'wallet',
+              builder: (context, state) => const WalletScreen(),
+            ),
           ],
         ),
 
@@ -153,6 +198,240 @@ final router = GoRouter(
           builder: (context, state) {
             final product = state.extra as Map<String, dynamic>;
             return ProductDetailsScreen(product: product);
+          },
+        ),
+        GoRoute(
+          path: 'create-ad-slot',
+          name: 'create-ad-slot',
+          builder: (context, state) => const CreateAdSlotScreen(),
+        ),
+        GoRoute(
+          path: 'ad-slot-details/:slotId',
+          name: 'ad-slot-details',
+          builder: (context, state) {
+            final slotId = state.pathParameters['slotId']!;
+            final adSlot = state.extra as AdSlot?;
+            return AdSlotDetailsScreen(
+              adSlotId: slotId,
+              initialData: adSlot,
+            );
+          },
+        ),
+        GoRoute(
+          path: 'artist-ad-slots/:userId',
+          name: 'artist-ad-slots',
+          builder: (context, state) {
+            final userId = int.parse(state.pathParameters['userId'] ?? '0');
+            final extra = (state.extra ?? {}) as Map;
+            return SellerAdSlotsScreen(
+              userId: userId,
+              sellerName: extra['sellerName']?.toString(),
+              sellerAvatar: extra['sellerAvatar']?.toString(),
+              sellerType: extra['sellerType']?.toString() ?? 'Artist',
+            );
+          },
+        ),
+        GoRoute(
+          path: 'seller-ad-slots/:userId',
+          name: 'seller-ad-slots',
+          builder: (context, state) {
+            final userId = int.parse(state.pathParameters['userId'] ?? '0');
+            final extra = (state.extra ?? {}) as Map;
+            return SellerAdSlotsScreen(
+              userId: userId,
+              sellerName: extra['sellerName']?.toString(),
+              sellerAvatar: extra['sellerAvatar']?.toString(),
+              sellerType: extra['sellerType']?.toString() ?? 'Seller',
+            );
+          },
+        ),
+        GoRoute(
+          path: 'asset-details',
+          name: 'asset-details',
+          builder: (context, state) {
+            final asset = state.extra as dynamic;
+            return AssetDetailsScreen(asset: asset);
+          },
+        ),
+
+        // KYC Routes
+        GoRoute(
+          path: 'kyc-gate',
+          name: 'kyc-gate',
+          builder: (context, state) {
+            final extra = (state.extra ?? {}) as Map;
+            return KycGateScreen(
+              requiredFor: extra['requiredFor']?.toString() ?? 'this action',
+              returnRoute: extra['returnRoute']?.toString(),
+            );
+          },
+        ),
+        GoRoute(
+          path: 'kyc',
+          name: 'kyc',
+          builder: (context, state) => const KycLandingScreen(),
+        ),
+        GoRoute(
+          path: 'kyc/form',
+          name: 'kyc-form',
+          builder: (context, state) => const KycFormScreen(),
+        ),
+        GoRoute(
+          path: 'kyc/submit',
+          name: 'kyc-submit',
+          builder: (context, state) {
+            final request = state.extra as KycVerificationRequest;
+            return KycSubmissionScreen(request: request);
+          },
+        ),
+        GoRoute(
+          path: 'kyc/verify',
+          name: 'kyc-verify',
+          builder: (context, state) {
+            final documentNumber = state.extra as String;
+            return KycVerificationScreen(documentNumber: documentNumber);
+          },
+        ),
+        GoRoute(
+          path: 'kyc/face-verify',
+          name: 'kyc-face-verify',
+          builder: (context, state) {
+            final documentNumber = state.extra as String;
+            return FaceVerificationScreen(documentNumber: documentNumber);
+          },
+        ),
+        GoRoute(
+          path: 'kyc/status',
+          name: 'kyc-status',
+          builder: (context, state) => const KycStatusScreen(),
+        ),
+        GoRoute(
+          path: 'help-support',
+          name: 'help-support',
+          builder: (context, state) => const HelpSupportScreen(),
+        ),
+        GoRoute(
+          path: 'contact-us',
+          name: 'contact-us',
+          builder: (context, state) => const ContactUsScreen(),
+        ),
+        GoRoute(
+          path: 'settings',
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: 'profile-details',
+          name: 'profile-details',
+          builder: (context, state) => const ProfileDetailsScreen(),
+        ),
+        GoRoute(
+          path: 'edit-profile',
+          name: 'edit-profile',
+          builder: (context, state) {
+            final userData = state.extra as Map<String, dynamic>?;
+            return EditProfileScreen(userData: userData);
+          },
+        ),
+        GoRoute(
+          path: 'services',
+          name: 'services',
+          builder: (context, state) {
+            final serviceType = state.uri.queryParameters['type'];
+            return ServicesListingScreen(serviceType: serviceType);
+          },
+        ),
+        GoRoute(
+          path: 'service-details/:serviceId',
+          name: 'service-details',
+          builder: (context, state) {
+            final serviceId = state.pathParameters['serviceId']!;
+            final initialData = state.extra as dynamic; // Can be ServiceModel or null
+            // Check if extra is ServiceModel, otherwise null
+            // (Dart type check would be needed if strictly importing model here)
+            return ServiceDetailsScreen(
+                serviceId: serviceId, 
+                initialData: initialData is ServiceModel ? initialData : null
+            ); // ServiceModel import needed in app_routes if strictly typed
+          },
+        ),
+        GoRoute(
+          path: 'vetting',
+          name: 'vetting',
+          builder: (context, state) => const VettingListingScreen(),
+        ),
+        GoRoute(
+          path: 'template',
+          name: 'template',
+          builder: (context, state) => const TemplateListingScreen(),
+        ),
+        GoRoute(
+          path: 'template-details/:templateId',
+          name: 'template-details',
+          builder: (context, state) {
+            final templateId = state.pathParameters['templateId']!;
+            final initialData = state.extra as dynamic;
+            return TemplateDetailsScreen(
+              templateId: templateId,
+              initialData: initialData,
+            );
+          },
+        ),
+        GoRoute(
+          path: 'creatives',
+          name: 'creatives',
+          builder: (context, state) => const CreativesListingScreen(),
+        ),
+        GoRoute(
+          path: 'creative-details/:creativeId',
+          name: 'creative-details',
+          builder: (context, state) {
+            final creativeId = int.parse(state.pathParameters['creativeId'] ?? '0');
+            return CreativeDetailScreen(creativeId: creativeId);
+          },
+        ),
+        GoRoute(
+          path: 'campaigns-list',
+          name: 'campaigns-list',
+          builder: (context, state) {
+            final category = state.uri.queryParameters['category'];
+            return CampaignsListingScreen(category: category);
+          },
+        ),
+        GoRoute(
+          path: 'view-profile',
+          name: 'view-profile',
+          builder: (context, state) {
+            final profileData = state.extra as Map<String, dynamic>;
+            return ViewProfileScreen(profileData: profileData);
+          },
+        ),
+        GoRoute(
+          path: 'wallet/transactions',
+          name: 'wallet-transactions',
+          builder: (context, state) => const TransactionHistoryScreen(),
+        ),
+        GoRoute(
+          path: 'checkout',
+          name: 'checkout',
+          builder: (context, state) => const CheckoutScreen(),
+        ),
+        GoRoute(
+          path: 'service-setup',
+          name: 'service-setup',
+          builder: (context, state) => const ServiceSetupScreen(),
+        ),
+        GoRoute(
+          path: 'vetting-details/:vettingId',
+          name: 'vetting-details',
+          builder: (context, state) {
+            final vettingId = state.pathParameters['vettingId']!;
+            final vetting = state.extra as dynamic; // Cast to dynamic first to avoid type errors
+            return VettingDetailsScreen(
+              vettingId: vettingId,
+              // Map dynamic/object to VettingOptionModel if possible, or leave null for fresh fetch
+              initialData: vetting is VettingOptionModel ? vetting : null,
+            );
           },
         ),
       ],

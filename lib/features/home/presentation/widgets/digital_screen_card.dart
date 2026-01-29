@@ -17,6 +17,7 @@ class DigitalScreenCard extends StatelessWidget {
   final String provider; // e.g., "by Branto Africa"
   final VoidCallback? onLikeTap;
   final VoidCallback? onBookScreen;
+  final VoidCallback? onViewDetailsTap;
 
   const DigitalScreenCard({
     super.key,
@@ -32,6 +33,7 @@ class DigitalScreenCard extends StatelessWidget {
     this.provider = '',
     this.onLikeTap,
     this.onBookScreen,
+    this.onViewDetailsTap,
   });
 
   @override
@@ -57,26 +59,26 @@ class DigitalScreenCard extends StatelessWidget {
           
           // Content section
           Padding(
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.all(14.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildScreenName(),
-                SizedBox(height: 6.h),
+                SizedBox(height: 4.h),
                 _buildLocation(),
                 if (description.isNotEmpty) ...[
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 10.h),
                   _buildDescription(),
                 ],
-                SizedBox(height: 12.h),
+                SizedBox(height: 10.h),
                 _buildFeatures(),
                 if (specifications.isNotEmpty) ...[
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 10.h),
                   _buildSpecifications(),
                 ],
-                SizedBox(height: 16.h),
+                SizedBox(height: 12.h),
                 _buildPriceAndProvider(),
-                SizedBox(height: 16.h),
+                SizedBox(height: 12.h),
                 _buildBookButton(),
               ],
             ),
@@ -87,6 +89,9 @@ class DigitalScreenCard extends StatelessWidget {
   }
 
   Widget _buildImageSection() {
+    // Check if imageUrl is a network URL or asset path
+    final isNetworkImage = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+    
     return Stack(
       children: [
         // Screen image
@@ -99,7 +104,9 @@ class DigitalScreenCard extends StatelessWidget {
               topRight: Radius.circular(12.r),
             ),
             image: DecorationImage(
-              image: AssetImage(imageUrl),
+              image: isNetworkImage 
+                  ? NetworkImage(imageUrl) as ImageProvider
+                  : AssetImage(imageUrl),
               fit: BoxFit.cover,
             ),
           ),
@@ -213,7 +220,7 @@ class DigitalScreenCard extends StatelessWidget {
             ).copyWith(fontWeight: FontWeight.w500),
           ),
         );
-      }).toList(),
+      }).toList().cast<Widget>(),
     );
   }
 
@@ -291,26 +298,53 @@ class DigitalScreenCard extends StatelessWidget {
   }
 
   Widget _buildBookButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onBookScreen,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.r),
+    return Row(
+      children: [
+        // View Details button (outlined)
+        Expanded(
+          child: OutlinedButton(
+            onPressed: onViewDetailsTap,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.secondaryColor,
+              side: BorderSide(color: AppColors.secondaryColor, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+            ),
+            child: Text(
+              'View Details',
+              style: AppTexts.bodyMedium(
+                color: AppColors.secondaryColor,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
           ),
-          padding: EdgeInsets.symmetric(vertical: 14.h),
         ),
-        child: Text(
-          'Book This Screen',
-          style: AppTexts.bodyLarge(
-            color: Colors.white,
-          ).copyWith(fontWeight: FontWeight.w600),
+        
+        SizedBox(width: 12.w),
+        
+        // View Slots button (filled)
+        Expanded(
+          child: ElevatedButton(
+            onPressed: onBookScreen,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+            ),
+            child: Text(
+              'View Slots',
+              style: AppTexts.bodyMedium(
+                color: Colors.white,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

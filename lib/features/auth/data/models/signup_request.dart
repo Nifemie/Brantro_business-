@@ -807,26 +807,8 @@ class SignUpRequest {
 
   Map<String, dynamic> toJson() {
     return {
-      'role': role,
+      'role': 'USER', // Backend requires USER for all roles
       'authProvider': authProvider,
-      'accountType': accountType,
-      if (artistInfo != null) 'artistInfo': artistInfo!.toJson(),
-      if (advertiserInfo != null) 'advertiserInfo': advertiserInfo!.toJson(),
-      if (screenBillboardInfo != null)
-        'screenBillboardInfo': screenBillboardInfo!.toJson(),
-      if (contentProducerInfo != null)
-        'producerInfo': contentProducerInfo!.toJson(),
-      if (influencerInfo != null) 'influencerInfo': influencerInfo!.toJson(),
-      if (ugcInfo != null) 'ugcInfo': ugcInfo!.toJson(),
-      if (hostInfo != null) 'hostInfo': hostInfo!.toJson(),
-      if (tvStationInfo != null) 'tvStationInfo': tvStationInfo!.toJson(),
-      if (radioStationInfo != null)
-        'radioStationInfo': radioStationInfo!.toJson(),
-      if (mediaHouseInfo != null) 'mediaHouseInfo': mediaHouseInfo!.toJson(),
-      if (creativeInfo != null) 'creativeInfo': creativeInfo!.toJson(),
-      if (designerInfo != null) 'designerInfo': designerInfo!.toJson(),
-      if (talentManagerInfo != null)
-        'talentManagerInfo': talentManagerInfo!.toJson(),
       'name': name,
       'emailAddress': emailAddress,
       'phoneNumber': phoneNumber,
@@ -835,11 +817,34 @@ class SignUpRequest {
       if (state != null) 'state': state,
       if (city != null) 'city': city,
       if (address != null) 'address': address,
-      if (referredById != null) 'referredById': referredById,
+      if (referredById != null)
+        'refferedById': referredById, // Note: backend has typo "refferedById"
       if (idType != null) 'idType': idType,
       if (idNumber != null) 'idNumber': idNumber,
-      if (ninNumber != null) 'ninNumber': ninNumber,
       if (tinNumber != null) 'tinNumber': tinNumber,
+      // userInfo for role-specific data
+      if (advertiserInfo != null)
+        'userInfo': {
+          'businessName': advertiserInfo!.businessName,
+          'businessAdress': advertiserInfo!
+              .businessAddress, // Note: backend typo "businessAdress"
+          'businessWebsite': advertiserInfo!.businessWebsite,
+          'industry': advertiserInfo!.industry,
+        },
+      if (artistInfo != null) 'userInfo': artistInfo!.toJson(),
+      if (screenBillboardInfo != null)
+        'userInfo': screenBillboardInfo!.toJson(),
+      if (contentProducerInfo != null)
+        'userInfo': contentProducerInfo!.toJson(),
+      if (influencerInfo != null) 'userInfo': influencerInfo!.toJson(),
+      if (ugcInfo != null) 'userInfo': ugcInfo!.toJson(),
+      if (hostInfo != null) 'userInfo': hostInfo!.toJson(),
+      if (tvStationInfo != null) 'userInfo': tvStationInfo!.toJson(),
+      if (radioStationInfo != null) 'userInfo': radioStationInfo!.toJson(),
+      if (mediaHouseInfo != null) 'userInfo': mediaHouseInfo!.toJson(),
+      if (creativeInfo != null) 'userInfo': creativeInfo!.toJson(),
+      if (designerInfo != null) 'userInfo': designerInfo!.toJson(),
+      if (talentManagerInfo != null) 'userInfo': talentManagerInfo!.toJson(),
     };
   }
 

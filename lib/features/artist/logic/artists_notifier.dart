@@ -1,8 +1,9 @@
 import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/data_state.dart';
+import '../../../core/network/api_client.dart';
 import '../data/artist_repository.dart';
 import '../data/models/artist_model.dart';
-import '../../../core/network/api_client.dart';
 
 final apiClientProvider = Provider((ref) => ApiClient());
 
@@ -11,14 +12,19 @@ final artistRepositoryProvider = Provider((ref) {
   return ArtistRepository(apiClient);
 });
 
-class ArtistsNotifier extends StateNotifier<ArtistsState> {
+class ArtistsNotifier extends StateNotifier<DataState<ArtistModel>> {
   final ArtistRepository _repository;
 
-  ArtistsNotifier(this._repository) : super(const ArtistsState.initial());
+  ArtistsNotifier(this._repository) : super(DataState.initial());
 
   Future<void> fetchArtists({int page = 1, int limit = 10}) async {
     log('[ArtistsNotifier] Fetching artists with page=$page, limit=$limit');
-    state = state.copyWith(isLoading: true, error: null);
+    
+    state = state.copyWith(
+      isInitialLoading: true,
+      message: null,
+      isDataAvailable: false,
+    );
 
     try {
       final response = await _repository.getArtists(page: page, limit: limit);
@@ -27,60 +33,79 @@ class ArtistsNotifier extends StateNotifier<ArtistsState> {
       );
 
       state = state.copyWith(
-        isLoading: false,
-        artists: response.payload.artists,
+        isInitialLoading: false,
+        isDataAvailable: true,
+        data: response.payload.artists,
         currentPage: response.payload.currentPage,
         totalPages: response.payload.totalPages,
+        message: null,
       );
-    } catch (e) {
-      log('[ArtistsNotifier] Error fetching artists: $e');
-      state = state.copyWith(isLoading: false, error: e.toString());
+    } catch (e, stack) {
+      log('[ArtistsNotifier] Error fetching artists: $e\n$stack');
+      state = state.copyWith(
+        isInitialLoading: false,
+        isDataAvailable: false,
+        message: e.toString().replaceAll('Exception: ', ''),
+      );
     }
   }
-}
 
-class ArtistsState {
-  final bool isLoading;
-  final List<ArtistModel> artists;
-  final String? error;
-  final int currentPage;
-  final int totalPages;
+  /// Clear any error messages
+  void clearMessage() {
+    state = state.copyWith(message: null);
+  }
 
-  const ArtistsState({
-    required this.isLoading,
-    required this.artists,
-    this.error,
-    required this.currentPage,
-    required this.totalPages,
-  });
-
-  const ArtistsState.initial()
-    : isLoading = false,
-      artists = const [],
-      error = null,
-      currentPage = 0,
-      totalPages = 0;
-
-  ArtistsState copyWith({
-    bool? isLoading,
-    List<ArtistModel>? artists,
-    String? error,
-    int? currentPage,
-    int? totalPages,
-  }) {
-    return ArtistsState(
-      isLoading: isLoading ?? this.isLoading,
-      artists: artists ?? this.artists,
-      error: error,
-      currentPage: currentPage ?? this.currentPage,
-      totalPages: totalPages ?? this.totalPages,
+  /// Search users by query with optional role filter
+  Future<void> searchUsers({
+    required String query,
+    int page = 0,
+    String? role,
+  }) async {
+    log('[ArtistsNotifier] Searching users with query=$query, page=$page, role=$role');
+    
+    state = state.copyWith(
+      isInitialLoading: true,
+      message: null,
+      isDataAvailable: false,
     );
+
+    try {
+      final response = await _repository.searchUsers(
+        query: query,
+        page: page,
+        role: role,
+      );
+      log(
+        '[ArtistsNotifier] Successfully found ${response.payload.artists.length} users',
+      );
+
+      state = state.copyWith(
+        isInitialLoading: false,
+        isDataAvailable: true,
+        data: response.payload.artists,
+        currentPage: response.payload.currentPage,
+        totalPages: response.payload.totalPages,
+        message: null,
+      );
+    } catch (e, stack) {
+      log('[ArtistsNotifier] Error searching users: $e\n$stack');
+      state = state.copyWith(
+        isInitialLoading: false,
+        isDataAvailable: false,
+        message: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
+  }
+
+  /// Reset state to initial
+  void reset() {
+    state = DataState.initial();
   }
 }
 
-final artistsProvider = StateNotifierProvider<ArtistsNotifier, ArtistsState>((
-  ref,
-) {
-  final repository = ref.watch(artistRepositoryProvider);
-  return ArtistsNotifier(repository);
-});
+final artistsProvider = StateNotifierProvider<ArtistsNotifier, DataState<ArtistModel>>(
+  (ref) {
+    final repository = ref.watch(artistRepositoryProvider);
+    return ArtistsNotifier(repository);
+  },
+);

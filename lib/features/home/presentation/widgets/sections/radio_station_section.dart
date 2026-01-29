@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../controllers/re_useable/app_texts.dart';
 import '../../../../../core/utils/platform_responsive.dart';
+import '../../../../../core/widgets/skeleton_loading.dart';
 import '../../../../radio_station/logic/radio_stations_notifier.dart';
 import '../radio_station_card.dart';
 
@@ -43,7 +45,7 @@ class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
               ),
               GestureDetector(
                 onTap: () {
-                  // TODO: Navigate to explore screen for radio stations
+                  context.push('/explore?category=Radio\\nStations');
                 },
                 child: Text(
                   'View All',
@@ -54,22 +56,23 @@ class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
           ),
         ),
         SizedBox(height: 12.h),
-        SizedBox(
+        radioStationsState.isInitialLoading
+            ? SkeletonHorizontalList(
+                cardWidth: 320.w,
+                cardHeight: 340.h,
+                itemCount: 3,
+                isProfileCard: true,
+              )
+            : SizedBox(
           height: 340.h,
-          child: radioStationsState.isLoading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryColor,
-                  ),
-                )
-              : radioStationsState.error != null
+          child: radioStationsState.message != null && !radioStationsState.isDataAvailable
               ? Center(
                   child: Text(
                     'Error loading radio stations',
                     style: AppTexts.bodyMedium(color: AppColors.textPrimary),
                   ),
                 )
-              : radioStationsState.radioStations.isEmpty
+              : (radioStationsState.data ?? []).isEmpty
               ? Center(
                   child: Text(
                     'No radio stations available',
@@ -79,9 +82,9 @@ class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
               : ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: PlatformResponsive.symmetric(horizontal: 16),
-                  itemCount: radioStationsState.radioStations.length,
+                  itemCount: (radioStationsState.data ?? []).length,
                   itemBuilder: (context, index) {
-                    final station = radioStationsState.radioStations[index];
+                    final station = (radioStationsState.data ?? [])[index];
                     final location = [
                       station.city,
                       station.state,
@@ -103,10 +106,34 @@ class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
                             station.additionalInfo?.yearsOfOperation ?? 0,
                         categories: station.additionalInfo?.contentFocus ?? [],
                         onBookAdSlot: () {
-                          // TODO: Navigate to booking page
+                          context.push('/seller-ad-slots/${station.id}', extra: {
+                            'sellerName': station.additionalInfo?.businessName ?? station.name,
+                            'sellerAvatar': station.avatarUrl,
+                            'sellerType': 'Radio Station',
+                          });
                         },
                         onViewProfile: () {
-                          // TODO: Navigate to profile page
+                          context.push('/view-profile', extra: {
+                            'userId': station.id,
+                            'name': station.additionalInfo?.businessName ?? station.name,
+                            'avatar': station.avatarUrl,
+                            'location': location,
+                            'about': 'Professional Radio Station available for verified advertising, partnerships, and brand collaborations on Brantro.',
+                            'genres': station.additionalInfo?.contentFocus ?? [],
+                            'experience': '${station.additionalInfo?.yearsOfOperation ?? 0} yrs',
+                            'projects': '0',
+                            'specialization': station.additionalInfo?.broadcastBand ?? 'FM',
+                            'profession': 'Radio Station',
+                            'rating': station.averageRating.toString(),
+                            'likes': station.totalLikes.toString(),
+                            'productions': '0',
+                            'socialMedia': {},
+                            'features': [
+                              'Verified media partners',
+                              'Transparent pricing',
+                              'Campaign performance tracking',
+                            ],
+                          });
                         },
                       ),
                     );

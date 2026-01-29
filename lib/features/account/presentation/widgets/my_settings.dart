@@ -33,6 +33,13 @@ class MySettings extends StatelessWidget {
                 ),
               ),
               _buildSettingItem(
+                title: 'Settings',
+                onTap: () {
+                  context.push('/settings');
+                },
+              ),
+              _buildDivider(),
+              _buildSettingItem(
                 title: 'Payment Settings',
                 onTap: () {
                   // TODO: Navigate to Payment Settings

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 import '../../../../core/service/session_service.dart';
@@ -89,118 +90,125 @@ class ProfileHeaderWidget extends ConsumerWidget {
   }
 
   Widget _buildHeader(ProfileHeaderData profileData) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Avatar with Camera Icon
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Avatar
-              Container(
-                width: 102.w,
-                height: 102.w,
-                decoration: BoxDecoration(
-                  color: AppColors.grey200,
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: NetworkImage(profileData.avatarUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-
-              // Camera Icon Button
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: onEditPhoto ?? () {},
-                  child: Container(
-                    width: 32.w,
-                    height: 32.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 16.sp,
-                    ),
-                  ),
-                ),
+    return Builder(
+      builder: (context) => GestureDetector(
+        onTap: () {
+          context.push('/profile-details');
+        },
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
+          margin: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Avatar with Camera Icon
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Avatar
+                  Container(
+                    width: 102.w,
+                    height: 102.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.grey200,
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: NetworkImage(profileData.avatarUrl),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
 
-          SizedBox(height: 16.h),
+                  // Camera Icon Button
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: onEditPhoto ?? () {},
+                      child: Container(
+                        width: 32.w,
+                        height: 32.w,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-          // Full Name
-          Text(
-            profileData.fullName,
-            style: AppTexts.h3(color: AppColors.textPrimary),
-            textAlign: TextAlign.center,
+              SizedBox(height: 16.h),
+
+              // Full Name
+              Text(
+                profileData.fullName,
+                style: AppTexts.h3(color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+
+              if (profileData.email.isNotEmpty && profileData.role != 'GUEST') ...[
+                SizedBox(height: 4.h),
+                Text(
+                  profileData.email,
+                  style: AppTexts.bodySmall(color: AppColors.grey600),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+
+              SizedBox(height: 12.h),
+
+              // Role Badge - only show for non-guest users
+              if (profileData.role != 'GUEST')
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 6.h,
+                  ),
+                  child: Text(
+                    _formatRole(profileData.role),
+                    style: AppTexts.labelSmall(color: AppColors.primaryColor),
+                  ),
+                ),
+
+              if (profileData.memberSince.isNotEmpty && profileData.role != 'GUEST') ...[
+                SizedBox(height: 8.h),
+                // Member Since
+                Text(
+                  profileData.memberSince,
+                  style: AppTexts.bodySmall(color: AppColors.grey600),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
           ),
-
-          if (profileData.email.isNotEmpty && profileData.role != 'GUEST') ...[
-            SizedBox(height: 4.h),
-            Text(
-              profileData.email,
-              style: AppTexts.bodySmall(color: AppColors.grey600),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
-          SizedBox(height: 12.h),
-
-          // Role Badge - only show for non-guest users
-          if (profileData.role != 'GUEST')
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: 12.w,
-                vertical: 6.h,
-              ),
-              child: Text(
-                _formatRole(profileData.role),
-                style: AppTexts.labelSmall(color: AppColors.primaryColor),
-              ),
-            ),
-
-          if (profileData.memberSince.isNotEmpty && profileData.role != 'GUEST') ...[
-            SizedBox(height: 8.h),
-            // Member Since
-            Text(
-              profileData.memberSince,
-              style: AppTexts.bodySmall(color: AppColors.grey600),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

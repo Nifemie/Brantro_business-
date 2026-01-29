@@ -1,8 +1,9 @@
+import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/data/data_state.dart';
 import '../../../core/network/api_client.dart';
 import '../data/models/tv_station_model.dart';
 import '../data/tv_station_repository.dart';
-import '../data/models/tv_station_response.dart';
 
 // API Client provider
 final apiClientProvider = Provider((ref) => ApiClient());
@@ -13,72 +14,57 @@ final tvStationRepositoryProvider = Provider((ref) {
   return TvStationRepository(apiClient);
 });
 
-// State class
-class TvStationsState {
-  final bool isLoading;
-  final List<TvStationModel> tvStations;
-  final String? error;
-  final int currentPage;
-  final int totalPages;
-
-  TvStationsState({
-    required this.isLoading,
-    required this.tvStations,
-    this.error,
-    required this.currentPage,
-    required this.totalPages,
-  });
-
-  TvStationsState copyWith({
-    bool? isLoading,
-    List<TvStationModel>? tvStations,
-    String? error,
-    int? currentPage,
-    int? totalPages,
-  }) {
-    return TvStationsState(
-      isLoading: isLoading ?? this.isLoading,
-      tvStations: tvStations ?? this.tvStations,
-      error: error ?? this.error,
-      currentPage: currentPage ?? this.currentPage,
-      totalPages: totalPages ?? this.totalPages,
-    );
-  }
-}
-
 // Notifier class
-class TvStationsNotifier extends StateNotifier<TvStationsState> {
+class TvStationsNotifier extends StateNotifier<DataState<TvStationModel>> {
   final TvStationRepository repository;
 
-  TvStationsNotifier(this.repository)
-    : super(
-        TvStationsState(
-          isLoading: false,
-          tvStations: [],
-          currentPage: 0,
-          totalPages: 0,
-        ),
-      );
+  TvStationsNotifier(this.repository) : super(DataState.initial());
 
   Future<void> fetchTvStations(int page, int limit) async {
-    state = state.copyWith(isLoading: true, error: null);
+    log('[TvStationsNotifier] Fetching TV stations with page=$page, limit=$limit');
+    
+    state = state.copyWith(
+      isInitialLoading: true,
+      message: null,
+      isDataAvailable: false,
+    );
+
     try {
       final response = await repository.getTvStations(page: page, limit: limit);
+      log('[TvStationsNotifier] Successfully fetched ${response.page.length} TV stations');
+      
       state = state.copyWith(
-        isLoading: false,
-        tvStations: response.page,
+        isInitialLoading: false,
+        isDataAvailable: true,
+        data: response.page,
         currentPage: response.currentPage,
         totalPages: response.totalPages,
+        message: null,
       );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+    } catch (e, stack) {
+      log('[TvStationsNotifier] Error fetching TV stations: $e\n$stack');
+      state = state.copyWith(
+        isInitialLoading: false,
+        isDataAvailable: false,
+        message: e.toString().replaceAll('Exception: ', ''),
+      );
     }
+  }
+
+  /// Clear any error messages
+  void clearMessage() {
+    state = state.copyWith(message: null);
+  }
+
+  /// Reset state to initial
+  void reset() {
+    state = DataState.initial();
   }
 }
 
 // Provider
 final tvStationsProvider =
-    StateNotifierProvider<TvStationsNotifier, TvStationsState>((ref) {
+    StateNotifierProvider<TvStationsNotifier, DataState<TvStationModel>>((ref) {
       final repository = ref.watch(tvStationRepositoryProvider);
       return TvStationsNotifier(repository);
     });

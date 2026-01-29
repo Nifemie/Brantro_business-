@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
+import '../../../../../core/widgets/skeleton_loading.dart';
 import '../../../../producer/logic/producers_notifier.dart';
 import '../producer_card.dart';
 
@@ -44,7 +46,9 @@ class _ProducerSectionState extends ConsumerState<ProducerSection> {
                 ),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  context.push('/explore?category=Film\\nProducer');
+                },
                 child: Text(
                   'View All',
                   style: TextStyle(
@@ -58,12 +62,14 @@ class _ProducerSectionState extends ConsumerState<ProducerSection> {
               ),
             ),
             SizedBox(height: 12.h),
-            if (producersState.isLoading)
-              SizedBox(
-                height: 320.h,
-                child: Center(child: CircularProgressIndicator()),
+            if (producersState.isInitialLoading)
+              SkeletonHorizontalList(
+                cardWidth: 320.w,
+                cardHeight: 320.h,
+                itemCount: 3,
+                isProfileCard: true,
               )
-            else if (producersState.error != null)
+            else if (producersState.message != null && !producersState.isDataAvailable)
               SizedBox(
                 height: 320.h,
                 child: Center(
@@ -83,7 +89,7 @@ class _ProducerSectionState extends ConsumerState<ProducerSection> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Text(
-                          producersState.error ?? '',
+                          producersState.message ?? '',
                           textAlign: TextAlign.center,
                           style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                         ),
@@ -101,7 +107,7 @@ class _ProducerSectionState extends ConsumerState<ProducerSection> {
                   ),
                 ),
               )
-            else if (producersState.producers.isEmpty)
+            else if ((producersState.data ?? []).isEmpty)
               SizedBox(
                 height: 320.h,
                 child: Center(child: Text('No producers found')),
@@ -112,20 +118,32 @@ class _ProducerSectionState extends ConsumerState<ProducerSection> {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: PlatformResponsive.symmetric(horizontal: 16),
-                  children: producersState.producers.map((producer) {
+                  children: (producersState.data ?? []).map((producer) {
                     return Padding(
                       padding: EdgeInsets.only(right: 16.w),
-                      child: ProducerCard(
-                        avatarUrl:
-                            producer.avatarUrl ?? 'assets/promotions/Davido1.jpg',
-                        name: producer.additionalInfo?.businessName ?? producer.name,
-                        location:
-                            '${producer.city ?? ''}, ${producer.country ?? ''}',
-                        rating: producer.averageRating ?? 0.0,
-                        likes: producer.totalLikes ?? 0,
-                        productions:
-                            producer.additionalInfo?.numberOfProductions ?? 0,
-                        onViewAdSlotsTap: () {},
+                      child: SizedBox(
+                        width: 320.w,
+                        child: ProducerCard(
+                          avatarUrl:
+                              producer.avatarUrl ?? 'assets/promotions/Davido1.jpg',
+                          name: producer.additionalInfo?.businessName ?? producer.name,
+                          location:
+                              '${producer.city ?? ''}, ${producer.country ?? ''}',
+                          rating: producer.averageRating ?? 0.0,
+                          likes: producer.totalLikes ?? 0,
+                          productions:
+                              producer.additionalInfo?.numberOfProductions ?? 0,
+                          onViewAdSlotsTap: () {
+                            context.push(
+                              '/artist-ad-slots/${producer.id}',
+                              extra: {
+                                'sellerName': producer.additionalInfo?.businessName ?? producer.name,
+                                'sellerAvatar': producer.avatarUrl,
+                                'sellerType': 'Producer',
+                              },
+                            );
+                          },
+                        ),
                       ),
                     );
                   }).toList(),
