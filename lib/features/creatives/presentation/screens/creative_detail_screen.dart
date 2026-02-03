@@ -21,10 +21,12 @@ final creativeDetailProvider = FutureProvider.family<CreativeModel, int>((ref, i
 
 class CreativeDetailScreen extends ConsumerWidget {
   final int creativeId;
+  final bool isPurchased;
 
   const CreativeDetailScreen({
     super.key,
     required this.creativeId,
+    this.isPurchased = false,
   });
 
   @override
@@ -452,6 +454,56 @@ class CreativeDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildBottomBar(BuildContext context, CreativeModel creative) {
+    if (isPurchased) {
+      // Show download button for purchased creatives
+      return Positioned(
+        bottom: 0,
+        left: 0,
+        right: 0,
+        child: Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Implement download
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Downloading ${creative.title}...'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              icon: Icon(Icons.download, size: 20.sp, color: Colors.white),
+              label: Text(
+                'Download Creative',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF003D82),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Show buy now button for non-purchased creatives
     return Positioned(
       bottom: 0,
       left: 0,

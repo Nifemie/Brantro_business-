@@ -8,6 +8,8 @@ import 'models/creative_order_request.dart';
 import 'models/creative_order_response.dart';
 import 'models/service_order_request.dart';
 import 'models/service_order_response.dart';
+import 'models/campaign_order_request.dart';
+import 'models/campaign_order_response.dart';
 
 class CheckoutRepository {
   final ApiClient apiClient;
@@ -123,6 +125,45 @@ class CheckoutRepository {
                   : e.response?.data['message'] ??
                       e.response?.data['error'] ??
                       'Failed to submit service order. Please try again.';
+
+      throw Exception(errorMessage);
+    } catch (e) {
+      log('[CheckoutRepository] Error: $e');
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  /// Submit campaign order
+  Future<CampaignOrderResponse> submitCampaignOrder(CampaignOrderRequest request) async {
+    try {
+      log('[CheckoutRepository] Submitting campaign order: ${request.toJson()}');
+
+      final response = await apiClient.post(
+        ApiEndpoints.campaignOrder,
+        data: request.toJson(),
+      );
+
+      log('[CheckoutRepository] Campaign order response received: ${response.statusCode}');
+      log('[CheckoutRepository] Response data: ${response.data}');
+
+      final orderResponse = CampaignOrderResponse.fromJson(response.data);
+      log('[CheckoutRepository] Campaign order submitted successfully: ${orderResponse.message}');
+      
+      return orderResponse;
+    } on DioException catch (e) {
+      log('[CheckoutRepository] DioException: ${e.message}');
+      log('[CheckoutRepository] Status Code: ${e.response?.statusCode}');
+      log('[CheckoutRepository] Error Response: ${e.response?.data}');
+
+      final errorMessage = e.response?.statusCode == 401
+          ? 'Unauthorized: Please log in again'
+          : e.response?.statusCode == 403
+              ? 'Forbidden: You do not have permission to place orders'
+              : e.response?.statusCode == 400
+                  ? e.response?.data['message'] ?? 'Invalid order data'
+                  : e.response?.data['message'] ??
+                      e.response?.data['error'] ??
+                      'Failed to submit campaign order. Please try again.';
 
       throw Exception(errorMessage);
     } catch (e) {

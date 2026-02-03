@@ -48,10 +48,15 @@ import 'package:brantro/features/account/presentation/profile_details_screen.dar
 import 'package:brantro/features/account/presentation/edit_profile_screen.dart';
 import 'package:brantro/features/template/presentation/screens/template_listing_screen.dart';
 import 'package:brantro/features/template/presentation/screens/template_details_screen.dart';
+import 'package:brantro/features/template/presentation/screens/my_templates_screen.dart';
+import 'package:brantro/features/template/data/models/template_model.dart';
 import 'package:brantro/features/creatives/presentation/screens/creatives_listing_screen.dart';
 import 'package:brantro/features/creatives/presentation/screens/creative_detail_screen.dart';
+import 'package:brantro/features/creatives/presentation/screens/my_creatives_screen.dart';
 import 'package:brantro/features/cart/presentation/screens/checkout_screen.dart';
 import 'package:brantro/features/cart/presentation/screens/service_setup_screen.dart';
+import 'package:brantro/features/cart/presentation/screens/campaign_setup_screen.dart';
+import 'package:brantro/features/campaign/presentation/screens/campaign_details_screen.dart';
 import 'package:brantro/features/Digital_services/data/models/service_model.dart';
 
 final router = GoRouter(
@@ -210,10 +215,23 @@ final router = GoRouter(
           name: 'ad-slot-details',
           builder: (context, state) {
             final slotId = state.pathParameters['slotId']!;
-            final adSlot = state.extra as AdSlot?;
+            
+            // Handle both AdSlot and Map cases
+            bool hideBooking = false;
+            AdSlot? adSlot;
+            
+            if (state.extra is Map<String, dynamic>) {
+              final extra = state.extra as Map<String, dynamic>;
+              adSlot = extra['initialData'] as AdSlot?;
+              hideBooking = extra['hideBooking'] as bool? ?? false;
+            } else if (state.extra is AdSlot) {
+              adSlot = state.extra as AdSlot;
+            }
+            
             return AdSlotDetailsScreen(
               adSlotId: slotId,
               initialData: adSlot,
+              hideBooking: hideBooking,
             );
           },
         ),
@@ -366,14 +384,33 @@ final router = GoRouter(
           builder: (context, state) => const TemplateListingScreen(),
         ),
         GoRoute(
+          path: 'my-templates',
+          name: 'my-templates',
+          builder: (context, state) => const MyTemplatesScreen(),
+        ),
+        GoRoute(
           path: 'template-details/:templateId',
           name: 'template-details',
           builder: (context, state) {
             final templateId = state.pathParameters['templateId']!;
-            final initialData = state.extra as dynamic;
+            
+            // Handle both Map and direct TemplateModel cases
+            TemplateModel? initialData;
+            bool isPurchased = false;
+            
+            if (state.extra is Map<String, dynamic>) {
+              final extra = state.extra as Map<String, dynamic>;
+              initialData = extra['initialData'] as TemplateModel?;
+              isPurchased = extra['isPurchased'] as bool? ?? false;
+            } else if (state.extra is TemplateModel) {
+              initialData = state.extra as TemplateModel;
+              isPurchased = false;
+            }
+            
             return TemplateDetailsScreen(
               templateId: templateId,
               initialData: initialData,
+              isPurchased: isPurchased,
             );
           },
         ),
@@ -383,11 +420,28 @@ final router = GoRouter(
           builder: (context, state) => const CreativesListingScreen(),
         ),
         GoRoute(
+          path: 'my-creatives',
+          name: 'my-creatives',
+          builder: (context, state) => const MyCreativesScreen(),
+        ),
+        GoRoute(
           path: 'creative-details/:creativeId',
           name: 'creative-details',
           builder: (context, state) {
             final creativeId = int.parse(state.pathParameters['creativeId'] ?? '0');
-            return CreativeDetailScreen(creativeId: creativeId);
+            
+            // Handle both Map and direct data cases
+            bool isPurchased = false;
+            
+            if (state.extra is Map<String, dynamic>) {
+              final extra = state.extra as Map<String, dynamic>;
+              isPurchased = extra['isPurchased'] as bool? ?? false;
+            }
+            
+            return CreativeDetailScreen(
+              creativeId: creativeId,
+              isPurchased: isPurchased,
+            );
           },
         ),
         GoRoute(
@@ -420,6 +474,19 @@ final router = GoRouter(
           path: 'service-setup',
           name: 'service-setup',
           builder: (context, state) => const ServiceSetupScreen(),
+        ),
+        GoRoute(
+          path: 'campaign-setup',
+          name: 'campaign-setup',
+          builder: (context, state) => const CampaignSetupScreen(),
+        ),
+        GoRoute(
+          path: 'campaign-details/:campaignId',
+          name: 'campaign-details',
+          builder: (context, state) {
+            final campaignId = int.parse(state.pathParameters['campaignId']!);
+            return CampaignDetailsScreen(campaignId: campaignId);
+          },
         ),
         GoRoute(
           path: 'vetting-details/:vettingId',

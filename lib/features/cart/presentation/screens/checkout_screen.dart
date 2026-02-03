@@ -11,6 +11,7 @@ import '../../data/models/cart_item_model.dart';
 import '../../data/models/template_order_request.dart';
 import '../../data/models/creative_order_request.dart';
 import '../../data/models/service_order_request.dart';
+import '../../data/models/campaign_order_request.dart';
 import '../../../wallet/logic/wallet_notifier.dart';
 import '../../../../core/utils/pricing_calculator.dart';
 import '../../../../core/utils/reference_generator.dart';
@@ -50,6 +51,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     // Generate reference specific to checkout type
     final checkoutReference = _generateReferenceForType(checkoutType);
     
+    // Show loading if wallet is still being fetched
+    if (walletState.isLoading && walletState.wallet == null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: _buildAppBar(checkoutType),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryColor),
+        ),
+      );
+    }
+    
     final walletBalance = double.tryParse(walletState.wallet?.balance ?? '0') ?? 0.0;
     final isWalletSufficient = walletBalance >= breakdown.total;
 
@@ -67,7 +79,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           // Clear only the items that were checked out
           Future.delayed(const Duration(seconds: 1), () {
             ref.read(cartProvider.notifier).clearItemsByType(checkoutType);
-            context.go('/home');
+            
+            // Navigate to appropriate screen based on checkout type
+            switch (checkoutType) {
+              case 'template':
+                context.go('/my-templates');
+                break;
+              case 'creative':
+                context.go('/my-creatives');
+                break;
+              case 'campaign':
+                context.go('/campaigns');
+                break;
+              case 'service':
+                // For services, go to home
+                context.go('/home');
+                break;
+              default:
+                context.go('/home');
+            }
           });
         }
       }
@@ -117,8 +147,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           ),
           SizedBox(height: 24.h),
           
-          // Only show selected items for non-service checkouts
-          if (checkoutType != 'service') ...[
+          // Only show selected items for template and creative checkouts
+          // Hide for service and campaign since they have setup screens
+          if (checkoutType != 'service' && checkoutType != 'campaign') ...[
             Text('Selected Items', style: AppTexts.h4()),
             SizedBox(height: 16.h),
             ...items.map((item) => CartItemCard(item: item)),
@@ -352,6 +383,56 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       // Submit service order
       ref.read(checkoutProvider.notifier).submitServiceOrder(request);
+    } else if (checkoutType == 'campaign') {
+      // Build campaign order request
+      final campaignReference = ReferenceGenerator.generateNumericReference('CMP');
+      
+      final orderItems = items.map((item) {
+        // Extract campaign creatives from metadata
+        final metadata = item.metadata ?? {};
+        final campaignCreatives = metadata['campaignCreatives'] as Map<String, dynamic>?;
+        
+        // Build creatives list
+        List<CampaignCreative> creatives = [];
+        if (campaignCreatives != null) {
+          final creativeFiles = campaignCreatives['creativeFiles'] as List<dynamic>?;
+          if (creativeFiles != null) {
+            creatives = creativeFiles.map((file) {
+              if (file is Map<String, dynamic>) {
+                return CampaignCreative(
+                  id: file['id']?.toString() ?? '',
+                  name: file['name']?.toString() ?? '',
+                  mimeType: file['mimeType']?.toString() ?? '',
+                  size: file['size'] as int? ?? 0,
+                  description: 'Campaign creative',
+                  status: 'PENDING',
+                );
+              }
+              return null;
+            }).whereType<CampaignCreative>().toList();
+          }
+        }
+        
+        return CampaignOrderItem(
+          id: item.id,
+          adSlotId: int.tryParse(item.id) ?? 0,
+          quantity: 1,
+          creatives: creatives,
+        );
+      }).toList();
+
+      final request = CampaignOrderRequest(
+        reference: campaignReference,
+        items: orderItems,
+        method: _paymentMethod.toUpperCase(),
+        currency: 'NGN',
+        amount: breakdown.total,
+        paymentRef: cartState.reference ?? '',
+        remark: 'Campaign order',
+      );
+
+      // Submit campaign order
+      ref.read(checkoutProvider.notifier).submitCampaignOrder(request);
     } else {
       // Build template order request
       final orderItems = items.map((item) {

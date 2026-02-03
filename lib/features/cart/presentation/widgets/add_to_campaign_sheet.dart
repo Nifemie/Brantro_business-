@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
+import '../../../../core/service/session_service.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../logic/cart_notifier.dart';
 
@@ -22,6 +23,125 @@ class AddToCampaignSheet extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddToCampaignSheet(item: item),
+    );
+  }
+
+  Future<void> _handleCheckout(BuildContext context, WidgetRef ref, String route) async {
+    final isLoggedIn = await SessionService.isLoggedIn();
+    
+    if (!isLoggedIn) {
+      if (context.mounted) {
+        context.pop(); // Close bottom sheet
+        _showLoginDialog(context);
+      }
+      return;
+    }
+    
+    // User is logged in, proceed with checkout
+    if (context.mounted) {
+      ref.read(cartProvider.notifier).addItem(item);
+      context.pop();
+      context.push(route);
+    }
+  }
+
+  void _showLoginDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.lock_outline,
+                  size: 48.sp,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+              
+              SizedBox(height: 20.h),
+              
+              // Title
+              Text(
+                'Login Required',
+                style: AppTexts.h3(),
+                textAlign: TextAlign.center,
+              ),
+              
+              SizedBox(height: 12.h),
+              
+              // Message
+              Text(
+                'Please login to continue with your purchase. Create an account or sign in to access all features.',
+                style: AppTexts.bodyMedium(color: AppColors.grey600),
+                textAlign: TextAlign.center,
+              ),
+              
+              SizedBox(height: 24.h),
+              
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.grey300),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: AppTexts.buttonSmall(color: AppColors.grey700),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.push('/signin');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Login',
+                        style: AppTexts.buttonSmall(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -186,20 +306,19 @@ class AddToCampaignSheet extends ConsumerWidget {
                   SizedBox(width: 16.w),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        ref.read(cartProvider.notifier).addItem(item);
-                        context.pop();
-                        
-                        // Navigate based on item type
+                      onPressed: () async {
+                        // Determine the route based on item type
+                        String route;
                         if (item.type == 'service') {
-                          context.push('/service-setup');
+                          route = '/service-setup';
+                        } else if (item.type == 'adslot' || item.type == 'campaign') {
+                          route = '/campaign-setup';
                         } else {
-                          String checkoutType = 'campaign';
-                          if (item.type == 'template') checkoutType = 'template';
-                          else if (item.type == 'creative') checkoutType = 'creative';
-                          
-                          context.push('/checkout?type=$checkoutType');
+                          String checkoutType = item.type == 'creative' ? 'creative' : 'template';
+                          route = '/checkout?type=$checkoutType';
                         }
+                        
+                        await _handleCheckout(context, ref, route);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,

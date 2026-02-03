@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import '../service/session_service.dart';
 
 class ApiClient {
-  static const String baseUrl = 'https://api.syroltech.com/screensy';
+  static const String baseUrl = 'https://api.syroltech.com/brantro';
   static const String fileBaseUrl = 'https://realta360.b-cdn.net';
   static const String apiToken = 'NlwvQOhvOgMARJ21Jfs1yLsG';
 

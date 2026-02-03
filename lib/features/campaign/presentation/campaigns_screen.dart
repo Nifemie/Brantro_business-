@@ -56,13 +56,13 @@ class _CampaignsScreenState extends State<CampaignsScreen>
       
       // Determine tab count based on role
       // SUPER_ADMIN gets all tabs (buyer + seller combined)
-      // ADVERTISER gets buyer tabs (5 tabs)
+      // ADVERTISER and USER get buyer tabs (5 tabs)
       // All other roles get seller tabs (4 tabs)
       int tabCount;
       if (userRole == 'SUPER_ADMIN') {
         tabCount = 9; // All buyer tabs + all seller tabs
         _isSeller = false; // Treat as buyer for primary view
-      } else if (userRole == 'ADVERTISER') {
+      } else if (userRole == 'ADVERTISER' || userRole == 'USER') {
         tabCount = 5; // Buyer tabs
         _isSeller = false;
       } else {
@@ -208,66 +208,21 @@ class _CampaignsScreenState extends State<CampaignsScreen>
   // Buyer tabs: All, Requested, Accepted, In Progress, Completed
   List<Widget> _buildBuyerTabs() {
     return [
-      CampaignTabView(
-        status: 'all',
-        isSeller: false,
-        campaigns: _getMockCampaigns('all'),
-        onRefresh: _refreshCampaigns,
-      ),
-      CampaignTabView(
-        status: 'requested',
-        isSeller: false,
-        campaigns: _getMockCampaigns('requested'),
-        onRefresh: _refreshCampaigns,
-      ),
-      CampaignTabView(
-        status: 'accepted',
-        isSeller: false,
-        campaigns: _getMockCampaigns('accepted'),
-        onRefresh: _refreshCampaigns,
-      ),
-      CampaignTabView(
-        status: 'in_progress',
-        isSeller: false,
-        campaigns: _getMockCampaigns('in_progress'),
-        onRefresh: _refreshCampaigns,
-      ),
-      CampaignTabView(
-        status: 'completed',
-        isSeller: false,
-        campaigns: _getMockCampaigns('completed'),
-        onRefresh: _refreshCampaigns,
-      ),
+      CampaignTabView(status: 'all', isSeller: false),
+      CampaignTabView(status: 'pending', isSeller: false),
+      CampaignTabView(status: 'accepted', isSeller: false),
+      CampaignTabView(status: 'in_progress', isSeller: false),
+      CampaignTabView(status: 'completed', isSeller: false),
     ];
   }
 
   // Seller tabs: Requests, Accepted, In Progress, Completed
   List<Widget> _buildSellerTabs() {
     return [
-      CampaignTabView(
-        status: 'requests',
-        isSeller: true,
-        campaigns: _getMockCampaigns('requests'),
-        onRefresh: _refreshCampaigns,
-      ),
-      CampaignTabView(
-        status: 'accepted',
-        isSeller: true,
-        campaigns: _getMockCampaigns('accepted'),
-        onRefresh: _refreshCampaigns,
-      ),
-      CampaignTabView(
-        status: 'in_progress',
-        isSeller: true,
-        campaigns: _getMockCampaigns('in_progress'),
-        onRefresh: _refreshCampaigns,
-      ),
-      CampaignTabView(
-        status: 'completed',
-        isSeller: true,
-        campaigns: _getMockCampaigns('completed'),
-        onRefresh: _refreshCampaigns,
-      ),
+      CampaignTabView(status: 'pending', isSeller: true),
+      CampaignTabView(status: 'accepted', isSeller: true),
+      CampaignTabView(status: 'in_progress', isSeller: true),
+      CampaignTabView(status: 'completed', isSeller: true),
     ];
   }
 
@@ -279,11 +234,6 @@ class _CampaignsScreenState extends State<CampaignsScreen>
       // Seller tabs
       ..._buildSellerTabs(),
     ];
-  }
-
-  void _refreshCampaigns() {
-    // TODO: Implement refresh logic
-    setState(() {});
   }
 
   Widget _buildGuestView() {
@@ -377,11 +327,5 @@ class _CampaignsScreenState extends State<CampaignsScreen>
         ),
       ),
     );
-  }
-
-  // Mock data - TODO: Replace with actual API data
-  List<Map<String, dynamic>> _getMockCampaigns(String status) {
-    // Return empty for now - will be populated with real data
-    return [];
   }
 }

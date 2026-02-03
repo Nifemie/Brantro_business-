@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 /// Pricing calculator utility for calculating VAT, service charges, and totals
 class PricingCalculator {
   // Charge rates (matching environment variables)
@@ -50,9 +52,10 @@ class PricingCalculator {
     return '₦${amount.toStringAsFixed(2)}';
   }
 
-  /// Format amount with full precision
+  /// Format amount with full precision and thousand separators
   static String formatAmountFull(double amount) {
-    return '₦${amount.toStringAsFixed(2)}';
+    final formatter = NumberFormat('#,##0.00', 'en_US');
+    return '₦${formatter.format(amount)}';
   }
 }
 

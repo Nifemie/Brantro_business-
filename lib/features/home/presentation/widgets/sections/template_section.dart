@@ -19,17 +19,7 @@ class TemplateSection extends ConsumerStatefulWidget {
 
 class _TemplateSectionState extends ConsumerState<TemplateSection> {
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(templateProvider.notifier).fetchTemplates(page: 0, size: 5);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final templateState = ref.watch(templateProvider);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -66,14 +56,21 @@ class _TemplateSectionState extends ConsumerState<TemplateSection> {
         SizedBox(height: 12.h),
 
         // Content based on state
-        if (templateState.isInitialLoading)
-          _buildLoadingState()
-        else if (templateState.message != null && !templateState.isDataAvailable)
-          _buildErrorState(templateState.message!, ref)
-        else if ((templateState.data ?? []).isEmpty)
-          _buildEmptyState()
-        else
-          _buildTemplateList(templateState.data!),
+        ref
+            .watch(templateProvider)
+            .when(
+              loading: _buildLoadingState,
+              error: (e, _) => _buildErrorState(e.toString(), ref),
+              data: (dataState) {
+                final templates = dataState.data ?? [];
+
+                if (templates.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return _buildTemplateList(templates);
+              },
+            ),
       ],
     );
   }
@@ -105,11 +102,19 @@ class _TemplateSectionState extends ConsumerState<TemplateSection> {
             SizedBox(height: 16.h),
             Text('Failed to load templates', style: AppTexts.h4()),
             SizedBox(height: 8.h),
-            Text(error, style: AppTexts.bodySmall(color: AppColors.grey600), textAlign: TextAlign.center),
+            Text(
+              error,
+              style: AppTexts.bodySmall(color: AppColors.grey600),
+              textAlign: TextAlign.center,
+            ),
             SizedBox(height: 16.h),
             ElevatedButton(
-              onPressed: () => ref.read(templateProvider.notifier).fetchTemplates(page: 0, size: 5),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+              onPressed: () => ref
+                  .read(templateProvider.notifier)
+                  .fetchTemplates(page: 0, size: 5),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+              ),
               child: const Text('Retry'),
             ),
           ],
@@ -126,11 +131,18 @@ class _TemplateSectionState extends ConsumerState<TemplateSection> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.design_services_outlined, size: 48.sp, color: AppColors.grey400),
+            Icon(
+              Icons.design_services_outlined,
+              size: 48.sp,
+              color: AppColors.grey400,
+            ),
             SizedBox(height: 16.h),
             Text('No templates available', style: AppTexts.h4()),
             SizedBox(height: 8.h),
-            Text('Check back later', style: AppTexts.bodySmall(color: AppColors.grey600)),
+            Text(
+              'Check back later',
+              style: AppTexts.bodySmall(color: AppColors.grey600),
+            ),
           ],
         ),
       ),
@@ -146,7 +158,7 @@ class _TemplateSectionState extends ConsumerState<TemplateSection> {
         itemCount: templates.length > 5 ? 5 : templates.length,
         itemBuilder: (context, index) {
           final template = templates[index];
-          
+
           return Container(
             width: 280.w,
             margin: EdgeInsets.only(right: 16.w),
@@ -169,7 +181,10 @@ class _TemplateSectionState extends ConsumerState<TemplateSection> {
     );
   }
 
-  Future<void> _handleTemplateClick(BuildContext context, dynamic template) async {
+  Future<void> _handleTemplateClick(
+    BuildContext context,
+    dynamic template,
+  ) async {
     // Navigate to template details screen
     context.push('/template-details/${template.id}', extra: template);
   }

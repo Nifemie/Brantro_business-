@@ -11,6 +11,7 @@ class SearchBarWidget extends ConsumerStatefulWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final bool enableAdSlotSearch; // New parameter to enable ad slot search
+  final Color? iconColor; // New parameter for icon color
 
   const SearchBarWidget({
     super.key,
@@ -21,6 +22,7 @@ class SearchBarWidget extends ConsumerStatefulWidget {
     this.readOnly = false,
     this.onTap,
     this.enableAdSlotSearch = false,
+    this.iconColor,
   });
 
   @override
@@ -77,7 +79,11 @@ class _SearchBarWidgetState extends ConsumerState<SearchBarWidget> {
             decoration: InputDecoration(
               hintText: widget.hintText,
               hintStyle: TextStyle(color: Colors.grey, fontSize: 14.sp),
-              prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20.sp),
+              prefixIcon: Icon(
+                Icons.search,
+                color: widget.iconColor ?? Colors.grey,
+                size: 20.sp,
+              ),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(vertical: 0),
             ),

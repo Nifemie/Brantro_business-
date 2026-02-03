@@ -14,22 +14,14 @@ class TemplateListingScreen extends ConsumerStatefulWidget {
   const TemplateListingScreen({super.key});
 
   @override
-  ConsumerState<TemplateListingScreen> createState() => _TemplateListingScreenState();
+  ConsumerState<TemplateListingScreen> createState() =>
+      _TemplateListingScreenState();
 }
 
 class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedType = 'All Types';
   String _selectedPriceFilter = 'All';
-  List _filteredTemplates = [];
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(templateProvider.notifier).fetchTemplates(page: 0, size: 20);
-    });
-  }
 
   @override
   void dispose() {
@@ -37,22 +29,19 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
     super.dispose();
   }
 
-  void _applyFilters(List templates) {
+  List _getFilteredTemplates(List templates) {
     var filtered = List.from(templates);
 
-    // Apply type filter
     if (_selectedType != 'All Types') {
       filtered = filtered.where((t) => t.type == _selectedType).toList();
     }
 
-    // Apply price filter
     if (_selectedPriceFilter == 'Free') {
       filtered = filtered.where((t) => t.isFree).toList();
     } else if (_selectedPriceFilter == 'Paid') {
       filtered = filtered.where((t) => !t.isFree).toList();
     }
 
-    // Apply search filter
     if (_searchController.text.isNotEmpty) {
       final query = _searchController.text.toLowerCase();
       filtered = filtered.where((t) {
@@ -62,21 +51,15 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
       }).toList();
     }
 
-    setState(() {
-      _filteredTemplates = filtered;
-    });
+    return filtered;
   }
 
   @override
   Widget build(BuildContext context) {
     final templateState = ref.watch(templateProvider);
-    
-    // Apply filters whenever data changes
-    if (templateState.data != null && templateState.data!.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _applyFilters(templateState.data!);
-      });
-    }
+    final dataState = templateState.asData?.value;
+    final templates = dataState?.data ?? [];
+    final filteredTemplates = _getFilteredTemplates(templates);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -103,7 +86,7 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
                 // Search bar
                 TextField(
                   controller: _searchController,
-                  onChanged: (value) => _applyFilters(templateState.data ?? []),
+                  onChanged: (value) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: 'Search templates...',
                     hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
@@ -114,12 +97,15 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
                       borderRadius: BorderRadius.circular(8.r),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
                   ),
                 ),
-                
+
                 SizedBox(height: 16.h),
-                
+
                 // Type filters
                 Row(
                   children: [
@@ -145,9 +131,9 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
                     ),
                   ],
                 ),
-                
+
                 SizedBox(height: 12.h),
-                
+
                 // Price filters and count
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -162,26 +148,38 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
                       ],
                     ),
                     Text(
-                      '${_filteredTemplates.length} Templates',
-                      style: AppTexts.bodyMedium(color: AppColors.textSecondary),
+                      '${filteredTemplates.length} Templates',
+                      style: AppTexts.bodyMedium(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-          
+
           // Content
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () => ref.read(templateProvider.notifier).fetchTemplates(page: 0, size: 20),
-              child: templateState.isInitialLoading
-                  ? _buildLoadingState()
-                  : templateState.message != null && !templateState.isDataAvailable
-                      ? _buildErrorState(templateState.message!)
-                      : _filteredTemplates.isEmpty
-                          ? _buildEmptyState()
-                          : _buildTemplateGrid(_filteredTemplates),
+              onRefresh: () => ref
+                  .read(templateProvider.notifier)
+                  .fetchTemplates(page: 0, size: 20),
+              child: templateState.when(
+                loading: _buildLoadingState,
+                error: (error, _) => _buildErrorState(error.toString()),
+                data: (state) {
+                  if (state.message != null && !state.isDataAvailable) {
+                    return _buildErrorState(state.message!);
+                  }
+
+                  if (filteredTemplates.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  return _buildTemplateGrid(filteredTemplates);
+                },
+              ),
             ),
           ),
         ],
@@ -196,7 +194,6 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
         setState(() {
           _selectedType = type;
         });
-        _applyFilters(ref.read(templateProvider).data ?? []);
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -224,7 +221,6 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
         setState(() {
           _selectedPriceFilter = filter;
         });
-        _applyFilters(ref.read(templateProvider).data ?? []);
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -255,7 +251,8 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
         childAspectRatio: 0.75,
       ),
       itemCount: 4,
-      itemBuilder: (context, index) => SkeletonCard(width: double.infinity, height: 400.h),
+      itemBuilder: (context, index) =>
+          SkeletonCard(width: double.infinity, height: 400.h),
     );
   }
 
@@ -275,8 +272,12 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
               Text(error, style: AppTexts.bodySmall(color: AppColors.grey600)),
               SizedBox(height: 16.h),
               ElevatedButton(
-                onPressed: () => ref.read(templateProvider.notifier).fetchTemplates(page: 0, size: 20),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+                onPressed: () => ref
+                    .read(templateProvider.notifier)
+                    .fetchTemplates(page: 0, size: 20),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                ),
                 child: const Text('Retry'),
               ),
             ],
@@ -295,11 +296,18 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.design_services_outlined, size: 64.sp, color: AppColors.grey400),
+              Icon(
+                Icons.design_services_outlined,
+                size: 64.sp,
+                color: AppColors.grey400,
+              ),
               SizedBox(height: 16.h),
               Text('No templates found', style: AppTexts.h4()),
               SizedBox(height: 8.h),
-              Text('Try adjusting your filters', style: AppTexts.bodySmall(color: AppColors.grey600)),
+              Text(
+                'Try adjusting your filters',
+                style: AppTexts.bodySmall(color: AppColors.grey600),
+              ),
             ],
           ),
         ),
@@ -309,7 +317,12 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
 
   Widget _buildTemplateGrid(List templates) {
     return GridView.builder(
-      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 80.h), // Added bottom padding
+      padding: EdgeInsets.fromLTRB(
+        16.w,
+        16.h,
+        16.w,
+        80.h,
+      ), // Added bottom padding
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 1,
         crossAxisSpacing: 16.w,
@@ -336,7 +349,10 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
     );
   }
 
-  Future<void> _handleTemplateClick(BuildContext context, dynamic template) async {
+  Future<void> _handleTemplateClick(
+    BuildContext context,
+    dynamic template,
+  ) async {
     // Navigate to template details screen
     context.push('/template-details/${template.id}', extra: template);
   }

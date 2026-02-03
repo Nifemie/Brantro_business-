@@ -8,6 +8,8 @@ import '../data/models/creative_order_request.dart';
 import '../data/models/creative_order_response.dart';
 import '../data/models/service_order_request.dart';
 import '../data/models/service_order_response.dart';
+import '../data/models/campaign_order_request.dart';
+import '../data/models/campaign_order_response.dart';
 
 final checkoutRepositoryProvider = Provider((ref) {
   final apiClient = ApiClient();
@@ -146,6 +148,45 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       );
     } catch (e, stack) {
       log('[CheckoutNotifier] Error submitting service order: $e\n$stack');
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: false,
+        message: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
+  }
+
+  Future<void> submitCampaignOrder(CampaignOrderRequest request) async {
+    log('[CheckoutNotifier] Submitting campaign order');
+    
+    state = state.copyWith(
+      isLoading: true,
+      isSuccess: false,
+      message: null,
+    );
+
+    try {
+      final response = await _repository.submitCampaignOrder(request);
+      log('[CheckoutNotifier] Campaign order submitted successfully: ${response.message}');
+
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: response.success,
+        message: response.message,
+        orderData: response.data != null 
+            ? TemplateOrderData(
+                orderId: response.data!.orderId,
+                reference: response.data!.reference,
+                status: response.data!.status,
+                amount: response.data!.amount,
+                currency: response.data!.currency,
+                paymentMethod: response.data!.paymentMethod,
+                createdAt: response.data!.createdAt,
+              )
+            : null,
+      );
+    } catch (e, stack) {
+      log('[CheckoutNotifier] Error submitting campaign order: $e\n$stack');
       state = state.copyWith(
         isLoading: false,
         isSuccess: false,

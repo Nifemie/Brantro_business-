@@ -11,23 +11,36 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 
 // Repository provider
 final templateRepositoryProvider = Provider<TemplateRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
+  final apiClient = ref.read(apiClientProvider);
   return TemplateRepository(apiClient);
 });
 
-// Notifier
-class TemplateNotifier extends StateNotifier<DataState<TemplateModel>> {
-  final TemplateRepository _repository;
+// Provider
+final templateProvider =
+    AsyncNotifierProvider<TemplateNotifier, DataState<TemplateModel>>(
+      TemplateNotifier.new,
+    );
 
-  TemplateNotifier(this._repository) : super(DataState.initial());
+// Notifier
+class TemplateNotifier extends AsyncNotifier<DataState<TemplateModel>> {
+  late final TemplateRepository _repository;
+
+  @override
+  Future<DataState<TemplateModel>> build() async {
+    _repository = ref.read(templateRepositoryProvider);
+
+    final templates = await _repository.fetchTemplates(page: 0, size: 20);
+
+    return DataState<TemplateModel>(
+      data: templates,
+      isDataAvailable: templates.isNotEmpty,
+      currentPage: 0,
+      message: templates.isEmpty ? 'No templates available' : null,
+    );
+  }
 
   Future<void> fetchTemplates({int page = 0, int size = 20}) async {
-    // Show initial loading only if no data exists
-    if (state.data == null || state.data!.isEmpty) {
-      state = state.copyWith(isInitialLoading: true, message: null);
-    } else {
-      state = state.copyWith(isPaginating: true, message: null);
-    }
+    state = const AsyncLoading();
 
     try {
       final templates = await _repository.fetchTemplates(
@@ -35,31 +48,22 @@ class TemplateNotifier extends StateNotifier<DataState<TemplateModel>> {
         size: size,
       );
 
-      state = state.copyWith(
-        data: templates,
-        isPaginating: false,
-        isInitialLoading: false,
-        isDataAvailable: true,
-        currentPage: page,
-        message: templates.isEmpty ? 'No templates available' : null,
+      state = AsyncData(
+        DataState<TemplateModel>(
+          data: templates,
+          isDataAvailable: templates.isNotEmpty,
+          currentPage: page,
+          message: templates.isEmpty ? 'No templates available' : null,
+        ),
       );
-    } catch (e) {
-      state = state.copyWith(
-        isPaginating: false,
-        isInitialLoading: false,
-        message: e.toString(),
-        isDataAvailable: state.data != null && state.data!.isNotEmpty,
-      );
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
     }
   }
 
   void clearError() {
-    state = state.copyWith(message: null);
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(message: null));
   }
 }
-
-// Provider
-final templateProvider = StateNotifierProvider<TemplateNotifier, DataState<TemplateModel>>((ref) {
-  final repository = ref.watch(templateRepositoryProvider);
-  return TemplateNotifier(repository);
-});

@@ -10,11 +10,13 @@ import '../../logic/ad_slot_details_notifier.dart';
 class AdSlotDetailsScreen extends ConsumerStatefulWidget {
   final String adSlotId;
   final AdSlot? initialData;
+  final bool hideBooking;
 
   const AdSlotDetailsScreen({
     super.key,
     required this.adSlotId,
     this.initialData,
+    this.hideBooking = false,
   });
 
   @override
@@ -306,6 +308,11 @@ class _AdSlotDetailsScreenState extends ConsumerState<AdSlotDetailsScreen>
   }
 
   Widget _buildPriceSection(AdSlot adSlot) {
+    // Hide the entire price section if hideBooking is true
+    if (widget.hideBooking) {
+      return SizedBox.shrink();
+    }
+    
     return Container(
       margin: EdgeInsets.only(top: 8.h),
       padding: EdgeInsets.all(16.w),
@@ -400,21 +407,23 @@ class _AdSlotDetailsScreenState extends ConsumerState<AdSlotDetailsScreen>
               ),
             ),
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Handle book
-              },
-              icon: Icon(Icons.shopping_cart, size: 18.sp),
-              label: Text('Book'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 12.h),
+          if (!widget.hideBooking) ...[
+            SizedBox(width: 12.w),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // TODO: Handle book
+                },
+                icon: Icon(Icons.shopping_cart, size: 18.sp),
+                label: Text('Book'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                ),
               ),
             ),
-          ),
+          ],
           SizedBox(width: 12.w),
           IconButton(
             onPressed: () {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 
@@ -25,50 +26,34 @@ class AccountMenuSection extends StatelessWidget {
             ),
           ),
           _buildMenuItem(
-            icon: Icons.shopping_bag_outlined,
-            title: 'Orders',
+            icon: Icons.business_center_outlined,
+            title: 'My Services',
             onTap: () {
-              // TODO: Navigate to Orders
+              // TODO: Navigate to My Services
             },
           ),
           _buildDivider(),
           _buildMenuItem(
-            icon: Icons.inbox_outlined,
-            title: 'Inbox',
+            icon: Icons.verified_outlined,
+            title: 'My Vetting Plans',
             onTap: () {
-              // TODO: Navigate to Inbox
+              // TODO: Navigate to My Vetting Plans
             },
           ),
           _buildDivider(),
           _buildMenuItem(
-            icon: Icons.star_outline,
-            title: 'Ratings & Reviews',
+            icon: Icons.design_services_outlined,
+            title: 'My Templates',
             onTap: () {
-              // TODO: Navigate to Ratings & Reviews
+              context.push('/my-templates');
             },
           ),
           _buildDivider(),
           _buildMenuItem(
-            icon: Icons.local_offer_outlined,
-            title: 'Vouchers',
+            icon: Icons.image_outlined,
+            title: 'My Creatives',
             onTap: () {
-              // TODO: Navigate to Vouchers
-            },
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.favorite_outline,
-            title: 'Wishlist',
-            onTap: () {
-              // TODO: Navigate to Wishlist
-            },
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.store_outlined,
-            title: 'Follow Artist',
-            onTap: () {
-              // TODO: Navigate to Follow Seller
+              context.push('/my-creatives');
             },
           ),
         ],

@@ -50,12 +50,26 @@ class ApiEndpoints {
   static const String templateList = '$apiVersion/template/list';
   static const String templateDetails = '$apiVersion/template/details'; // + /:id
   static const String templateOrder = '$apiVersion/template-order';
+  static const String myTemplates = '$apiVersion/template-order/mine';
 
   // Creative Endpoints
   static const String creativesList = '$apiVersion/creative/list';
   static const String creativeDetails = '$apiVersion/creative/details'; // + /:id
   static const String creativeOrder = '$apiVersion/creative-order';
+  static const String myCreatives = '$apiVersion/creative-order/mine';
   
   // Service Order Endpoint
   static const String serviceOrder = '$apiVersion/service-order';
+  
+  // Campaign Order Endpoint
+  static const String campaignOrder = '$apiVersion/ad-campaign';
+  
+  // My Campaigns Endpoint
+  static const String myCampaigns = '$apiVersion/ad-campaign/mine';
+  
+  // Campaign Details Endpoint
+  static const String campaignDetails = '$apiVersion/ad-campaign/details'; // + /:id
+  
+  // Cancel Campaign Endpoint
+  static String cancelCampaign(int campaignId) => '$apiVersion/ad-campaign/$campaignId/cancel';
 }

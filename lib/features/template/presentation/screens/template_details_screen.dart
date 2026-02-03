@@ -12,11 +12,13 @@ import '../widgets/template_added_sheet.dart';
 class TemplateDetailsScreen extends ConsumerStatefulWidget {
   final String templateId;
   final TemplateModel? initialData;
+  final bool isPurchased;
 
   const TemplateDetailsScreen({
     super.key,
     required this.templateId,
     this.initialData,
+    this.isPurchased = false,
   });
 
   @override
@@ -255,7 +257,7 @@ class _TemplateDetailsScreenState extends ConsumerState<TemplateDetailsScreen>
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Row(
                       children: [
-                        if (!template.isFree) ...[
+                        if (!template.isFree && !widget.isPurchased) ...[
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () {
@@ -276,16 +278,24 @@ class _TemplateDetailsScreenState extends ConsumerState<TemplateDetailsScreen>
                           SizedBox(width: 12.w),
                         ],
                         Expanded(
-                          flex: template.isFree ? 1 : 2,
+                          flex: (template.isFree || widget.isPurchased) ? 1 : 2,
                           child: ElevatedButton.icon(
                             onPressed: () => _handleAction(template),
                             icon: Icon(
-                              template.isFree ? Icons.download : Icons.shopping_cart_outlined,
+                              (template.isFree || widget.isPurchased) 
+                                  ? Icons.download 
+                                  : Icons.shopping_cart_outlined,
                               size: 18.sp,
                             ),
-                            label: Text(template.isFree ? 'Download Template' : 'Buy Now'),
+                            label: Text(
+                              (template.isFree || widget.isPurchased) 
+                                  ? 'Download Template' 
+                                  : 'Buy Now'
+                            ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
+                              backgroundColor: widget.isPurchased 
+                                  ? Colors.green 
+                                  : AppColors.primaryColor,
                               foregroundColor: Colors.white,
                               padding: EdgeInsets.symmetric(vertical: 14.h),
                               shape: RoundedRectangleBorder(
@@ -568,7 +578,7 @@ class _TemplateDetailsScreenState extends ConsumerState<TemplateDetailsScreen>
   }
 
   Future<void> _handleAction(TemplateModel template) async {
-    if (template.isFree) {
+    if (template.isFree || widget.isPurchased) {
       await _downloadTemplate(template);
     } else {
       if (mounted) {

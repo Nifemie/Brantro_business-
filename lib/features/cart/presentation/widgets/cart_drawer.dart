@@ -4,10 +4,57 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
+import '../../../../core/service/session_service.dart';
 import '../../logic/cart_notifier.dart';
 
 class CartDrawer extends ConsumerWidget {
   const CartDrawer({super.key});
+
+  Future<void> _handleCheckout(BuildContext context, String route) async {
+    final isLoggedIn = await SessionService.isLoggedIn();
+    
+    if (!isLoggedIn) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close drawer
+        _showLoginPrompt(context);
+      }
+      return;
+    }
+    
+    if (context.mounted) {
+      Navigator.pop(context);
+      context.push(route);
+    }
+  }
+
+  void _showLoginPrompt(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Login Required', style: AppTexts.h4()),
+        content: Text(
+          'You need to be logged in to checkout. Would you like to login now?',
+          style: AppTexts.bodyMedium(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push('/signin');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+            ),
+            child: Text('Login'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -82,10 +129,7 @@ class CartDrawer extends ConsumerWidget {
                             icon: Icons.design_services_outlined,
                             title: 'Templates',
                             count: templateCount,
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.push('/checkout?type=template');
-                            },
+                            onTap: () => _handleCheckout(context, '/checkout?type=template'),
                           ),
                         if (serviceCount > 0) ...[
                           SizedBox(height: 12.h),
@@ -94,10 +138,7 @@ class CartDrawer extends ConsumerWidget {
                             icon: Icons.miscellaneous_services_outlined,
                             title: 'Services',
                             count: serviceCount,
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.push('/service-setup');
-                            },
+                            onTap: () => _handleCheckout(context, '/service-setup'),
                           ),
                         ],
                         if (creativeCount > 0) ...[
@@ -107,10 +148,7 @@ class CartDrawer extends ConsumerWidget {
                             icon: Icons.palette_outlined,
                             title: 'Creatives',
                             count: creativeCount,
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.push('/checkout?type=creative');
-                            },
+                            onTap: () => _handleCheckout(context, '/checkout?type=creative'),
                           ),
                         ],
                         if (campaignCount > 0) ...[
@@ -120,10 +158,7 @@ class CartDrawer extends ConsumerWidget {
                             icon: Icons.campaign_outlined,
                             title: 'Campaigns',
                             count: campaignCount,
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.push('/checkout?type=campaign');
-                            },
+                            onTap: () => _handleCheckout(context, '/campaign-setup'),
                           ),
                         ],
                         SizedBox(height: 24.h),

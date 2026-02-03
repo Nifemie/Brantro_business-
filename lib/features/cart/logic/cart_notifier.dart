@@ -169,7 +169,14 @@ class CartNotifier extends StateNotifier<CartState> {
   }
 
   void clearItemsByType(String type) {
-    final updatedItems = state.items.where((item) => item.type != type).toList();
+    List<CartItem> updatedItems;
+    
+    // For campaign type, clear both 'adslot' and 'campaign' types
+    if (type == 'campaign') {
+      updatedItems = state.items.where((item) => item.type != 'campaign' && item.type != 'adslot').toList();
+    } else {
+      updatedItems = state.items.where((item) => item.type != type).toList();
+    }
     
     state = state.copyWith(
       items: updatedItems,
