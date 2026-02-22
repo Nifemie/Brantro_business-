@@ -8,23 +8,36 @@ import '../data/models/producer_model.dart';
 final apiClientProvider = Provider((ref) => ApiClient());
 
 final producerRepositoryProvider = Provider((ref) {
-  final apiClient = ref.watch(apiClientProvider);
+  final apiClient = ref.read(apiClientProvider);
   return ProducerRepository(apiClient);
 });
 
-class ProducersNotifier extends StateNotifier<DataState<ProducerModel>> {
-  final ProducerRepository _repository;
+class ProducersNotifier extends AsyncNotifier<DataState<ProducerModel>> {
+  late final ProducerRepository _repository;
 
-  ProducersNotifier(this._repository) : super(DataState.initial());
+  @override
+  Future<DataState<ProducerModel>> build() async {
+    _repository = ref.read(producerRepositoryProvider);
+
+    final response = await _repository.getProducers(page: 1, limit: 10);
+    log(
+      '[ProducersNotifier] Successfully fetched ${response.payload.producers.length} producers',
+    );
+
+    return DataState<ProducerModel>(
+      data: response.payload.producers,
+      isDataAvailable: response.payload.producers.isNotEmpty,
+      currentPage: response.payload.currentPage,
+      totalPages: response.payload.totalPages,
+      message: response.payload.producers.isEmpty
+          ? 'No producers available'
+          : null,
+    );
+  }
 
   Future<void> fetchProducers({int page = 1, int limit = 10}) async {
     log('[ProducersNotifier] Fetching producers with page=$page, limit=$limit');
-    
-    state = state.copyWith(
-      isInitialLoading: true,
-      message: null,
-      isDataAvailable: false,
-    );
+    state = const AsyncLoading();
 
     try {
       final response = await _repository.getProducers(page: page, limit: limit);
@@ -32,38 +45,35 @@ class ProducersNotifier extends StateNotifier<DataState<ProducerModel>> {
         '[ProducersNotifier] Successfully fetched ${response.payload.producers.length} producers',
       );
 
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: true,
-        data: response.payload.producers,
-        currentPage: response.payload.currentPage,
-        totalPages: response.payload.totalPages,
-        message: null,
+      state = AsyncData(
+        DataState<ProducerModel>(
+          data: response.payload.producers,
+          isDataAvailable: response.payload.producers.isNotEmpty,
+          currentPage: response.payload.currentPage,
+          totalPages: response.payload.totalPages,
+          message: null,
+        ),
       );
-    } catch (e, stack) {
-      log('[ProducersNotifier] Error fetching producers: $e\n$stack');
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: false,
-        message: e.toString().replaceAll('Exception: ', ''),
-      );
+    } catch (e, stackTrace) {
+      log('[ProducersNotifier] Error fetching producers: $e\n$stackTrace');
+      state = AsyncError(e, stackTrace);
     }
   }
 
   /// Clear any error messages
   void clearMessage() {
-    state = state.copyWith(message: null);
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(message: null));
   }
 
   /// Reset state to initial
   void reset() {
-    state = DataState.initial();
+    state = AsyncData(DataState.initial());
   }
 }
 
-final producersProvider = StateNotifierProvider<ProducersNotifier, DataState<ProducerModel>>(
-  (ref) {
-    final repository = ref.watch(producerRepositoryProvider);
-    return ProducersNotifier(repository);
-  },
-);
+final producersProvider =
+    AsyncNotifierProvider<ProducersNotifier, DataState<ProducerModel>>(
+      ProducersNotifier.new,
+    );

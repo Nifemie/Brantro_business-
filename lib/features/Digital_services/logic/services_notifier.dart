@@ -10,10 +10,8 @@ final serviceRepositoryProvider = Provider((ref) {
   return ServiceRepository(apiClient);
 });
 
-class ServicesNotifier extends StateNotifier<DataState<ServiceModel>> {
-  final ServiceRepository _repository;
-
-  ServicesNotifier(this._repository) : super(DataState.initial());
+class ServicesNotifier extends AsyncNotifier<DataState<ServiceModel>> {
+  late final ServiceRepository _repository;
 
   String _getUserFriendlyError(dynamic error) {
     final errorString = error.toString().toLowerCase();
@@ -38,66 +36,83 @@ class ServicesNotifier extends StateNotifier<DataState<ServiceModel>> {
     }
   }
 
+  @override
+  Future<DataState<ServiceModel>> build() async {
+    _repository = ref.read(serviceRepositoryProvider);
+    final response = await _repository.getServices(page: 0, size: 10);
+    log(
+      '[ServicesNotifier] Successfully fetched ${response.services.length} services',
+    );
+
+    return DataState<ServiceModel>(
+      data: response.services,
+      isDataAvailable: response.services.isNotEmpty,
+      currentPage: response.currentPage,
+      totalPages: response.totalPages,
+      message: response.services.isEmpty ? 'No services available' : null,
+    );
+  }
+
   Future<void> fetchServices({int page = 0, int size = 10}) async {
     log('[ServicesNotifier] Fetching services with page=$page, size=$size');
-
-    state = state.copyWith(
-      isInitialLoading: true,
-      message: null,
-      isDataAvailable: false,
-    );
+    state = const AsyncLoading();
 
     try {
       final response = await _repository.getServices(page: page, size: size);
-      log('[ServicesNotifier] Successfully fetched ${response.services.length} services');
+      log(
+        '[ServicesNotifier] Successfully fetched ${response.services.length} services',
+      );
 
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: true,
-        data: response.services,
-        currentPage: response.currentPage,
-        totalPages: response.totalPages,
-        message: null,
+      state = AsyncData(
+        DataState<ServiceModel>(
+          data: response.services,
+          isDataAvailable: response.services.isNotEmpty,
+          currentPage: response.currentPage,
+          totalPages: response.totalPages,
+          message: null,
+        ),
       );
-    } catch (e, stack) {
-      log('[ServicesNotifier] Error fetching services: $e\n$stack');
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: false,
-        message: _getUserFriendlyError(e),
-      );
+    } catch (e, stackTrace) {
+      log('[ServicesNotifier] Error fetching services: $e\n$stackTrace');
+      state = AsyncError(e, stackTrace);
     }
   }
 
   Future<void> loadMore() async {
-    if (state.isPaginating || !state.isDataAvailable) return;
+    final current = state.asData?.value;
+    if (current == null || current.isPaginating || !current.isDataAvailable) {
+      return;
+    }
 
-    final nextPage = state.currentPage + 1;
-    if (nextPage >= state.totalPages) return;
+    final nextPage = current.currentPage + 1;
+    if (nextPage >= current.totalPages) return;
 
     log('[ServicesNotifier] Loading more services, page=$nextPage');
 
-    state = state.copyWith(isPaginating: true, message: null);
+    state = AsyncData(current.copyWith(isPaginating: true, message: null));
 
     try {
-      final response = await _repository.getServices(
-        page: nextPage,
-        size: 10,
+      final response = await _repository.getServices(page: nextPage, size: 10);
+      log(
+        '[ServicesNotifier] Successfully loaded ${response.services.length} more services',
       );
-      log('[ServicesNotifier] Successfully loaded ${response.services.length} more services');
 
-      state = state.copyWith(
-        isPaginating: false,
-        data: [...(state.data ?? []), ...response.services],
-        currentPage: response.currentPage,
-        totalPages: response.totalPages,
-        message: null,
+      state = AsyncData(
+        current.copyWith(
+          isPaginating: false,
+          data: [...(current.data ?? []), ...response.services],
+          currentPage: response.currentPage,
+          totalPages: response.totalPages,
+          message: null,
+        ),
       );
     } catch (e, stack) {
       log('[ServicesNotifier] Error loading more services: $e\n$stack');
-      state = state.copyWith(
-        isPaginating: false,
-        message: _getUserFriendlyError(e),
+      state = AsyncData(
+        current.copyWith(
+          isPaginating: false,
+          message: _getUserFriendlyError(e),
+        ),
       );
     }
   }
@@ -110,11 +125,7 @@ class ServicesNotifier extends StateNotifier<DataState<ServiceModel>> {
 
     log('[ServicesNotifier] Searching services with query: $query');
 
-    state = state.copyWith(
-      isInitialLoading: true,
-      message: null,
-      isDataAvailable: false,
-    );
+    state = const AsyncLoading();
 
     try {
       final response = await _repository.searchServices(
@@ -122,39 +133,37 @@ class ServicesNotifier extends StateNotifier<DataState<ServiceModel>> {
         page: 0,
         size: 10,
       );
-      log('[ServicesNotifier] Successfully found ${response.services.length} services');
+      log(
+        '[ServicesNotifier] Successfully found ${response.services.length} services',
+      );
 
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: true,
-        data: response.services,
-        currentPage: response.currentPage,
-        totalPages: response.totalPages,
-        message: null,
+      state = AsyncData(
+        DataState<ServiceModel>(
+          data: response.services,
+          isDataAvailable: response.services.isNotEmpty,
+          currentPage: response.currentPage,
+          totalPages: response.totalPages,
+          message: null,
+        ),
       );
     } catch (e, stack) {
       log('[ServicesNotifier] Error searching services: $e\n$stack');
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: false,
-        message: _getUserFriendlyError(e),
-      );
+      state = AsyncError(e, stack);
     }
   }
 
   void clearMessage() {
-    state = state.copyWith(message: null);
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(message: null));
   }
 
   void reset() {
-    state = DataState.initial();
+    state = AsyncData(DataState.initial());
   }
 }
 
 final servicesProvider =
-    StateNotifierProvider<ServicesNotifier, DataState<ServiceModel>>(
-  (ref) {
-    final repository = ref.watch(serviceRepositoryProvider);
-    return ServicesNotifier(repository);
-  },
-);
+    AsyncNotifierProvider<ServicesNotifier, DataState<ServiceModel>>(
+      ServicesNotifier.new,
+    );

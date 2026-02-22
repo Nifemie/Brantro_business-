@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/data/data_state.dart';
 import '../../../core/network/api_client.dart';
@@ -33,8 +32,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
   }
 
   Future<void> loadAdSlots({bool refresh = false}) async {
-    log('[AdSlotNotifier] Loading ad slots, refresh=$refresh');
-    
     if (refresh) {
       state = DataState.initial();
     }
@@ -47,7 +44,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
 
     try {
       final response = await _adSlotService.fetchAdSlots(page: 0, size: 20);
-      log('[AdSlotNotifier] Successfully loaded ${response.adSlots.length} ad slots');
       
       state = state.copyWith(
         isInitialLoading: false,
@@ -58,7 +54,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
         message: null,
       );
     } catch (e, stack) {
-      log('[AdSlotNotifier] Error loading ad slots: $e\n$stack');
       state = state.copyWith(
         isInitialLoading: false,
         isDataAvailable: false,
@@ -72,8 +67,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
     
     final nextPage = state.currentPage + 1;
     if (nextPage >= state.totalPages) return;
-
-    log('[AdSlotNotifier] Loading more ad slots, page=$nextPage');
     
     state = state.copyWith(isPaginating: true, message: null);
 
@@ -82,7 +75,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
         page: nextPage,
         size: 20,
       );
-      log('[AdSlotNotifier] Successfully loaded ${response.adSlots.length} more ad slots');
 
       state = state.copyWith(
         isPaginating: false,
@@ -92,7 +84,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
         message: null,
       );
     } catch (e, stack) {
-      log('[AdSlotNotifier] Error loading more ad slots: $e\n$stack');
       state = state.copyWith(
         isPaginating: false,
         message: _getUserFriendlyError(e),
@@ -114,8 +105,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
       await loadAdSlots(refresh: true);
       return;
     }
-
-    log('[AdSlotNotifier] Searching ad slots with query: $query');
     
     state = state.copyWith(
       isInitialLoading: true,
@@ -129,7 +118,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
         page: 0,
         size: 20,
       );
-      log('[AdSlotNotifier] Successfully found ${response.adSlots.length} ad slots');
       
       state = state.copyWith(
         isInitialLoading: false,
@@ -140,7 +128,6 @@ class AdSlotNotifier extends StateNotifier<DataState<AdSlot>> {
         message: null,
       );
     } catch (e, stack) {
-      log('[AdSlotNotifier] Error searching ad slots: $e\n$stack');
       state = state.copyWith(
         isInitialLoading: false,
         isDataAvailable: false,

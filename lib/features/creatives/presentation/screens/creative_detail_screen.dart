@@ -92,9 +92,9 @@ class CreativeDetailScreen extends ConsumerWidget {
       color: AppColors.grey100,
       child: Stack(
         children: [
-          if (creative.thumbnail != null && creative.thumbnail!.isNotEmpty)
+          if (creative.thumbnailUrl != null && creative.thumbnailUrl!.isNotEmpty)
             Image.network(
-              creative.thumbnail!,
+              creative.thumbnailUrl!,
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
@@ -157,7 +157,7 @@ class CreativeDetailScreen extends ConsumerWidget {
           Text(creative.title, style: AppTexts.h2()),
           SizedBox(height: 12.h),
           Text(
-            creative.description,
+            creative.cleanDescription,
             style: AppTexts.bodyMedium(color: AppColors.grey600),
           ),
           SizedBox(height: 20.h),
@@ -547,9 +547,9 @@ class CreativeDetailScreen extends ConsumerWidget {
                       id: creative.id.toString(),
                       type: 'creative',
                       title: creative.title,
-                      description: creative.description,
+                      description: creative.cleanDescription,
                       price: creative.formattedPrice,
-                      imageUrl: creative.thumbnail,
+                      imageUrl: creative.thumbnailUrl,
                       sellerName: creative.owner?.name ?? 'Brantro Africa',
                       sellerType: creative.type,
                       metadata: {

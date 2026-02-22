@@ -170,7 +170,7 @@ class _IntroWrapperState extends State<IntroWrapper> {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () {
-                        print('DEBUG: User tapped Log In button');
+                        // print('DEBUG: User tapped Log In button');
                         context.push('/signin');
                       },
                       style: OutlinedButton.styleFrom(

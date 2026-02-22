@@ -19,15 +19,6 @@ class RadioStationSection extends ConsumerStatefulWidget {
 
 class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
   @override
-  void initState() {
-    super.initState();
-    // Fetch radio stations on load
-    Future.microtask(() {
-      ref.read(radioStationsProvider.notifier).fetchRadioStations(0, 10);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final radioStationsState = ref.watch(radioStationsProvider);
 
@@ -56,73 +47,94 @@ class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
           ),
         ),
         SizedBox(height: 12.h),
-        radioStationsState.isInitialLoading
-            ? SkeletonHorizontalList(
-                cardWidth: 320.w,
-                cardHeight: 340.h,
-                itemCount: 3,
-                isProfileCard: true,
-              )
-            : SizedBox(
-          height: 340.h,
-          child: radioStationsState.message != null && !radioStationsState.isDataAvailable
-              ? Center(
-                  child: Text(
-                    'Error loading radio stations',
-                    style: AppTexts.bodyMedium(color: AppColors.textPrimary),
-                  ),
-                )
-              : (radioStationsState.data ?? []).isEmpty
-              ? Center(
+        radioStationsState.when(
+          loading: () => SkeletonHorizontalList(
+            cardWidth: 320.w,
+            cardHeight: 340.h,
+            itemCount: 3,
+            isProfileCard: true,
+          ),
+          error: (error, _) => SizedBox(
+            height: 340.h,
+            child: Center(
+              child: Text(
+                'Error loading radio stations',
+                style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+              ),
+            ),
+          ),
+          data: (state) {
+            final stations = state.data ?? [];
+
+            if (stations.isEmpty) {
+              return SizedBox(
+                height: 340.h,
+                child: Center(
                   child: Text(
                     'No radio stations available',
                     style: AppTexts.bodyMedium(color: AppColors.textPrimary),
                   ),
-                )
-              : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: PlatformResponsive.symmetric(horizontal: 16),
-                  itemCount: (radioStationsState.data ?? []).length,
-                  itemBuilder: (context, index) {
-                    final station = (radioStationsState.data ?? [])[index];
-                    final location = [
-                      station.city,
-                      station.state,
-                      station.country,
-                    ].where((e) => e != null).join(', ');
+                ),
+              );
+            }
 
-                    return Padding(
-                      padding: EdgeInsets.only(right: 16.w),
-                      child: RadioStationCard(
-                        stationName:
-                            station.additionalInfo?.businessName ??
-                            station.name,
-                        location: location.isEmpty ? 'Unknown' : location,
-                        stationType:
-                            station.additionalInfo?.broadcastBand ?? 'FM',
-                        rating: station.averageRating,
-                        favorites: station.totalLikes,
-                        yearsOnAir:
-                            station.additionalInfo?.yearsOfOperation ?? 0,
-                        categories: station.additionalInfo?.contentFocus ?? [],
-                        onBookAdSlot: () {
-                          context.push('/seller-ad-slots/${station.id}', extra: {
-                            'sellerName': station.additionalInfo?.businessName ?? station.name,
+            return SizedBox(
+              height: 340.h,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: PlatformResponsive.symmetric(horizontal: 16),
+                itemCount: stations.length,
+                itemBuilder: (context, index) {
+                  final station = stations[index];
+                  final location = [
+                    station.city,
+                    station.state,
+                    station.country,
+                  ].where((e) => e != null).join(', ');
+
+                  return Padding(
+                    padding: EdgeInsets.only(right: 16.w),
+                    child: RadioStationCard(
+                      stationName:
+                          station.additionalInfo?.businessName ?? station.name,
+                      location: location.isEmpty ? 'Unknown' : location,
+                      stationType:
+                          station.additionalInfo?.broadcastBand ?? 'FM',
+                      rating: station.averageRating,
+                      favorites: station.totalLikes,
+                      yearsOnAir: station.additionalInfo?.yearsOfOperation ?? 0,
+                      categories: station.additionalInfo?.contentFocus ?? [],
+                      onBookAdSlot: () {
+                        context.push(
+                          '/seller-ad-slots/${station.id}',
+                          extra: {
+                            'sellerName':
+                                station.additionalInfo?.businessName ??
+                                station.name,
                             'sellerAvatar': station.avatarUrl,
                             'sellerType': 'Radio Station',
-                          });
-                        },
-                        onViewProfile: () {
-                          context.push('/view-profile', extra: {
+                          },
+                        );
+                      },
+                      onViewProfile: () {
+                        context.push(
+                          '/view-profile',
+                          extra: {
                             'userId': station.id,
-                            'name': station.additionalInfo?.businessName ?? station.name,
+                            'name':
+                                station.additionalInfo?.businessName ??
+                                station.name,
                             'avatar': station.avatarUrl,
                             'location': location,
-                            'about': 'Professional Radio Station available for verified advertising, partnerships, and brand collaborations on Brantro.',
-                            'genres': station.additionalInfo?.contentFocus ?? [],
-                            'experience': '${station.additionalInfo?.yearsOfOperation ?? 0} yrs',
+                            'about':
+                                'Professional Radio Station available for verified advertising, partnerships, and brand collaborations on Brantro.',
+                            'genres':
+                                station.additionalInfo?.contentFocus ?? [],
+                            'experience':
+                                '${station.additionalInfo?.yearsOfOperation ?? 0} yrs',
                             'projects': '0',
-                            'specialization': station.additionalInfo?.broadcastBand ?? 'FM',
+                            'specialization':
+                                station.additionalInfo?.broadcastBand ?? 'FM',
                             'profession': 'Radio Station',
                             'rating': station.averageRating.toString(),
                             'likes': station.totalLikes.toString(),
@@ -133,12 +145,15 @@ class _RadioStationSectionState extends ConsumerState<RadioStationSection> {
                               'Transparent pricing',
                               'Campaign performance tracking',
                             ],
-                          });
-                        },
-                      ),
-                    );
-                  },
-                ),
+                          },
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ],
     );

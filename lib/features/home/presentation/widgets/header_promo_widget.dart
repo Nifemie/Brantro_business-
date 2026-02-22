@@ -18,7 +18,19 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
   final PageController _promoController = PageController();
   Timer? _autoPlayTimer;
   int _currentPage = 0;
-  static const int _totalPages = 5;
+  static const int _totalPages = 9;
+
+  final List<String> _promoImages = [
+    'assets/promotions/intro4.jpg',
+    'assets/promotions/intro5.jpg',
+    'assets/promotions/intro3.jpg',
+    'assets/promotions/billboard2.jpg',
+    'assets/promotions/billboard3.jpg',
+    'assets/promotions/billboard1.jpg',
+    'assets/promotions/radio1.jpg',
+    'assets/promotions/radio2.png',
+    'assets/promotions/tv1.jpg',
+  ];
 
   @override
   void initState() {
@@ -27,12 +39,12 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
   }
 
   void _startAutoPlay() {
-    _autoPlayTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (_promoController.hasClients) {
         _currentPage = (_currentPage + 1) % _totalPages;
         _promoController.animateToPage(
           _currentPage,
-          duration: const Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
         );
       }
@@ -48,128 +60,45 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryColor,
-            AppColors.primaryColor.withOpacity(0.8),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Column(children: [_buildPromoCarousel()]),
-      ),
-    );
-  }
-
-  // --- Layout Helper Widgets ---
-
-  Widget _buildSearchAndActionsRow() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Row(
-        children: [
-          Expanded(
-            child: SearchBarWidget(
-              hintText: 'Search Product',
-              readOnly: true,
-              onTap: () => context.push('/search'),
-            ),
-          ),
-          SizedBox(width: 12.w),
-          GestureDetector(
-            onTap: () {
-              FilterBottomSheet.show(context);
-            },
-            child: Icon(Icons.tune, color: Colors.white, size: 24.sp),
-          ),
-          SizedBox(width: 12.w),
-          _buildNotificationIcon(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationIcon() {
-    return GestureDetector(
-      onTap: () => context.push('/notification'),
-      child: Stack(
-        children: [
-          Icon(Icons.notifications_none, color: Colors.white, size: 24.sp),
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE57373),
-                shape: BoxShape.circle,
-              ),
-              constraints: BoxConstraints(minWidth: 12.w, minHeight: 12.h),
-              child: Text(
-                '8',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 7.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return SafeArea(
+      bottom: false,
+      child: _buildPromoCarousel(),
     );
   }
 
   Widget _buildPromoCarousel() {
-    return Column(
+    return Stack(
       children: [
         SizedBox(
-          height: 320.h, // Fixed height for the carousel
-          child: PageView(
+          height: 240.h,
+          child: PageView.builder(
             controller: _promoController,
-            children: [
-              _buildPromoContent(
-                title: 'Your Brand\nEverywhere in\nNigeria.',
-                buttonText: 'Explore Advertisement Options',
-              ),
-              _buildPromoContent(
-                title: 'Connect With\nTop Artists\nToday.',
-                buttonText: 'Browse Artists',
-                imagePath: 'assets/promotions/ayra2-removebg-preview.png',
-              ),
-              _buildPromoContent(
-                title: 'Reach Millions\nAcross Nigeria\nNow.',
-                buttonText: 'Get Started',
-              ),
-              _buildPromoContent(
-                title: 'Secure &\nVerified\nServices.',
-                buttonText: 'Vetting Available',
-                onTap: () => context.push('/vetting'),
-              ),
-              _buildPromoContent(
-                title: 'Free Design\nTemplates\nAvailable.',
-                buttonText: 'Browse Templates',
-                onTap: () => context.push('/template'),
-              ),
-            ],
+            itemCount: _promoImages.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return _buildPromoImage(_promoImages[index]);
+            },
           ),
         ),
-        Padding(
-          padding: EdgeInsets.only(bottom: 12.h),
-          child: SmoothPageIndicator(
-            controller: _promoController,
-            count: 5,
-            effect: ExpandingDotsEffect(
-              activeDotColor: Colors.white,
-              dotColor: Colors.white.withOpacity(0.5),
-              dotHeight: 4.h,
-              dotWidth: 8.w,
+        Positioned(
+          bottom: 12.h,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: SmoothPageIndicator(
+              controller: _promoController,
+              count: _totalPages,
+              effect: ExpandingDotsEffect(
+                activeDotColor: Colors.white,
+                dotColor: Colors.white.withOpacity(0.5),
+                dotHeight: 6.h,
+                dotWidth: 10.w,
+                expansionFactor: 3,
+              ),
             ),
           ),
         ),
@@ -177,119 +106,24 @@ class _HeaderPromoWidgetState extends State<HeaderPromoWidget> {
     );
   }
 
-  Widget _buildPromoContent({
-    required String title,
-    required String buttonText,
-    String? imagePath,
-    VoidCallback? onTap,
-  }) {
-    // Split title into lines
-    final lines = title.split('\n');
-    final firstLine = lines.isNotEmpty ? lines[0] : '';
-    final remainingLines = lines.length > 1 ? lines.sublist(1).join('\n') : '';
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Row(
-        children: [
-          // LEFT SIDE: TEXT
-          Expanded(
-            flex: imagePath != null ? 5 : 6,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Main headline with orange and white text
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '$firstLine\n',
-                          style: TextStyle(
-                            fontSize: 26.sp,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFFF6B35), // Orange color
-                            height: 1.2,
-                          ),
-                        ),
-                        if (remainingLines.isNotEmpty)
-                          TextSpan(
-                            text: remainingLines,
-                            style: TextStyle(
-                              fontSize: 26.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.2,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-                  // CTA Button
-                  ElevatedButton(
-                    onPressed: onTap ?? () {
-                      // Navigate based on button text
-                      if (buttonText == 'Explore Advertisement Options') {
-                        context.push('/explore');
-                      } else if (buttonText == 'Browse Artists') {
-                        context.push('/explore?category=Artists');
-                      } else if (buttonText == 'Get Started') {
-                        context.push('/explore');
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6B35), // Orange
-                      foregroundColor: Colors.white,
-                      elevation: 4,
-                      shadowColor: const Color(0xFFFF6B35).withOpacity(0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.r),
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 32.w,
-                        vertical: 14.h,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          buttonText,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Icon(Icons.arrow_forward_rounded, size: 18.sp),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+  Widget _buildPromoImage(String imagePath) {
+    return Image.asset(
+      imagePath,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: AppColors.primaryColor.withOpacity(0.3),
+          child: Center(
+            child: Icon(
+              Icons.image_not_supported,
+              color: Colors.white.withOpacity(0.5),
+              size: 48.sp,
             ),
           ),
-          // RIGHT SIDE: IMAGE (if provided)
-          if (imagePath != null) ...[
-            SizedBox(width: 16.w),
-            Expanded(
-              flex: 4,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12.r),
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  height: 270.h,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }

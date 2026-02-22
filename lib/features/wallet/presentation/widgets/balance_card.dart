@@ -112,31 +112,31 @@ class _BalanceCardState extends State<BalanceCard> {
 
           SizedBox(height: 12.h),
 
-          // Pending balance
-          if (double.tryParse(widget.pendingBalance) != null &&
-              double.parse(widget.pendingBalance) > 0)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    color: Colors.white,
-                    size: 16.sp,
-                  ),
-                  SizedBox(width: 6.w),
-                  Text(
-                    'Pending: ${widget.currency} ${_formatAmount(widget.pendingBalance)}',
-                    style: AppTexts.bodySmall(color: Colors.white),
-                  ),
-                ],
-              ),
+          // Pending balance - always show
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8.r),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.schedule,
+                  color: Colors.white,
+                  size: 16.sp,
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  _isBalanceVisible
+                      ? 'Pending: ${widget.currency} ${_formatAmount(widget.pendingBalance)}'
+                      : 'Pending: ${widget.currency} ••••••',
+                  style: AppTexts.bodySmall(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

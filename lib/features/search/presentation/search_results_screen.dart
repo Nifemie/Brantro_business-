@@ -6,10 +6,14 @@ import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
 import '../../../controllers/re_useable/filter_bottom_sheet.dart';
 import '../../../core/widgets/skeleton_loading.dart';
+import '../../../core/data/data_state.dart';
+import '../../../core/utils/avatar_helper.dart';
 import '../../home/presentation/widgets/ad_slot_card.dart';
 import '../../home/presentation/widgets/artist_profile_card.dart';
 import '../../ad_slot/logic/ad_slot_notifier.dart';
 import '../../artist/logic/artists_notifier.dart';
+import '../../ad_slot/data/models/ad_slot_model.dart';
+import '../../artist/data/models/artist_model.dart';
 
 class SearchResultsScreen extends ConsumerStatefulWidget {
   final String searchQuery;
@@ -142,7 +146,8 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen>
     );
   }
 
-  Widget _buildAdSlotsTab(adSlotState) {
+  Widget _buildAdSlotsTab(DataState<AdSlot> adSlotState) {
+    // adSlotProvider is a StateNotifierProvider, so it returns DataState directly
     if (adSlotState.isInitialLoading) {
       return SizedBox(
         height: 480.h,
@@ -176,25 +181,27 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen>
     return _buildAdSlotsList(filteredSlots);
   }
 
-  Widget _buildUsersTab(usersState) {
-    if (usersState.isInitialLoading) {
-      return ListView.builder(
+  Widget _buildUsersTab(AsyncValue<DataState<ArtistModel>> usersState) {
+    return usersState.when(
+      loading: () => ListView.builder(
         padding: EdgeInsets.all(16.w),
         itemCount: 3,
         itemBuilder: (context, index) => SkeletonListItem(),
-      );
-    }
+      ),
+      error: (error, _) => _buildErrorState('Error loading users'),
+      data: (state) {
+        if (state.message != null && !state.isDataAvailable) {
+          return _buildErrorState('Error loading users');
+        }
 
-    if (usersState.message != null && !usersState.isDataAvailable) {
-      return _buildErrorState('Error loading users');
-    }
+        final users = state.data ?? [];
+        if (users.isEmpty) {
+          return _buildEmptyState('No users found');
+        }
 
-    final users = usersState.data ?? [];
-    if (users.isEmpty) {
-      return _buildEmptyState('No users found');
-    }
-
-    return _buildUsersList(users);
+        return _buildUsersList(users);
+      },
+    );
   }
 
   Widget _buildErrorState(String message) {
@@ -288,7 +295,10 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen>
           padding: EdgeInsets.only(bottom: 16.h),
           child: ArtistProfileCard(
             userId: artist.id,
-            profileImage: artist.avatarUrl ?? '',
+            profileImage: AvatarHelper.getAvatar(
+              avatarUrl: artist.avatarUrl,
+              userId: artist.id,
+            ),
             name: artist.additionalInfo?.stageName ?? artist.name,
             location: location,
             tags: artist.additionalInfo?.genres ?? [],

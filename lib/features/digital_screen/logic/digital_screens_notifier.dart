@@ -8,62 +8,81 @@ import '../data/models/digital_screen_model.dart';
 final apiClientProvider = Provider((ref) => ApiClient());
 
 final digitalScreenRepositoryProvider = Provider((ref) {
-  final apiClient = ref.watch(apiClientProvider);
+  final apiClient = ref.read(apiClientProvider);
   return DigitalScreenRepository(apiClient);
 });
 
-class DigitalScreensNotifier extends StateNotifier<DataState<DigitalScreenModel>> {
-  final DigitalScreenRepository _repository;
+class DigitalScreensNotifier
+    extends AsyncNotifier<DataState<DigitalScreenModel>> {
+  late final DigitalScreenRepository _repository;
 
-  DigitalScreensNotifier(this._repository) : super(DataState.initial());
+  @override
+  Future<DataState<DigitalScreenModel>> build() async {
+    _repository = ref.read(digitalScreenRepositoryProvider);
 
-  Future<void> fetchDigitalScreens({int page = 0, int size = 15}) async {
-    log('[DigitalScreensNotifier] Fetching digital screens with page=$page, size=$size');
-    
-    state = state.copyWith(
-      isInitialLoading: true,
-      message: null,
-      isDataAvailable: false,
+    final response = await _repository.getDigitalScreens(page: 0, size: 15);
+    log(
+      '[DigitalScreensNotifier] Successfully fetched ${response.payload.screens.length} digital screens',
     );
 
+    return DataState<DigitalScreenModel>(
+      data: response.payload.screens,
+      isDataAvailable: response.payload.screens.isNotEmpty,
+      currentPage: int.tryParse(response.payload.currentPage) ?? 0,
+      totalPages: response.payload.totalPages,
+      message: response.payload.screens.isEmpty
+          ? 'No digital screens available'
+          : null,
+    );
+  }
+
+  Future<void> fetchDigitalScreens({int page = 0, int size = 15}) async {
+    log(
+      '[DigitalScreensNotifier] Fetching digital screens with page=$page, size=$size',
+    );
+    state = const AsyncLoading();
+
     try {
-      final response = await _repository.getDigitalScreens(page: page, size: size);
+      final response = await _repository.getDigitalScreens(
+        page: page,
+        size: size,
+      );
       log(
         '[DigitalScreensNotifier] Successfully fetched ${response.payload.screens.length} digital screens',
       );
 
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: true,
-        data: response.payload.screens,
-        currentPage: int.tryParse(response.payload.currentPage) ?? 0,
-        totalPages: response.payload.totalPages,
-        message: null,
+      state = AsyncData(
+        DataState<DigitalScreenModel>(
+          data: response.payload.screens,
+          isDataAvailable: response.payload.screens.isNotEmpty,
+          currentPage: int.tryParse(response.payload.currentPage) ?? 0,
+          totalPages: response.payload.totalPages,
+          message: null,
+        ),
       );
-    } catch (e, stack) {
-      log('[DigitalScreensNotifier] Error fetching digital screens: $e\n$stack');
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: false,
-        message: e.toString().replaceAll('Exception: ', ''),
+    } catch (e, stackTrace) {
+      log(
+        '[DigitalScreensNotifier] Error fetching digital screens: $e\n$stackTrace',
       );
+      state = AsyncError(e, stackTrace);
     }
   }
 
   /// Clear any error messages
   void clearMessage() {
-    state = state.copyWith(message: null);
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(message: null));
   }
 
   /// Reset state to initial
   void reset() {
-    state = DataState.initial();
+    state = AsyncData(DataState.initial());
   }
 }
 
-final digitalScreensProvider = StateNotifierProvider<DigitalScreensNotifier, DataState<DigitalScreenModel>>(
-  (ref) {
-    final repository = ref.watch(digitalScreenRepositoryProvider);
-    return DigitalScreensNotifier(repository);
-  },
-);
+final digitalScreensProvider =
+    AsyncNotifierProvider<
+      DigitalScreensNotifier,
+      DataState<DigitalScreenModel>
+    >(DigitalScreensNotifier.new);

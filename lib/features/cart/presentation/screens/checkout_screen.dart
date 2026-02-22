@@ -13,12 +13,17 @@ import '../../data/models/creative_order_request.dart';
 import '../../data/models/service_order_request.dart';
 import '../../data/models/campaign_order_request.dart';
 import '../../../wallet/logic/wallet_notifier.dart';
+import '../../../payment/logic/payment_notifier.dart';
+import '../../../payment/utils/payment_helper.dart';
+import '../../../auth/logic/auth_notifiers.dart';
 import '../../../../core/utils/pricing_calculator.dart';
 import '../../../../core/utils/reference_generator.dart';
+import '../../../../core/data/data_state.dart';
 import '../widgets/payment_method_section.dart';
 import '../widgets/checkout_header.dart';
 import '../widgets/order_summary.dart';
 import '../widgets/cart_item_card.dart';
+import '../widgets/order_success_modal.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -67,39 +72,26 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     // Listen to checkout state changes
     ref.listen<CheckoutState>(checkoutProvider, (previous, next) {
-      if (next.message != null) {
+      if (next.message != null && !next.isSuccess) {
+        // Only show error snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message!),
-            backgroundColor: next.isSuccess ? Colors.green : Colors.red,
+            backgroundColor: Colors.red,
           ),
         );
+      }
+      
+      if (next.isSuccess) {
+        // Clear only the items that were checked out
+        ref.read(cartProvider.notifier).clearItemsByType(checkoutType);
         
-        if (next.isSuccess) {
-          // Clear only the items that were checked out
-          Future.delayed(const Duration(seconds: 1), () {
-            ref.read(cartProvider.notifier).clearItemsByType(checkoutType);
-            
-            // Navigate to appropriate screen based on checkout type
-            switch (checkoutType) {
-              case 'template':
-                context.go('/my-templates');
-                break;
-              case 'creative':
-                context.go('/my-creatives');
-                break;
-              case 'campaign':
-                context.go('/campaigns');
-                break;
-              case 'service':
-                // For services, go to home
-                context.go('/home');
-                break;
-              default:
-                context.go('/home');
-            }
-          });
-        }
+        // Show success modal
+        OrderSuccessModal.show(
+          context,
+          orderType: checkoutType,
+          orderId: checkoutReference,
+        );
       }
     });
 
@@ -227,6 +219,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _buildEmptyState() {
+    final checkoutType = GoRouterState.of(context).uri.queryParameters['type'] ?? 'template';
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -234,17 +228,51 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           Icon(Icons.shopping_cart_outlined, size: 64.sp, color: AppColors.grey400),
           SizedBox(height: 16.h),
           Text('Your cart is empty', style: AppTexts.h4()),
+          SizedBox(height: 8.h),
+          Text(
+            'Add items to your cart to continue',
+            style: AppTexts.bodySmall(color: AppColors.grey600),
+          ),
           SizedBox(height: 24.h),
           ElevatedButton(
-            onPressed: () => context.push('/template'),
+            onPressed: () => _navigateToListingScreen(context, checkoutType),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF003D82),
             ),
-            child: const Text('Browse Templates'),
+            child: Text(_getBrowseButtonText(checkoutType)),
           ),
         ],
       ),
     );
+  }
+
+  String _getBrowseButtonText(String checkoutType) {
+    switch (checkoutType) {
+      case 'service':
+        return 'Browse Services';
+      case 'creative':
+        return 'Browse Creatives';
+      case 'campaign':
+        return 'Browse Ad Slots';
+      default:
+        return 'Browse Templates';
+    }
+  }
+
+  void _navigateToListingScreen(BuildContext context, String checkoutType) {
+    switch (checkoutType) {
+      case 'service':
+        context.push('/services');
+        break;
+      case 'creative':
+        context.push('/creatives');
+        break;
+      case 'campaign':
+        context.push('/explore?category=Ad Slots');
+        break;
+      default:
+        context.push('/templates');
+    }
   }
 
   List<CartItem> _filterItemsByType(List<CartItem> items, String checkoutType) {
@@ -304,6 +332,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       items.fold(0.0, (sum, item) => sum + item.priceValue),
     );
 
+    // If Paystack payment, handle with SDK
+    if (_paymentMethod == 'paystack') {
+      _handlePaystackPayment(context, checkoutType, items, breakdown);
+      return;
+    }
+
+    // Otherwise, handle wallet payment
     if (checkoutType == 'creative') {
       // Build creative order request
       final orderItems = items.map((item) {
@@ -454,5 +489,100 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       // Submit template order
       ref.read(checkoutProvider.notifier).submitTemplateOrder(request);
     }
+  }
+
+  Future<void> _handlePaystackPayment(
+    BuildContext context,
+    String checkoutType,
+    List<CartItem> items,
+    PricingBreakdown breakdown,
+  ) async {
+    final authState = ref.read(authNotifierProvider);
+    final user = authState.singleData;
+    
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not found. Please login again.')),
+      );
+      return;
+    }
+
+    // Generate payment reference
+    final paymentReference = ReferenceGenerator.generatePaymentReference(
+      checkoutType == 'template' ? 'template' :
+      checkoutType == 'creative' ? 'creative' :
+      checkoutType == 'service' ? 'service' : 'campaign'
+    );
+
+    // Build metadata based on checkout type
+    Map<String, dynamic> additionalData = {};
+    
+    if (checkoutType == 'template') {
+      additionalData = {
+        'templateIds': items.map((item) => item.id).toList(),
+        'itemCount': items.length,
+      };
+    } else if (checkoutType == 'creative') {
+      additionalData = {
+        'creativeIds': items.map((item) => item.id).toList(),
+        'itemCount': items.length,
+      };
+    } else if (checkoutType == 'service') {
+      additionalData = {
+        'serviceIds': items.map((item) => item.id).toList(),
+        'itemCount': items.length,
+      };
+    } else if (checkoutType == 'campaign') {
+      additionalData = {
+        'adSlotIds': items.map((item) => item.id).toList(),
+        'itemCount': items.length,
+      };
+    }
+
+    // Create payment request
+    final paymentRequest = PaymentHelper.createCustomPayment(
+      email: user.emailAddress,
+      userId: user.id,
+      purpose: checkoutType == 'template' ? 'template_purchase' :
+               checkoutType == 'creative' ? 'creative_purchase' :
+               checkoutType == 'service' ? 'service_order_payment' : 'campaign_payment',
+      totalAmount: breakdown.total,
+      referencePrefix: checkoutType,
+      additionalData: additionalData,
+    );
+
+    // Process payment with Paystack SDK
+    await ref.read(paymentNotifierProvider.notifier).processPayment(context, paymentRequest);
+
+    // Listen for payment result
+    ref.listen<DataState>(paymentNotifierProvider, (previous, next) {
+      if (next.isDataAvailable) {
+        // Payment successful and webhook processed!
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Clear cart
+        ref.read(cartProvider.notifier).clearItemsByType(checkoutType);
+        
+        // Show success modal
+        OrderSuccessModal.show(
+          context,
+          orderType: checkoutType,
+          orderId: paymentReference,
+        );
+      } else if (next.message != null && !next.isInitialLoading) {
+        // Payment failed or timeout
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
   }
 }

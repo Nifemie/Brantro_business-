@@ -59,13 +59,19 @@ class CartItem {
   }
 
   factory CartItem.fromTemplate(Map<String, dynamic> template) {
+    // Get thumbnail and construct full URL if needed
+    String? imageUrl = template['thumbnail'];
+    if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+      imageUrl = 'https://realta360.b-cdn.net/$imageUrl';
+    }
+    
     return CartItem(
       id: template['id']?.toString() ?? '',
       type: 'template',
       title: template['title'] ?? '',
       description: template['description'] ?? '',
       price: template['formattedPrice'] ?? template['price'] ?? '0',
-      imageUrl: template['thumbnail'],
+      imageUrl: imageUrl,
       sellerName: 'Brantro Africa',
       sellerType: template['type'], // AE, CANVA, PSD, etc.
       metadata: template,
@@ -73,13 +79,19 @@ class CartItem {
   }
 
   factory CartItem.fromCreative(Map<String, dynamic> creative) {
+    // Get thumbnail and construct full URL if needed
+    String? imageUrl = creative['thumbnail'];
+    if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+      imageUrl = 'https://realta360.b-cdn.net/$imageUrl';
+    }
+    
     return CartItem(
       id: creative['id']?.toString() ?? '',
       type: 'creative',
       title: creative['title'] ?? '',
       description: creative['description'] ?? '',
       price: creative['formattedPrice'] ?? creative['price'] ?? '0',
-      imageUrl: creative['thumbnail'],
+      imageUrl: imageUrl,
       sellerName: 'Brantro Africa',
       sellerType: creative['type'], // IMAGE, VIDEO, ANIMATION, etc.
       metadata: creative,

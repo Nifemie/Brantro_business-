@@ -8,23 +8,34 @@ import '../data/models/artist_model.dart';
 final apiClientProvider = Provider((ref) => ApiClient());
 
 final artistRepositoryProvider = Provider((ref) {
-  final apiClient = ref.watch(apiClientProvider);
+  final apiClient = ref.read(apiClientProvider);
   return ArtistRepository(apiClient);
 });
 
-class ArtistsNotifier extends StateNotifier<DataState<ArtistModel>> {
-  final ArtistRepository _repository;
+class ArtistsNotifier extends AsyncNotifier<DataState<ArtistModel>> {
+  late final ArtistRepository _repository;
 
-  ArtistsNotifier(this._repository) : super(DataState.initial());
+  @override
+  Future<DataState<ArtistModel>> build() async {
+    _repository = ref.read(artistRepositoryProvider);
+
+    final response = await _repository.getArtists(page: 1, limit: 10);
+    log(
+      '[ArtistsNotifier] Successfully fetched ${response.payload.artists.length} artists',
+    );
+
+    return DataState<ArtistModel>(
+      data: response.payload.artists,
+      isDataAvailable: response.payload.artists.isNotEmpty,
+      currentPage: response.payload.currentPage,
+      totalPages: response.payload.totalPages,
+      message: response.payload.artists.isEmpty ? 'No artists available' : null,
+    );
+  }
 
   Future<void> fetchArtists({int page = 1, int limit = 10}) async {
     log('[ArtistsNotifier] Fetching artists with page=$page, limit=$limit');
-    
-    state = state.copyWith(
-      isInitialLoading: true,
-      message: null,
-      isDataAvailable: false,
-    );
+    state = const AsyncLoading();
 
     try {
       final response = await _repository.getArtists(page: page, limit: limit);
@@ -32,27 +43,26 @@ class ArtistsNotifier extends StateNotifier<DataState<ArtistModel>> {
         '[ArtistsNotifier] Successfully fetched ${response.payload.artists.length} artists',
       );
 
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: true,
-        data: response.payload.artists,
-        currentPage: response.payload.currentPage,
-        totalPages: response.payload.totalPages,
-        message: null,
+      state = AsyncData(
+        DataState<ArtistModel>(
+          data: response.payload.artists,
+          isDataAvailable: response.payload.artists.isNotEmpty,
+          currentPage: response.payload.currentPage,
+          totalPages: response.payload.totalPages,
+          message: null,
+        ),
       );
-    } catch (e, stack) {
-      log('[ArtistsNotifier] Error fetching artists: $e\n$stack');
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: false,
-        message: e.toString().replaceAll('Exception: ', ''),
-      );
+    } catch (e, stackTrace) {
+      log('[ArtistsNotifier] Error fetching artists: $e\n$stackTrace');
+      state = AsyncError(e, stackTrace);
     }
   }
 
   /// Clear any error messages
   void clearMessage() {
-    state = state.copyWith(message: null);
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(message: null));
   }
 
   /// Search users by query with optional role filter
@@ -61,13 +71,10 @@ class ArtistsNotifier extends StateNotifier<DataState<ArtistModel>> {
     int page = 0,
     String? role,
   }) async {
-    log('[ArtistsNotifier] Searching users with query=$query, page=$page, role=$role');
-    
-    state = state.copyWith(
-      isInitialLoading: true,
-      message: null,
-      isDataAvailable: false,
+    log(
+      '[ArtistsNotifier] Searching users with query=$query, page=$page, role=$role',
     );
+    state = const AsyncLoading();
 
     try {
       final response = await _repository.searchUsers(
@@ -79,33 +86,28 @@ class ArtistsNotifier extends StateNotifier<DataState<ArtistModel>> {
         '[ArtistsNotifier] Successfully found ${response.payload.artists.length} users',
       );
 
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: true,
-        data: response.payload.artists,
-        currentPage: response.payload.currentPage,
-        totalPages: response.payload.totalPages,
-        message: null,
+      state = AsyncData(
+        DataState<ArtistModel>(
+          data: response.payload.artists,
+          isDataAvailable: response.payload.artists.isNotEmpty,
+          currentPage: response.payload.currentPage,
+          totalPages: response.payload.totalPages,
+          message: null,
+        ),
       );
-    } catch (e, stack) {
-      log('[ArtistsNotifier] Error searching users: $e\n$stack');
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: false,
-        message: e.toString().replaceAll('Exception: ', ''),
-      );
+    } catch (e, stackTrace) {
+      log('[ArtistsNotifier] Error searching users: $e\n$stackTrace');
+      state = AsyncError(e, stackTrace);
     }
   }
 
   /// Reset state to initial
   void reset() {
-    state = DataState.initial();
+    state = AsyncData(DataState.initial());
   }
 }
 
-final artistsProvider = StateNotifierProvider<ArtistsNotifier, DataState<ArtistModel>>(
-  (ref) {
-    final repository = ref.watch(artistRepositoryProvider);
-    return ArtistsNotifier(repository);
-  },
-);
+final artistsProvider =
+    AsyncNotifierProvider<ArtistsNotifier, DataState<ArtistModel>>(
+      ArtistsNotifier.new,
+    );

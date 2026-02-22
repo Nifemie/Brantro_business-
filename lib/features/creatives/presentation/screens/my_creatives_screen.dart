@@ -49,28 +49,48 @@ class _MyCreativesScreenState extends ConsumerState<MyCreativesScreen> {
     return Scaffold(
       backgroundColor: AppColors.grey50,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.primaryColor,
         elevation: 0,
         scrolledUnderElevation: 0,
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
         title: Text(
           'My Creatives',
-          style: AppTexts.h3(color: AppColors.textPrimary),
+          style: AppTexts.h3(color: Colors.white),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.home_outlined, color: AppColors.textPrimary),
+            icon: const Icon(Icons.home_outlined, color: Colors.white),
             onPressed: () => context.go('/home'),
             tooltip: 'Go to Home',
           ),
           IconButton(
-            icon: Icon(Icons.refresh, color: AppColors.textPrimary),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               ref.read(purchasedCreativesProvider.notifier).refresh();
             },
             tooltip: 'Refresh',
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(70.h),
+          child: Container(
+            color: AppColors.primaryColor,
+            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+            child: SearchBarWidget(
+              hintText: 'Search creatives...',
+              controller: _searchController,
+              iconColor: AppColors.primaryColor,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+        ),
       ),
       body: creativesState.when(
         data: (payload) {
@@ -96,22 +116,6 @@ class _MyCreativesScreenState extends ConsumerState<MyCreativesScreen> {
 
           return Column(
             children: [
-              // Search Bar
-              Container(
-                color: Colors.white,
-                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
-                child: SearchBarWidget(
-                  hintText: 'Search creatives...',
-                  controller: _searchController,
-                  iconColor: const Color(0xFF003D82),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                ),
-              ),
-
               // Creatives List
               Expanded(
                 child: filteredOrders.isEmpty
@@ -321,26 +325,10 @@ class _MyCreativesScreenState extends ConsumerState<MyCreativesScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Column(
-      children: [
-        // Search Bar Skeleton
-        Container(
-          color: Colors.white,
-          padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
-          child: ShimmerWrapper(
-            child: SkeletonBox(
-              width: double.infinity,
-              height: 50.h,
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-          ),
-        ),
-        // Creative Cards Skeleton
-        Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
-            itemCount: 3,
-            itemBuilder: (context, index) {
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
+      itemCount: 3,
+      itemBuilder: (context, index) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -451,10 +439,7 @@ class _MyCreativesScreenState extends ConsumerState<MyCreativesScreen> {
                 ],
               );
             },
-          ),
-        ),
-      ],
-    );
+          );
   }
 
   Widget _buildErrorState(String error) {

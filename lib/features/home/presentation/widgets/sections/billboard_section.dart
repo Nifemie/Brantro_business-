@@ -17,15 +17,6 @@ class BillboardSection extends ConsumerStatefulWidget {
 
 class _BillboardSectionState extends ConsumerState<BillboardSection> {
   @override
-  void initState() {
-    super.initState();
-    // Fetch billboards on init (public endpoint - no auth required)
-    Future.microtask(() {
-      ref.read(billboardsProvider.notifier).fetchBillboards(page: 0, size: 15);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final billboardsState = ref.watch(billboardsProvider);
 
@@ -62,14 +53,13 @@ class _BillboardSectionState extends ConsumerState<BillboardSection> {
           ),
         ),
         SizedBox(height: 12.h),
-        if (billboardsState.isInitialLoading)
-          SkeletonHorizontalList(
+        billboardsState.when(
+          loading: () => SkeletonHorizontalList(
             cardWidth: 320.w,
             cardHeight: 500.h,
             itemCount: 3,
-          )
-        else if (billboardsState.message != null && !billboardsState.isDataAvailable)
-          SizedBox(
+          ),
+          error: (error, _) => SizedBox(
             height: 500.h,
             child: Center(
               child: Column(
@@ -88,7 +78,7 @@ class _BillboardSectionState extends ConsumerState<BillboardSection> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Text(
-                      billboardsState.message ?? '',
+                      error.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                     ),
@@ -105,67 +95,84 @@ class _BillboardSectionState extends ConsumerState<BillboardSection> {
                 ],
               ),
             ),
-          )
-        else if ((billboardsState.data ?? []).isEmpty)
-          SizedBox(
-            height: 500.h,
-            child: Center(child: Text('No billboards found')),
-          )
-        else
-          SizedBox(
-            height: 500.h,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: PlatformResponsive.symmetric(horizontal: 16),
-              children: (billboardsState.data ?? []).map((billboard) {
-                final location = [
-                  billboard.city,
-                  billboard.state,
-                  billboard.country,
-                ].where((e) => e.isNotEmpty).join(', ');
-
-                // Parse features string into list
-                final featuresList = billboard.features?.split(',').map((e) => e.trim()).toList() ?? [];
-
-                return Padding(
-                  padding: EdgeInsets.only(right: 16.w),
-                  child: SizedBox(
-                    width: 320.w,
-                    child: BillboardCard(
-                      imageUrl: billboard.thumbnail ?? 'assets/promotions/billboard1.jpg',
-                      category: billboard.category?.name ?? 'Billboard',
-                      location: location.isEmpty ? billboard.address : location,
-                      title: billboard.title,
-                      subtitle: billboard.description,
-                      tags: featuresList,
-                      additionalInfo: billboard.specifications ?? '',
-                      rating: billboard.averageRating,
-                      ratedBy: billboard.totalLikes > 0 ? '${billboard.totalLikes} likes' : '',
-                      price: '₦${billboard.baseRateAmount.toStringAsFixed(0)}',
-                      priceUnit: 'per ${billboard.baseRateUnit.toLowerCase()}',
-                      likes: billboard.totalLikes,
-                      onLikeTap: () {},
-                      onBookTap: () {
-                        // Navigate to specific slots for this billboard
-                        context.push(
-                          '/seller-ad-slots/${billboard.ownerId}',
-                          extra: {
-                            'sellerName': billboard.title,
-                            'sellerAvatar': billboard.thumbnail,
-                            'sellerType': 'Billboard',
-                          },
-                        );
-                      },
-                      onViewDetailsTap: () {
-                        // Navigate to billboard details
-                        context.push('/asset-details', extra: billboard);
-                      },
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
           ),
+          data: (state) {
+            final billboards = state.data ?? [];
+
+            if (billboards.isEmpty) {
+              return SizedBox(
+                height: 500.h,
+                child: Center(child: Text('No billboards found')),
+              );
+            }
+
+            return SizedBox(
+              height: 500.h,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: PlatformResponsive.symmetric(horizontal: 16),
+                children: billboards.map((billboard) {
+                  final location = [
+                    billboard.city,
+                    billboard.state,
+                    billboard.country,
+                  ].where((e) => e.isNotEmpty).join(', ');
+
+                  // Parse features string into list
+                  final featuresList =
+                      billboard.features
+                          ?.split(',')
+                          .map((e) => e.trim())
+                          .toList() ??
+                      [];
+
+                  return Padding(
+                    padding: EdgeInsets.only(right: 16.w),
+                    child: SizedBox(
+                      width: 320.w,
+                      child: BillboardCard(
+                        imageUrl: billboard.thumbnailUrl,
+                        category: billboard.category?.name ?? 'Billboard',
+                        location: billboard.fullLocation.isEmpty
+                            ? billboard.address
+                            : billboard.fullLocation,
+                        title: billboard.title,
+                        subtitle: billboard.cleanDescription,
+                        tags: featuresList,
+                        additionalInfo: billboard.specifications ?? '',
+                        rating: billboard.averageRating,
+                        ratedBy: billboard.totalLikes > 0
+                            ? '${billboard.totalLikes} likes'
+                            : '',
+                        price: billboard.formattedPrice,
+                        priceUnit: billboard.baseRateAmount > 0
+                            ? 'per ${billboard.baseRateUnit.toLowerCase()}'
+                            : '',
+                        likes: billboard.totalLikes,
+                        onLikeTap: () {},
+                        onBookTap: () {
+                          // Navigate to specific slots for this billboard
+                          context.push(
+                            '/seller-ad-slots/${billboard.ownerId}',
+                            extra: {
+                              'sellerName': billboard.title,
+                              'sellerAvatar': billboard.thumbnailUrl,
+                              'sellerType': 'Billboard',
+                            },
+                          );
+                        },
+                        onViewDetailsTap: () {
+                          // Navigate to billboard details
+                          context.push('/asset-details', extra: billboard);
+                        },
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }

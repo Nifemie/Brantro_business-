@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 import '../../../../core/service/session_service.dart';
+import '../../../../core/service/notification_service.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../logic/cart_notifier.dart';
 
@@ -40,6 +41,17 @@ class AddToCampaignSheet extends ConsumerWidget {
     // User is logged in, proceed with checkout
     if (context.mounted) {
       ref.read(cartProvider.notifier).addItem(item);
+      
+      // Show notification
+      NotificationService.showCartNotification(
+        context,
+        itemName: item.title,
+        itemType: item.type,
+        onViewCart: () {
+          context.push('/cart');
+        },
+      );
+      
       context.pop();
       context.push(route);
     }
@@ -145,6 +157,21 @@ class AddToCampaignSheet extends ConsumerWidget {
     );
   }
 
+  String _getHeaderText() {
+    switch (item.type) {
+      case 'creative':
+        return 'Creative Added';
+      case 'service':
+        return 'Add to Service';
+      case 'template':
+        return 'Template Added';
+      case 'adslot':
+      case 'campaign':
+      default:
+        return 'Add to Your Campaign';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
@@ -184,7 +211,7 @@ class AddToCampaignSheet extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    item.type == 'creative' ? 'Creative Added' : 'Add to Your Campaign',
+                    _getHeaderText(),
                     style: AppTexts.h3(),
                   ),
                   GestureDetector(
@@ -288,7 +315,18 @@ class AddToCampaignSheet extends ConsumerWidget {
                     child: OutlinedButton(
                       onPressed: () {
                         ref.read(cartProvider.notifier).addItem(item);
+                        
+                        // Show notification
+                        NotificationService.showCartNotification(
+                          context,
+                          itemName: item.title,
+                          itemType: item.type,
+                        );
+                        
                         context.pop();
+                        
+                        // Navigate to respective listing screen
+                        _navigateToListingScreen(context, item.type);
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: AppColors.secondaryColor, width: 1.5),
@@ -350,5 +388,25 @@ class AddToCampaignSheet extends ConsumerWidget {
         color: AppColors.grey400,
       ),
     );
+  }
+
+  void _navigateToListingScreen(BuildContext context, String itemType) {
+    switch (itemType) {
+      case 'service':
+        context.push('/services');
+        break;
+      case 'creative':
+        context.push('/creatives');
+        break;
+      case 'template':
+        context.push('/templates');
+        break;
+      case 'adslot':
+      case 'campaign':
+        context.push('/explore?category=Ad Slots');
+        break;
+      default:
+        context.push('/home');
+    }
   }
 }

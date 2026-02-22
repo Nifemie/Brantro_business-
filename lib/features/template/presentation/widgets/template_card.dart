@@ -48,9 +48,10 @@ class TemplateCard extends StatelessWidget {
           
           // Content section
           Padding(
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.5.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Title
                 Text(
@@ -60,7 +61,7 @@ class TemplateCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 
-                SizedBox(height: 8.h),
+                SizedBox(height: 2.h),
                 
                 // Description
                 Text(
@@ -70,12 +71,12 @@ class TemplateCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 
-                SizedBox(height: 12.h),
+                SizedBox(height: 4.h),
                 
                 // Tags
                 _buildTags(),
                 
-                SizedBox(height: 16.h),
+                SizedBox(height: 5.h),
                 
                 // Price and Button
                 _buildFooter(),

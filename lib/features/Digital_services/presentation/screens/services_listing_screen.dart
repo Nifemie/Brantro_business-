@@ -7,7 +7,9 @@ import '../../../../controllers/re_useable/app_texts.dart';
 import '../../../../controllers/re_useable/filter_bottom_sheet.dart';
 import '../../../home/presentation/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/skeleton_loading.dart';
+import '../../../../core/data/data_state.dart';
 import '../../logic/services_notifier.dart';
+import '../../data/models/service_model.dart';
 import '../widgets/service_card.dart';
 
 class ServicesListingScreen extends ConsumerStatefulWidget {
@@ -25,15 +27,10 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
   String _selectedSort = 'Recommended';
   String? _selectedServiceType;
   final ScrollController _scrollController = ScrollController();
-  List _filteredServices = [];
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(servicesProvider.notifier).fetchServices(page: 0, size: 20);
-    });
-
     _scrollController.addListener(_onScroll);
   }
 
@@ -51,14 +48,14 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
     }
   }
 
-  void _applyFiltersAndSort(List services) {
-    var filtered = List.from(services);
+  List<ServiceModel> _getProcessedServices(List<ServiceModel> services) {
+    var filtered = List<ServiceModel>.from(services);
 
     // Apply service type filter (match by title)
     if (_selectedServiceType != null) {
+      final filterType = _selectedServiceType!.toLowerCase();
       filtered = filtered.where((s) {
-        final title = s.title.toString().toLowerCase();
-        final filterType = _selectedServiceType!.toLowerCase();
+        final title = s.title.toLowerCase();
         return title.contains(filterType) || filterType.contains(title);
       }).toList();
     }
@@ -66,18 +63,18 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
     // Apply sorting
     switch (_selectedSort) {
       case 'Price: Low to High':
-        filtered.sort((a, b) {
-          final priceA = double.tryParse(a.price) ?? 0;
-          final priceB = double.tryParse(b.price) ?? 0;
-          return priceA.compareTo(priceB);
-        });
+        filtered.sort(
+          (a, b) => (double.tryParse(a.price) ?? 0).compareTo(
+            double.tryParse(b.price) ?? 0,
+          ),
+        );
         break;
       case 'Price: High to Low':
-        filtered.sort((a, b) {
-          final priceA = double.tryParse(a.price) ?? 0;
-          final priceB = double.tryParse(b.price) ?? 0;
-          return priceB.compareTo(priceA);
-        });
+        filtered.sort(
+          (a, b) => (double.tryParse(b.price) ?? 0).compareTo(
+            double.tryParse(a.price) ?? 0,
+          ),
+        );
         break;
       case 'Most Popular':
         filtered.sort((a, b) => b.totalLikes.compareTo(a.totalLikes));
@@ -91,24 +88,13 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
         break;
     }
 
-    // Always update filtered services, even if empty
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _filteredServices = filtered;
-        });
-      }
-    });
+    return filtered;
   }
 
   @override
   Widget build(BuildContext context) {
     final servicesState = ref.watch(servicesProvider);
-
-    // Apply filters and sorting whenever data changes
-    if (servicesState.data != null && servicesState.data!.isNotEmpty) {
-      _applyFiltersAndSort(servicesState.data!);
-    }
+    final servicesData = servicesState.asData?.value;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -131,9 +117,7 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
           ),
 
           // Services grid
-          Expanded(
-            child: _buildContent(servicesState),
-          ),
+          Expanded(child: _buildContent(servicesState)),
         ],
       ),
     );
@@ -150,11 +134,7 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
             children: [
               GestureDetector(
                 onTap: () => context.pop(),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 24.sp,
-                ),
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 24.sp),
               ),
               SizedBox(width: 16.w),
               Expanded(
@@ -212,7 +192,9 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8.r),
                 border: Border.all(
-                  color: hasFilters ? AppColors.primaryColor : AppColors.grey300,
+                  color: hasFilters
+                      ? AppColors.primaryColor
+                      : AppColors.grey300,
                   width: 1,
                 ),
               ),
@@ -221,14 +203,18 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                 children: [
                   Icon(
                     Icons.tune,
-                    color: hasFilters ? AppColors.primaryColor : AppColors.textPrimary,
+                    color: hasFilters
+                        ? AppColors.primaryColor
+                        : AppColors.textPrimary,
                     size: 20.sp,
                   ),
                   SizedBox(width: 8.w),
                   Text(
                     'Filter',
                     style: AppTexts.bodyMedium(
-                      color: hasFilters ? AppColors.primaryColor : AppColors.textPrimary,
+                      color: hasFilters
+                          ? AppColors.primaryColor
+                          : AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -246,10 +232,6 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
               setState(() {
                 _selectedSort = value;
               });
-              final servicesState = ref.read(servicesProvider);
-              if (servicesState.data != null) {
-                _applyFiltersAndSort(servicesState.data!);
-              }
             },
             offset: Offset(0, 50.h),
             shape: RoundedRectangleBorder(
@@ -282,7 +264,11 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                     ),
                   ),
                   SizedBox(width: 4.w),
-                  Icon(Icons.arrow_drop_down, color: AppColors.grey400, size: 20.sp),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: AppColors.grey400,
+                    size: 20.sp,
+                  ),
                 ],
               ),
             ),
@@ -338,13 +324,12 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                         setState(() {
                           _selectedServiceType = null;
                         });
-                        final servicesState = ref.read(servicesProvider);
-                        if (servicesState.data != null) {
-                          _applyFiltersAndSort(servicesState.data!);
-                        }
                         Navigator.pop(context);
                       },
-                      child: Text('Clear', style: AppTexts.bodyMedium(color: Colors.red)),
+                      child: Text(
+                        'Clear',
+                        style: AppTexts.bodyMedium(color: Colors.red),
+                      ),
                     ),
                   ],
                 ),
@@ -361,74 +346,59 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Design Services
-                      _buildCategorySection(
-                        'Design Services',
-                        [
-                          'Logo Design',
-                          'Brand Identity Design',
-                          'Brand Guidelines',
-                          'Banner Design',
-                          'Flyer Design',
-                          'Poster Design',
-                          'UI / UX Design',
-                          'Packaging Design',
-                          'Print Design',
-                        ],
-                      ),
+                      _buildCategorySection('Design Services', [
+                        'Logo Design',
+                        'Brand Identity Design',
+                        'Brand Guidelines',
+                        'Banner Design',
+                        'Flyer Design',
+                        'Poster Design',
+                        'UI / UX Design',
+                        'Packaging Design',
+                        'Print Design',
+                      ]),
 
                       SizedBox(height: 20.h),
 
                       // Content & Writing
-                      _buildCategorySection(
-                        'Content & Writing',
-                        [
-                          'Caption Writing',
-                        ],
-                      ),
+                      _buildCategorySection('Content & Writing', [
+                        'Caption Writing',
+                      ]),
 
                       SizedBox(height: 20.h),
 
                       // Video Services
-                      _buildCategorySection(
-                        'Video Services',
-                        [
-                          'Video Advertisement',
-                          'Video Editing',
-                          'Motion Graphics',
-                          'Animated Advertisement',
-                          'Short-Form Video (Reels / TikTok)',
-                          'Long-Form Video',
-                          'Explainer Video',
-                        ],
-                      ),
+                      _buildCategorySection('Video Services', [
+                        'Video Advertisement',
+                        'Video Editing',
+                        'Motion Graphics',
+                        'Animated Advertisement',
+                        'Short-Form Video (Reels / TikTok)',
+                        'Long-Form Video',
+                        'Explainer Video',
+                      ]),
 
                       SizedBox(height: 20.h),
 
                       // UGC Content
-                      _buildCategorySection(
-                        'UGC Content',
-                        [
-                          'UGC Video',
-                          'UGC Photo',
-                          'Product Review',
-                          'Testimonial Video',
-                          'Lifestyle Content',
-                          'Unboxing Video',
-                        ],
-                      ),
+                      _buildCategorySection('UGC Content', [
+                        'UGC Video',
+                        'UGC Photo',
+                        'Product Review',
+                        'Testimonial Video',
+                        'Lifestyle Content',
+                        'Unboxing Video',
+                      ]),
 
                       SizedBox(height: 20.h),
 
                       // Audio Services
-                      _buildCategorySection(
-                        'Audio Services',
-                        [
-                          'Voice-Over Recording',
-                          'Audio Advertisement',
-                          'Jingle Production',
-                          'Sound Design',
-                        ],
-                      ),
+                      _buildCategorySection('Audio Services', [
+                        'Voice-Over Recording',
+                        'Audio Advertisement',
+                        'Jingle Production',
+                        'Sound Design',
+                      ]),
 
                       SizedBox(height: 32.h),
                     ],
@@ -446,10 +416,7 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: AppTexts.h4(color: AppColors.textPrimary),
-        ),
+        Text(title, style: AppTexts.h4(color: AppColors.textPrimary)),
         SizedBox(height: 12.h),
         Wrap(
           spacing: 8.w,
@@ -461,10 +428,6 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                 setState(() {
                   _selectedServiceType = isSelected ? null : type;
                 });
-                final servicesState = ref.read(servicesProvider);
-                if (servicesState.data != null) {
-                  _applyFiltersAndSort(servicesState.data!);
-                }
                 Navigator.pop(context);
               },
               child: Container(
@@ -472,7 +435,9 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primaryColor : Colors.white,
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryColor : AppColors.grey300,
+                    color: isSelected
+                        ? AppColors.primaryColor
+                        : AppColors.grey300,
                   ),
                   borderRadius: BorderRadius.circular(20.r),
                 ),
@@ -504,29 +469,29 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
     );
   }
 
-  Widget _buildContent(servicesState) {
-    if (servicesState.isInitialLoading) {
-      return _buildLoadingState();
-    }
+  Widget _buildContent(AsyncValue<DataState<ServiceModel>> servicesState) {
+    return servicesState.when(
+      loading: _buildLoadingState,
+      error: (error, _) => _buildErrorState(error.toString()),
+      data: (state) {
+        if (state.message != null && !state.isDataAvailable) {
+          return _buildErrorState(state.message!);
+        }
 
-    if (servicesState.message != null && !servicesState.isDataAvailable) {
-      return _buildErrorState(servicesState.message!);
-    }
+        if ((state.data ?? []).isEmpty) {
+          return _buildEmptyState();
+        }
 
-    if ((servicesState.data ?? []).isEmpty) {
-      return _buildEmptyState();
-    }
+        // Show filtered services if filters/sort applied, otherwise show all
+        final servicesToShow = _getProcessedServices(state.data ?? []);
 
-    // Show filtered services if filters/sort applied, otherwise show all
-    final servicesToShow = _filteredServices.isEmpty && _selectedServiceType == null && _selectedSort == 'Recommended'
-        ? servicesState.data ?? []
-        : _filteredServices;
+        if (servicesToShow.isEmpty && _selectedServiceType != null) {
+          return _buildNoResultsState();
+        }
 
-    if (servicesToShow.isEmpty && _selectedServiceType != null) {
-      return _buildNoResultsState();
-    }
-
-    return _buildServicesGrid(servicesToShow);
+        return _buildServicesGrid(servicesToShow);
+      },
+    );
   }
 
   Widget _buildNoResultsState() {
@@ -534,11 +499,7 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.search_off,
-            size: 48.sp,
-            color: AppColors.grey400,
-          ),
+          Icon(Icons.search_off, size: 48.sp, color: AppColors.grey400),
           SizedBox(height: 16.h),
           Text('No services found', style: AppTexts.h4()),
           SizedBox(height: 8.h),
@@ -552,10 +513,6 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
               setState(() {
                 _selectedServiceType = null;
               });
-              final servicesState = ref.read(servicesProvider);
-              if (servicesState.data != null) {
-                _applyFiltersAndSort(servicesState.data!);
-              }
             },
             child: Text('Clear Filters'),
           ),
@@ -632,15 +589,18 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
   Widget _buildServicesGrid(List services) {
     return ListView.builder(
       controller: _scrollController,
-      scrollDirection: Axis.horizontal,
+      scrollDirection: Axis.vertical,
       padding: EdgeInsets.all(16.w),
       itemCount: services.length,
       itemBuilder: (context, index) {
         final service = services[index];
+        final isLastItem = index == services.length - 1;
+        
         return Padding(
-          padding: EdgeInsets.only(right: 16.w),
+          padding: EdgeInsets.only(
+            bottom: isLastItem ? 80.h : 16.h, // Extra padding for last item
+          ),
           child: SizedBox(
-            width: 280.w,
             child: ServiceCard(
               service: {
                 'id': service.id,
@@ -649,8 +609,10 @@ class _ServicesListingScreenState extends ConsumerState<ServicesListingScreen> {
                 'rating': service.averageRating,
                 'reviewCount': service.totalLikes,
                 'title': service.title,
-                'description': service.description
-                    .replaceAll(RegExp(r'<[^>]*>'), ''), // Strip HTML tags
+                'description': service.description.replaceAll(
+                  RegExp(r'<[^>]*>'),
+                  '',
+                ), // Strip HTML tags
                 'duration': '${service.deliveryDays} days',
                 'tags': service.tags,
                 'price': service.formattedPrice,

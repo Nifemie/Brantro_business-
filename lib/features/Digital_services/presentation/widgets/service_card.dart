@@ -32,6 +32,7 @@ class ServiceCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Image with badge
           _buildImageSection(),
@@ -39,13 +40,14 @@ class ServiceCard extends StatelessWidget {
           Divider(height: 1, color: AppColors.grey400),
 
           Padding(
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.all(12.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Rating
                 _buildRating(),
-                SizedBox(height: 8.h),
+                SizedBox(height: 4.h),
 
                 // Title
                 Text(
@@ -54,7 +56,7 @@ class ServiceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: 3.h),
 
                 // Description
                 Text(
@@ -63,29 +65,31 @@ class ServiceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 12.h),
+                SizedBox(height: 6.h),
 
                 // Duration
                 _buildDuration(),
-                SizedBox(height: 12.h),
+                SizedBox(height: 6.h),
 
                 // Tags
                 _buildTags(),
-                SizedBox(height: 16.h),
+                SizedBox(height: 8.h),
 
                 // Price
                 Text(
                   service['price'] ?? '₦0.00',
                   style: AppTexts.h3(),
                 ),
-                SizedBox(height: 8.h),
+                SizedBox(height: 3.h),
 
                 // Provider
                 Text(
                   'By ${service['provider'] ?? 'Brantro Africa'}',
                   style: AppTexts.bodySmall(color: AppColors.grey600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 16.h),
+                SizedBox(height: 10.h),
 
                 // Action buttons
                 _buildActionButtons(),

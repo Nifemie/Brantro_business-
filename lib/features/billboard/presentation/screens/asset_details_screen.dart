@@ -79,30 +79,36 @@ class AssetDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildHeroImage() {
-    final hasThumbnail = asset.thumbnail != null && asset.thumbnail!.isNotEmpty;
+    final thumbnailUrl = asset.thumbnailUrl; // Use the helper method
+    final hasThumbnail = thumbnailUrl.isNotEmpty && !thumbnailUrl.contains('assets/');
+    
     return Container(
       height: 250.h,
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.grey200,
-        image: hasThumbnail
-            ? DecorationImage(
-                image: asset.thumbnail!.startsWith('http')
-                    ? NetworkImage(asset.thumbnail!) as ImageProvider
-                    : AssetImage(asset.thumbnail!),
-                fit: BoxFit.cover,
-              )
-            : null,
       ),
-      child: !hasThumbnail
-          ? Center(
+      child: hasThumbnail
+          ? Image.network(
+              thumbnailUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 64.sp,
+                    color: AppColors.grey400,
+                  ),
+                );
+              },
+            )
+          : Center(
               child: Icon(
                 Icons.image_not_supported_outlined,
                 size: 64.sp,
                 color: AppColors.grey400,
               ),
-            )
-          : null,
+            ),
     );
   }
 
@@ -185,7 +191,7 @@ class AssetDetailsScreen extends StatelessWidget {
           Text('Description', style: AppTexts.h4()),
           SizedBox(height: 12.h),
           Text(
-            asset.description,
+            asset.cleanDescription, // Use the helper method to strip HTML
             style: AppTexts.bodyMedium(color: AppColors.grey700),
           ),
         ],
@@ -395,7 +401,7 @@ class AssetDetailsScreen extends StatelessWidget {
                     style: AppTexts.bodySmall(color: AppColors.grey600),
                   ),
                   Text(
-                    '₦${asset.baseRateAmount.toStringAsFixed(0)}',
+                    asset.formattedPrice, // Use the helper method
                     style: AppTexts.h3(color: AppColors.textPrimary)
                         .copyWith(fontWeight: FontWeight.bold),
                   ),

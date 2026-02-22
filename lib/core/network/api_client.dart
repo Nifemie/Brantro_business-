@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:dio/dio.dart';
 import '../service/session_service.dart';
 
@@ -27,14 +25,9 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          log("Api call: ${options.path}");
-          log("Request headers: ${options.headers}");
-          log("Request data: ${options.data.toString()}");
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          log("Response: ${response.statusCode}");
-          log("Response data: ${response.data}");
           if (response.statusCode == 200) {
             final data = response.data;
             final path = response.requestOptions.path;
@@ -64,9 +57,6 @@ class ApiClient {
           return handler.next(response);
         },
         onError: (DioException e, handler) async {
-          log("Error: ${e.message}");
-          log("Error response: ${e.response?.data}");
-          log("Error status code: ${e.response?.statusCode}");
           return handler.next(e);
         },
       ),

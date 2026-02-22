@@ -45,39 +45,88 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       final authState = ref.read(authNotifierProvider);
 
       if (authState.isDataAvailable) {
-        // On success, navigate to home
-        context.pushReplacement('/home');
+        // Check user role BEFORE navigation
+        final userRole = authState.singleData?.role?.toUpperCase();
         
-        // Show welcome message after navigation
-        Future.delayed(const Duration(milliseconds: 500), () async {
+        // Only allow USER and ADVERTISER roles (this is a buyer/advertiser app, not for sellers)
+        if (userRole == 'USER' || userRole == 'ADVERTISER') {
+          // Role is valid - navigate to home
           if (!mounted) return;
+          setState(() => _isLoading = false);
           
-          // Get user's name from session
-          final userName = await SessionService.getUserFullname() ?? 
-                          await SessionService.getUsername() ?? 
-                          'User';
+          context.pushReplacement('/home');
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome back, $userName!'),
-              backgroundColor: AppColors.primaryColor,
-              duration: const Duration(seconds: 3),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.only(
-                bottom: 80.h, // Position above bottom nav
-                left: 16.w,
-                right: 16.w,
+          // Show welcome message after navigation
+          Future.delayed(const Duration(milliseconds: 500), () async {
+            if (!mounted) return;
+            
+            // Get user's name from session
+            final userName = await SessionService.getUserFullname() ?? 
+                            await SessionService.getUsername() ?? 
+                            'User';
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Welcome back, $userName!'),
+                backgroundColor: AppColors.primaryColor,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.only(
+                  bottom: 80.h, // Position above bottom nav
+                  left: 16.w,
+                  right: 16.w,
+                ),
               ),
-            ),
+            );
+          });
+        } else {
+          // User has a seller/provider role - not allowed in this app
+          // Stay on signin screen and show error
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          
+          AppMessenger.show(
+            context,
+            message: 'This app is for buyers and advertisers only. Please use the seller app to manage your services.',
+            type: MessageType.error,
           );
-        });
+          
+          // Clear the session so they can't bypass
+          await SessionService.clearSession();
+        }
       } else if (authState.message != null) {
-        setState(() => _hasIncorrectCred = true);
-        AppMessenger.show(
-          context,
-          message: authState.message!,
-          type: MessageType.error,
-        );
+        // Check if the error is about inactive account
+        final errorMessage = authState.message!.toLowerCase();
+        if (errorMessage.contains('inactive') || 
+            errorMessage.contains('not activated') ||
+            errorMessage.contains('not verified')) {
+          // Show error message
+          AppMessenger.show(
+            context,
+            message: authState.message!,
+            type: MessageType.error,
+          );
+          
+          // Navigate to verification screen after a short delay
+          Future.delayed(const Duration(seconds: 2), () {
+            if (!mounted) return;
+            context.push(
+              '/verify-identity',
+              extra: {
+                'email': _usernameController.text.trim(),
+                'phoneNumber': _usernameController.text.trim(),
+              },
+            );
+          });
+        } else {
+          // Other errors - just show the message
+          setState(() => _hasIncorrectCred = true);
+          AppMessenger.show(
+            context,
+            message: authState.message!,
+            type: MessageType.error,
+          );
+        }
       }
     }
   }

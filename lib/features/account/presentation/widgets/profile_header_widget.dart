@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 import '../../../../core/service/session_service.dart';
+import '../../../../core/utils/avatar_helper.dart';
 
 // Profile Header Data Model
 class ProfileHeaderData {
@@ -13,6 +14,7 @@ class ProfileHeaderData {
   final String email;
   final String role;
   final String memberSince;
+  final String userId; // Add userId for avatar helper
 
   const ProfileHeaderData({
     required this.avatarUrl,
@@ -20,6 +22,7 @@ class ProfileHeaderData {
     required this.email,
     required this.role,
     required this.memberSince,
+    required this.userId,
   });
 }
 
@@ -30,11 +33,12 @@ final profileHeaderProvider = FutureProvider<ProfileHeaderData>((ref) async {
   // If not logged in, return guest data
   if (!isLoggedIn) {
     return const ProfileHeaderData(
-      avatarUrl: 'https://i.pravatar.cc/150?img=12',
+      avatarUrl: '',
       fullName: 'Guest',
       email: '',
       role: 'GUEST',
       memberSince: '',
+      userId: 'guest',
     );
   }
   
@@ -54,12 +58,16 @@ final profileHeaderProvider = FutureProvider<ProfileHeaderData>((ref) async {
     }
   }
   
+  // Get user ID for avatar helper
+  final userId = user?['id']?.toString() ?? user?['userId']?.toString() ?? 'user';
+  
   return ProfileHeaderData(
-    avatarUrl: user?['avatarUrl'] ?? 'https://i.pravatar.cc/150?img=12',
+    avatarUrl: user?['avatarUrl'] ?? '',
     fullName: fullName ?? user?['name'] ?? 'User',
     email: email ?? user?['emailAddress'] ?? '',
     role: user?['role'] ?? 'USER',
     memberSince: memberSince,
+    userId: userId,
   );
 });
 
@@ -80,16 +88,23 @@ class ProfileHeaderWidget extends ConsumerWidget {
       data: (profileData) => _buildHeader(profileData),
       loading: () => _buildLoadingSkeleton(),
       error: (_, __) => _buildHeader(const ProfileHeaderData(
-        avatarUrl: 'https://i.pravatar.cc/150?img=12',
+        avatarUrl: '',
         fullName: 'User',
         email: '',
         role: 'USER',
         memberSince: 'Member since 2025',
+        userId: 'user',
       )),
     );
   }
 
   Widget _buildHeader(ProfileHeaderData profileData) {
+    // Get avatar using AvatarHelper
+    final avatarUrl = AvatarHelper.getAvatar(
+      avatarUrl: profileData.avatarUrl,
+      userId: profileData.userId,
+    );
+
     return Builder(
       builder: (context) => GestureDetector(
         onTap: () {
@@ -126,7 +141,9 @@ class ProfileHeaderWidget extends ConsumerWidget {
                       color: AppColors.grey200,
                       shape: BoxShape.circle,
                       image: DecorationImage(
-                        image: NetworkImage(profileData.avatarUrl),
+                        image: AvatarHelper.isDefaultAvatar(avatarUrl)
+                            ? AssetImage(avatarUrl) as ImageProvider
+                            : NetworkImage(avatarUrl),
                         fit: BoxFit.cover,
                       ),
                     ),

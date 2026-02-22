@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/constants/endpoints.dart';
@@ -15,6 +16,8 @@ class CampaignRepository {
     String? status,
   }) async {
     try {
+      log('[CampaignRepository] Fetching campaigns: page=$page, size=$size, status=$status');
+      
       final queryParams = {
         'page': page.toString(),
         'size': size.toString(),
@@ -29,10 +32,14 @@ class CampaignRepository {
         query: queryParams,
       );
       
+      log('[CampaignRepository] Campaigns response received: ${response.statusCode}');
+      log('[CampaignRepository] Response data: ${response.data}');
+      
       final campaignsResponse = CampaignsResponse.fromJson(response.data);
       
       // Handle "No record found" as empty result, not an error
       if (!campaignsResponse.success && campaignsResponse.message.toLowerCase().contains('no record')) {
+        log('[CampaignRepository] No campaigns found, returning empty result');
         return CampaignsResponse(
           success: true,
           message: 'No campaigns found',
@@ -46,11 +53,17 @@ class CampaignRepository {
       }
       
       if (!campaignsResponse.success) {
+        log('[CampaignRepository] Campaign fetch failed: ${campaignsResponse.message}');
         throw Exception(campaignsResponse.message);
       }
       
+      log('[CampaignRepository] Successfully parsed ${campaignsResponse.payload?.page.length ?? 0} campaigns');
       return campaignsResponse;
     } on DioException catch (e) {
+      log('[CampaignRepository] DioException: ${e.message}');
+      log('[CampaignRepository] Status Code: ${e.response?.statusCode}');
+      log('[CampaignRepository] Error Response: ${e.response?.data}');
+      
       final errorMessage = e.response?.statusCode == 401
           ? 'Unauthorized: Please log in again'
           : e.response?.data['message'] ??
@@ -59,6 +72,7 @@ class CampaignRepository {
 
       throw Exception(errorMessage);
     } catch (e) {
+      log('[CampaignRepository] Error: $e');
       throw Exception('An unexpected error occurred: $e');
     }
   }

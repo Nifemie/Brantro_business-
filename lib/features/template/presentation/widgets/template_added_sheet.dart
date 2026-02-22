@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
+import '../../../../core/service/notification_service.dart';
 import '../../data/models/template_model.dart';
 import '../../../cart/logic/cart_notifier.dart';
 import '../../../cart/data/models/cart_item_model.dart';
@@ -91,17 +92,20 @@ class TemplateAddedSheet extends ConsumerWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.r),
-                  child: template.thumbnail.startsWith('http')
-                      ? Image.network(
-                          template.thumbnail,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: AppColors.grey300,
-                          ),
-                        )
-                      : Container(
-                          color: AppColors.grey300,
+                  child: Image.network(
+                    template.thumbnailUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: AppColors.grey300,
+                      child: Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: 48.sp,
+                          color: AppColors.grey400,
                         ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
 
@@ -118,7 +122,7 @@ class TemplateAddedSheet extends ConsumerWidget {
               SizedBox(height: 8.h),
 
               Text(
-                template.description,
+                template.cleanDescription,
                 style: AppTexts.bodySmall(color: AppColors.grey600),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
@@ -184,6 +188,13 @@ class TemplateAddedSheet extends ConsumerWidget {
                         // Add template to cart
                         final cartItem = CartItem.fromTemplate(template.toJson());
                         ref.read(cartProvider.notifier).addItem(cartItem);
+                        
+                        // Show notification
+                        NotificationService.showCartNotification(
+                          context,
+                          itemName: template.title,
+                          itemType: 'template',
+                        );
                         
                         // Navigate to checkout
                         context.push('/checkout?type=template');

@@ -1,9 +1,5 @@
 /// Form Constants - All dropdown and select options for signup forms
 /// Converted from JavaScript constants for use across the app
-
-// ===============================
-// Advertiser Constants
-// ===============================
 const List<String> ADVERTISER_BUSINESS_INDUSTRIES = [
   "Advertising & Marketing",
   "Real Estate & Property",

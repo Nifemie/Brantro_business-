@@ -29,7 +29,7 @@ class AccountMenuSection extends StatelessWidget {
             icon: Icons.business_center_outlined,
             title: 'My Services',
             onTap: () {
-              // TODO: Navigate to My Services
+              context.push('/my-services');
             },
           ),
           _buildDivider(),

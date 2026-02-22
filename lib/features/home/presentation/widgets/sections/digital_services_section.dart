@@ -21,28 +21,24 @@ class DigitalServicesSection extends ConsumerStatefulWidget {
 class _DigitalServicesSectionState
     extends ConsumerState<DigitalServicesSection> {
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(servicesProvider.notifier).fetchServices(page: 0, size: 10);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final servicesState = ref.watch(servicesProvider);
-
-    var services = servicesState.data ?? [];
+    final servicesData = servicesState.asData?.value;
+    var services = servicesData?.data ?? [];
 
     // Apply filters and sorting if in explore mode
     if (widget.initialCategory != null) {
-      final exploreState = ref.watch(exploreControllerProvider(widget.initialCategory!));
+      final exploreState = ref.watch(
+        exploreControllerProvider(widget.initialCategory!),
+      );
       final filters = exploreState.filters;
       final selectedSort = exploreState.selectedSort;
 
       // 1. Filter by category/role if applicable
       if (filters['category'] != null || filters['role'] != null) {
-        final filterValue = (filters['category'] ?? filters['role']).toString().toUpperCase();
+        final filterValue = (filters['category'] ?? filters['role'])
+            .toString()
+            .toUpperCase();
         services = services.where((s) {
           final type = s.type.toUpperCase();
           // Match if type contains the filter value or vice versa
@@ -52,11 +48,22 @@ class _DigitalServicesSectionState
 
       // 2. Sorting
       if (selectedSort == 'Price: Low to High') {
-        services = List.from(services)..sort((a, b) => (double.tryParse(a.price) ?? 0).compareTo(double.tryParse(b.price) ?? 0));
+        services = List.from(services)
+          ..sort(
+            (a, b) => (double.tryParse(a.price) ?? 0).compareTo(
+              double.tryParse(b.price) ?? 0,
+            ),
+          );
       } else if (selectedSort == 'Price: High to Low') {
-        services = List.from(services)..sort((a, b) => (double.tryParse(b.price) ?? 0).compareTo(double.tryParse(a.price) ?? 0));
+        services = List.from(services)
+          ..sort(
+            (a, b) => (double.tryParse(b.price) ?? 0).compareTo(
+              double.tryParse(a.price) ?? 0,
+            ),
+          );
       } else if (selectedSort == 'Rating') {
-        services = List.from(services)..sort((a, b) => b.averageRating.compareTo(a.averageRating));
+        services = List.from(services)
+          ..sort((a, b) => b.averageRating.compareTo(a.averageRating));
       }
     }
 
@@ -86,14 +93,17 @@ class _DigitalServicesSectionState
         SizedBox(height: 12.h),
 
         // Content based on state
-        if (servicesState.isInitialLoading && services.isEmpty)
-          _buildLoadingState()
-        else if (servicesState.message != null && !servicesState.isDataAvailable && services.isEmpty)
-          _buildErrorState(servicesState.message!, ref)
-        else if (services.isEmpty)
-          _buildEmptyState()
-        else
-          _buildServicesList(services),
+        servicesState.when(
+          loading: _buildLoadingState,
+          error: (error, _) => _buildErrorState(error.toString(), ref),
+          data: (state) {
+            if (services.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            return _buildServicesList(services);
+          },
+        ),
       ],
     );
   }
@@ -153,7 +163,7 @@ class _DigitalServicesSectionState
               color: AppColors.grey400,
             ),
             SizedBox(height: 16.h),
-            Text('No services available', style: AppTexts.h4()),
+            Text('Services are not available for now', style: AppTexts.h4()),
             SizedBox(height: 8.h),
             Text(
               'Check back later for new services',
@@ -184,8 +194,10 @@ class _DigitalServicesSectionState
                 'rating': service.averageRating,
                 'reviewCount': service.totalLikes,
                 'title': service.title,
-                'description': service.description
-                    .replaceAll(RegExp(r'<[^>]*>'), ''), // Strip HTML tags
+                'description': service.description.replaceAll(
+                  RegExp(r'<[^>]*>'),
+                  '',
+                ), // Strip HTML tags
                 'duration': '${service.deliveryDays} days',
                 'tags': service.tags,
                 'price': service.formattedPrice,

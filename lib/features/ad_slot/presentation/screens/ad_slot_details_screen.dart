@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
+import '../../../cart/data/models/cart_item_model.dart';
+import '../../../cart/presentation/widgets/add_to_campaign_sheet.dart';
 import '../../data/models/ad_slot_model.dart';
 import '../../logic/ad_slot_details_notifier.dart';
 
@@ -326,7 +328,23 @@ class _AdSlotDetailsScreenState extends ConsumerState<AdSlotDetailsScreen>
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: Handle book now
+              // Create CartItem from AdSlot
+              final cartItem = CartItem(
+                id: adSlot.id.toString(),
+                type: 'adslot',
+                title: adSlot.title,
+                description: adSlot.description,
+                price: adSlot.formattedPrice,
+                imageUrl: null, // Ad slots don't have images in the current model
+                sellerName: adSlot.sellerName,
+                sellerType: adSlot.partnerType,
+                duration: adSlot.duration,
+                reach: adSlot.audienceSize,
+                location: adSlot.location,
+              );
+              
+              // Show the add to campaign sheet
+              AddToCampaignSheet.show(context, cartItem);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
@@ -394,6 +412,21 @@ class _AdSlotDetailsScreenState extends ConsumerState<AdSlotDetailsScreen>
       child: Row(
         children: [
           Expanded(
+            child: IconButton(
+              onPressed: () {
+                // TODO: Handle favorite
+              },
+              icon: Icon(Icons.favorite_border),
+              color: AppColors.primaryColor,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.grey.shade100,
+                padding: EdgeInsets.all(12.w),
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            flex: 3,
             child: OutlinedButton.icon(
               onPressed: () {
                 // TODO: Handle share
@@ -405,45 +438,6 @@ class _AdSlotDetailsScreenState extends ConsumerState<AdSlotDetailsScreen>
                 side: BorderSide(color: AppColors.primaryColor),
                 padding: EdgeInsets.symmetric(vertical: 12.h),
               ),
-            ),
-          ),
-          if (!widget.hideBooking) ...[
-            SizedBox(width: 12.w),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Handle book
-                },
-                icon: Icon(Icons.shopping_cart, size: 18.sp),
-                label: Text('Book'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                ),
-              ),
-            ),
-          ],
-          SizedBox(width: 12.w),
-          IconButton(
-            onPressed: () {
-              // TODO: Handle favorite
-            },
-            icon: Icon(Icons.favorite_border),
-            color: AppColors.primaryColor,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.grey.shade100,
-            ),
-          ),
-          SizedBox(width: 8.w),
-          IconButton(
-            onPressed: () {
-              // TODO: Handle share
-            },
-            icon: Icon(Icons.share),
-            color: AppColors.primaryColor,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.grey.shade100,
             ),
           ),
         ],

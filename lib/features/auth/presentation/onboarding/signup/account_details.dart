@@ -3,13 +3,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:nigerian_states_and_lga/nigerian_states_and_lga.dart';
 import '../../../../../core/utils/color_utils.dart' hide AppColors;
 import '../../../../../core/utils/platform_responsive.dart';
-import '../../../../../core/constants/location_constants.dart';
-import '../../../../../controllers/re_useable/country_picker_field.dart';
 import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../logic/auth_notifiers.dart';
-import '../../../data/models/signup_request.dart';
+import '../../../logic/signup_handlers/signup_handler_factory.dart';
 import '../../../../../core/constants/enum.dart';
 
 class AccountDetailsScreen extends ConsumerStatefulWidget {
@@ -30,9 +29,8 @@ class AccountDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
-  int _currentStep = 1; // 1 or 2
+  int _currentStep = 1;
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
   final _scrollController = ScrollController();
   bool _isScrolled = false;
   bool _passwordVisible = false;
@@ -48,16 +46,13 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   late TextEditingController _addressController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
-  late TextEditingController _cityController;
   late TextEditingController _idTypeController;
   late TextEditingController _idNumberController;
   late TextEditingController _tinNumberController;
   Country? _selectedCountry;
   String? _selectedState;
-
-  // Location data
-  final Map<String, List<String>> statesByCountry = STATES_BY_COUNTRY;
-  final Map<String, List<String>> citiesByState = CITIES_BY_STATE;
+  String? _selectedLGA;
+  List<String> _availableLGAs = [];
 
   @override
   void initState() {
@@ -68,13 +63,10 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     _addressController = TextEditingController();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
-    _cityController = TextEditingController();
     _idTypeController = TextEditingController();
     _idNumberController = TextEditingController();
     _tinNumberController = TextEditingController();
-    // Normalize accountType to match dropdown values
     _selectedAccountType = _normalizeAccountType(widget.accountType);
-
     _scrollController.addListener(_onScroll);
   }
 
@@ -104,7 +96,6 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     _addressController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _cityController.dispose();
     _idTypeController.dispose();
     _idNumberController.dispose();
     _tinNumberController.dispose();
@@ -122,602 +113,49 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     setState(() => _currentStep = 1);
   }
 
-  List<String> _getGenresList(dynamic genreData) {
-    if (genreData == null) return [];
-    if (genreData is List) {
-      return genreData.map((e) => e.toString()).toList();
-    }
-    if (genreData is String) {
-      return [genreData];
-    }
-    return [];
-  }
-
-  int _extractIntValue(dynamic value) {
-    if (value == null) return 0;
-    if (value is int) return value;
-
-    // Try to parse as string
-    String strValue = value.toString();
-
-    // Try direct parse first
-    int? parsed = int.tryParse(strValue);
-    if (parsed != null) return parsed;
-
-    // Extract first number from string like "1-3 years" or "5-10"
-    RegExp regExp = RegExp(r'\d+');
-    Match? match = regExp.firstMatch(strValue);
-    if (match != null) {
-      return int.tryParse(match.group(0)!) ?? 0;
-    }
-
-    return 0;
-  }
-
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      switch (widget.role.toUpperCase()) {
-        case 'ARTIST':
-          await _handleArtistSignup();
-          break;
-        case 'ADVERTISER':
-          await _handleAdvertiserSignup();
-          break;
-        case 'SCREEN / BILLBOARD':
-          await _handleScreenBillboardSignup();
-          break;
-        case 'CONTENT PRODUCER':
-          await _handleContentProducerSignup();
-          break;
-        case 'INFLUENCER':
-          await _handleInfluencerSignup();
-          break;
-        case 'UGC CREATOR':
-          await _handleUGCCreatorSignup();
-          break;
-        case 'HOST':
-          await _handleHostSignup();
-          break;
-        case 'TV STATION':
-          await _handleTVStationSignup();
-          break;
-        case 'RADIO STATION':
-          await _handleRadioStationSignup();
-          break;
-        case 'MEDIA HOUSE':
-          await _handleMediaHouseSignup();
-          break;
-        case 'CREATIVES':
-          await _handleCreativesSignup();
-          break;
-        case 'DESIGNER':
-          await _handleDesignerSignup();
-          break;
-        case 'TALENT MANAGER':
-          await _handleTalentManagerSignup();
-          break;
-        default:
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Signup for ${widget.role} is not yet implemented.',
-              ),
-              backgroundColor: Colors.orange,
-            ),
-          );
-      }
+    if (!_formKey.currentState!.validate()) return;
+
+    final handler = SignupHandlerFactory.getHandler(widget.role);
+    
+    if (handler == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Signup for ${widget.role} is not yet implemented.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
     }
-  }
 
-  Future<void> _handleCreativesSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
+    try {
+      final signUpRequest = await handler.createSignupRequest(
+        roleData: widget.roleData,
+        name: _nameController.text,
+        email: _emailController.text,
+        phone: _phoneController.text,
+        password: _passwordController.text,
+        country: _selectedCountry?.name,
+        state: _selectedState,
+        city: _selectedLGA,
+        address: _addressController.text.isEmpty ? null : _addressController.text,
+        accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
+        idType: _idTypeController.text.isNotEmpty ? _idTypeController.text : null,
+        idNumber: _idNumberController.text.isNotEmpty ? _idNumberController.text : null,
+        tinNumber: _tinNumberController.text.isNotEmpty ? _tinNumberController.text : null,
+      );
 
-    // Convert comma-separated strings to lists
-    final List<String> skills = widget.roleData['skills'] != null
-        ? (widget.roleData['skills'] as String)
-              .split(',')
-              .map((s) => s.trim())
-              .toList()
-        : [];
-
-    final List<String> toolsUsed = widget.roleData['toolsUsed'] != null
-        ? (widget.roleData['toolsUsed'] as String)
-              .split(',')
-              .map((s) => s.trim())
-              .toList()
-        : [];
-
-    final creativeInfo = CreativeInfo(
-      displayName: widget.roleData['displayName'],
-      creativeType: widget.roleData['creativeType'],
-      skills: skills,
-      specialization: widget.roleData['specialization'],
-      toolsUsed: toolsUsed,
-      yearsOfExperience: _extractIntValue(widget.roleData['yearsOfExperience']),
-      numberOfProjects: _extractIntValue(widget.roleData['numberOfProjects']),
-      portfolioLink: widget.roleData['portfolioLink'],
-      availabilityType: widget.roleData['availabilityType'],
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.DESIGNER.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      creativeInfo: creativeInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleDesignerSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final designerInfo = DesignerInfo(
-      businessName: widget.roleData['businessName'],
-      businessAddress: widget.roleData['businessAddress'],
-      businessWebsite: widget.roleData['businessWebsite'],
-      telephoneNumber: widget.roleData['telephoneNumber'],
-      portfolioUrl: widget.roleData['portfolioUrl'],
-      bio: widget.roleData['bio'],
-      skillTags: widget.roleData['skillTags'],
-      experienceLevel: widget.roleData['experienceLevel'],
-      pricingModel: widget.roleData['pricingModel'],
-      price: double.tryParse(widget.roleData['price']?.toString() ?? ''),
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.DESIGNER.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      designerInfo: designerInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-      idType: _idTypeController.text.isNotEmpty ? _idTypeController.text : null,
-      idNumber: _idNumberController.text.isNotEmpty
-          ? _idNumberController.text
-          : null,
-      tinNumber: _tinNumberController.text.isNotEmpty
-          ? _tinNumberController.text
-          : null,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleTalentManagerSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final talentManagerInfo = TalentManagerInfo(
-      managerDisplayName: widget.roleData['managerDisplayName'],
-      businessName: widget.roleData['businessName'],
-      businessAddress: widget.roleData['businessAddress'],
-      businessTelephoneNumber: widget.roleData['businessTelephoneNumber'],
-      numberOfTalentsManaged: widget.roleData['numberOfTalentsManaged'],
-      talentCategories: _getGenresList(widget.roleData['talentCategories']),
-      yearsOfExperience: widget.roleData['yearsOfExperience'],
-      website: widget.roleData['website'],
-      businessRegistrationNumber: widget.roleData['businessRegistrationNumber'],
-      tinNumber: widget.roleData['tinNumber'] ?? _tinNumberController.text,
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.TALENT_MANAGER.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      talentManagerInfo: talentManagerInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleHostSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final hostInfo = HostInfo(
-      businessName: widget.roleData['businessName'],
-      permitNumber: widget.roleData['permitNumber'],
-      businessAddress: widget.roleData['businessAddress'],
-      businessWebsite: widget.roleData['businessWebsite'],
-      industry: widget.roleData['industry'],
-      operatingCities: _getGenresList(widget.roleData['operatingCities']),
-      yearsOfOperation: _extractIntValue(widget.roleData['yearsOfOperation']),
-      idType: widget.roleData['idType'],
-      idNumber: widget.roleData['idNumber'],
-      tinNumber: widget.roleData['tinNumber'],
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.HOST.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.BUSINESS.value,
-      hostInfo: hostInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleTVStationSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final tvStationInfo = TVStationInfo(
-      businessName: widget.roleData['businessName'] ?? '',
-      businessAddress: widget.roleData['businessAddress'] ?? '',
-      rcNumber: widget.roleData['rcNumber'] ?? '',
-      tinNumber: widget.roleData['tinNumber'] ?? '',
-      contactPhone: widget.roleData['contactPhone'] ?? '',
-      businessWebsite: widget.roleData['businessWebsite'],
-      broadcastType: widget.roleData['broadcastType'] ?? '',
-      channelType: widget.roleData['channelType'] ?? '',
-      operatingRegions: _getGenresList(widget.roleData['operatingRegions']),
-      contentFocus: _getGenresList(widget.roleData['contentFocus']),
-      yearsOfOperation: _extractIntValue(widget.roleData['yearsOfOperation']),
-      averageDailyViewership: _extractIntValue(
-        widget.roleData['averageDailyViewership'],
-      ),
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.TV_STATION.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.BUSINESS.value,
-      tvStationInfo: tvStationInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleRadioStationSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final radioStationInfo = RadioStationInfo(
-      businessName: widget.roleData['businessName'] ?? '',
-      businessAddress: widget.roleData['businessAddress'] ?? '',
-      rcNumber: widget.roleData['rcNumber'] ?? '',
-      tinNumber: widget.roleData['tinNumber'] ?? '',
-      contactPhone: widget.roleData['contactPhone'] ?? '',
-      businessWebsite: widget.roleData['businessWebsite'],
-      broadcastBand: widget.roleData['broadcastBand'] ?? '',
-      primaryLanguage: widget.roleData['primaryLanguage'] ?? '',
-      operatingRegions: _getGenresList(widget.roleData['operatingRegions']),
-      contentFocus: _getGenresList(widget.roleData['contentFocus']),
-      yearsOfOperation: _extractIntValue(widget.roleData['yearsOfOperation']),
-      averageDailyListenership: _extractIntValue(
-        widget.roleData['averageDailyListenership'],
-      ),
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.RADIO_STATION.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.BUSINESS.value,
-      radioStationInfo: radioStationInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleMediaHouseSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final mediaHouseInfo = MediaHouseInfo(
-      businessName: widget.roleData['businessName'] ?? '',
-      businessAddress: widget.roleData['businessAddress'] ?? '',
-      rcNumber: widget.roleData['rcNumber'] ?? '',
-      tinNumber: widget.roleData['tinNumber'] ?? '',
-      contactPhone: widget.roleData['contactPhone'] ?? '',
-      businessWebsite: widget.roleData['businessWebsite'],
-      mediaTypes: _getGenresList(widget.roleData['mediaTypes']),
-      operatingRegions: _getGenresList(widget.roleData['operatingRegions']),
-      yearsOfOperation: _extractIntValue(widget.roleData['yearsOfOperation']),
-      contentFocus: _getGenresList(widget.roleData['contentFocus']),
-      estimatedMonthlyReach: _extractIntValue(
-        widget.roleData['estimatedMonthlyReach'],
-      ),
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.MEDIA_HOUSE.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.BUSINESS.value,
-      mediaHouseInfo: mediaHouseInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleInfluencerSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final influencerInfo = InfluencerInfo(
-      displayName: widget.roleData['displayName'],
-      primaryPlatform: widget.roleData['primaryPlatform'],
-      contentCategory: widget.roleData['contentCategory'],
-      niche: widget.roleData['niche'],
-      audienceSizeRange: widget.roleData['audienceSizeRange'],
-      averageEngagementRate: double.tryParse(
-        widget.roleData['averageEngagementRate']?.toString() ?? '',
-      ),
-      contentFormats: _getGenresList(widget.roleData['contentFormats']),
-      portfolioLink: widget.roleData['portfolioLink'],
-      availabilityType: widget.roleData['availabilityType'] ?? '',
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.INFLUENCER.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      influencerInfo: influencerInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleUGCCreatorSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final ugcInfo = UGCInfo(
-      displayName: widget.roleData['displayName'] ?? '',
-      contentStyle: _getGenresList(widget.roleData['contentStyle']),
-      niches: _getGenresList(widget.roleData['niches']),
-      contentFormats: _getGenresList(widget.roleData['contentFormats']),
-      yearsOfExperience: _extractIntValue(widget.roleData['yearsOfExperience']),
-      portfolioLink: widget.roleData['portfolioLink'],
-      availabilityType: widget.roleData['availabilityType'] ?? '',
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.UGC_CREATOR.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      ugcInfo: ugcInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleScreenBillboardSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    // Screen Billboard seems to be business-centric based on fields,
-    // but we support generic account type selection at the top level.
-    // However, the fields are consistent.
-
-    final screenBillboardInfo = ScreenBillboardInfo(
-      businessName: widget.roleData['businessName'] ?? '',
-      permitNumber: widget.roleData['permitNumber'] ?? '',
-      industry: widget.roleData['industry'] ?? '',
-      operatingStates: _getGenresList(
-        widget.roleData['operatingStates'],
-      ), // Reusing list helper
-      yearsOfOperation: widget.roleData['yearsOfOperation'],
-      businessWebsite: widget.roleData['businessWebsite'],
-      businessAddress: widget.roleData['businessAddress'] ?? '',
-      idType: widget.roleData['idType'] ?? 'CAC',
-      idRcNumber: widget.roleData['idRcNumber'] ?? '',
-      tinNumber: widget.roleData['tinNumber'] ?? '',
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.SCREEN_BILLBOARD.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.BUSINESS.value,
-      screenBillboardInfo: screenBillboardInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleContentProducerSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    final contentProducerInfo = ContentProducerInfo(
-      producerName: widget.roleData['producerName'],
-      businessName: widget.roleData['businessName'],
-      specialization: widget.roleData['specialization'],
-      serviceTypes: _getGenresList(widget.roleData['serviceTypes']),
-      yearsOfExperience: _extractIntValue(widget.roleData['yearsOfExperience']),
-      numberOfProductions: _extractIntValue(
-        widget.roleData['numberOfProductions'],
-      ),
-      portfolioLink: widget.roleData['portfolioLink'],
-      availabilityType: widget.roleData['availabilityType'],
-      businessAddress: widget.roleData['businessAddress'],
-      businessWebsite: widget.roleData['businessWebsite'],
-      idType: widget.roleData['idType'],
-      idNumber: widget.roleData['idNumber'],
-      tinNumber:
-          widget.roleData['tinNumber'] ?? _tinNumberController.text, // fallback
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.PRODUCER.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      contentProducerInfo: contentProducerInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleAdvertiserSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    AdvertiserInfo? advertiserInfo;
-
-    // Only parameters populated for BUSINESS account type
-    if (_selectedAccountType == 'BUSINESS') {
-      advertiserInfo = AdvertiserInfo(
-        businessName: widget.roleData['businessName'],
-        businessAddress: widget.roleData['businessAddress'],
-        industry: widget.roleData['industry'],
-        telephoneNumber: widget.roleData['businessTelephoneNumber'],
-        businessWebsite: widget.roleData['businessWebsite'],
-        // Use ID Type controller or default to 'CAC' if RC number is present
-        idType: _idTypeController.text.isNotEmpty
-            ? _idTypeController.text
-            : (widget.roleData['businessRegistrationNumber'] != null
-                  ? 'CAC'
-                  : null),
-        // Prioritize roleData RC number, fallback to ID controller
-        idNumber:
-            widget.roleData['businessRegistrationNumber'] ??
-            _idNumberController.text,
-        // Prioritize roleData TIN, fallback to TIN controller
-        tinNumber: widget.roleData['tinNumber'] ?? _tinNumberController.text,
+      final authNotifier = ref.read(authNotifierProvider.notifier);
+      await authNotifier.signupUser(signUpRequest);
+      await _handleSignupResponse();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
-
-    final signUpRequest = SignUpRequest(
-      role: 'USER', // Backend requires USER for all roles
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      advertiserInfo: advertiserInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
-  }
-
-  Future<void> _handleArtistSignup() async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
-
-    // Build ArtistInfo from roleData
-    final artistInfo = ArtistInfo(
-      stageName: widget.roleData['stageName'] ?? '',
-      primaryProfession: widget.roleData['profession'] ?? '',
-      specialization: widget.roleData['specialization'] ?? '',
-      genres: _getGenresList(widget.roleData['genre']),
-      yearsOfExperience: _extractIntValue(widget.roleData['yearsOfExperience']),
-      numberOfProductions: _extractIntValue(
-        widget.roleData['numberOfProductions'],
-      ),
-      availabilityType: widget.roleData['availabilityType'] ?? '',
-      portfolioLink: widget.roleData['portfolioLink'],
-      managementType: widget.roleData['whoManagesYou'] ?? 'SELF',
-    );
-
-    final signUpRequest = SignUpRequest(
-      role: UserRole.ARTIST.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-      artistInfo: artistInfo,
-      name: _nameController.text,
-      emailAddress: _emailController.text,
-      phoneNumber: _phoneController.text,
-      password: _passwordController.text,
-      country: _selectedCountry?.name ?? 'Nigeria',
-      state: _selectedState,
-      city: _cityController.text.isEmpty ? null : _cityController.text,
-      address: _addressController.text.isEmpty ? null : _addressController.text,
-    );
-
-    await authNotifier.signupUser(signUpRequest);
-    await _handleSignupResponse();
   }
 
   Future<void> _handleSignupResponse() async {
@@ -732,7 +170,6 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      // Navigate to verification screen with email and phone number
       context.push(
         '/verify-identity',
         extra: {
@@ -801,7 +238,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                     minHeight: 6.h,
                     backgroundColor: Colors.grey[200],
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      const Color(0xFF2196F3), // Blue color
+                      const Color(0xFF2196F3),
                     ),
                   ),
                 ),
@@ -868,6 +305,8 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   }
 
   Widget _buildStep2() {
+    final nigerianStates = NigerianStatesAndLGA.allStates;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -880,88 +319,230 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           ),
         ),
         SizedBox(height: 24.h),
+        // Country Picker
         Padding(
           padding: EdgeInsets.only(bottom: 16.h),
-          child: CountryPickerField(
-            label: 'Country',
-            onCountryChanged: (country) {
-              setState(() {
-                _selectedCountry = country;
-                _selectedState = null;
-                _cityController.clear();
-              });
-            },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Country',
+                      style: TextStyle(
+                        fontSize: 14.rsp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '*',
+                      style: TextStyle(
+                        fontSize: 14.rsp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 8.h),
+              InkWell(
+                onTap: () {
+                  showCountryPicker(
+                    context: context,
+                    showPhoneCode: false,
+                    onSelect: (Country country) {
+                      setState(() {
+                        _selectedCountry = country;
+                        // Reset state and LGA when country changes
+                        _selectedState = null;
+                        _selectedLGA = null;
+                        _availableLGAs = [];
+                      });
+                    },
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedCountry?.name ?? 'Select Country',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: _selectedCountry == null
+                              ? Colors.grey[400]
+                              : Colors.black,
+                        ),
+                      ),
+                      Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        if (_selectedCountry != null)
+        // State Dropdown (for Nigeria)
+        if (_selectedCountry?.name == 'Nigeria')
           Padding(
             padding: EdgeInsets.only(bottom: 16.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'State/Region',
-                  style: TextStyle(
-                    fontSize: 14.rsp,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'State',
+                        style: TextStyle(
+                          fontSize: 14.rsp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '*',
+                        style: TextStyle(
+                          fontSize: 14.rsp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: 8.h),
                 DropdownButtonFormField<String>(
                   value: _selectedState,
-                  decoration: _inputDecoration('Select state/region'),
-                  items: (statesByCountry[_selectedCountry!.name] ?? [])
-                      .map(
-                        (state) =>
-                            DropdownMenuItem(value: state, child: Text(state)),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(() {
-                    _selectedState = value;
-                    _cityController.clear();
-                  }),
-                  validator: (value) =>
-                      value == null ? 'State is required' : null,
+                  decoration: InputDecoration(
+                    hintText: 'Select State',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.rsp),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5),
+                    ),
+                    contentPadding: PlatformResponsive.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                  items: nigerianStates.map((state) {
+                    return DropdownMenuItem<String>(
+                      value: state,
+                      child: Text(state, style: TextStyle(fontSize: 14.sp)),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedState = value;
+                      _selectedLGA = null;
+                      if (value != null) {
+                        _availableLGAs = NigerianStatesAndLGA.getStateLGAs(value);
+                      } else {
+                        _availableLGAs = [];
+                      }
+                    });
+                  },
+                  validator: (value) => value == null ? 'State is required' : null,
                 ),
               ],
             ),
           ),
-        if (_selectedState != null)
+        // LGA/City Dropdown (for Nigeria)
+        if (_selectedCountry?.name == 'Nigeria' && _selectedState != null)
           Padding(
             padding: EdgeInsets.only(bottom: 16.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'City',
-                  style: TextStyle(
-                    fontSize: 14.rsp,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'Local Government Area (LGA)',
+                        style: TextStyle(
+                          fontSize: 14.rsp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '*',
+                        style: TextStyle(
+                          fontSize: 14.rsp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: 8.h),
                 DropdownButtonFormField<String>(
-                  value: _cityController.text.isEmpty
+                  value: _selectedLGA,
+                  decoration: InputDecoration(
+                    hintText: _availableLGAs.isEmpty 
+                        ? 'No LGAs available' 
+                        : 'Select LGA',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.rsp),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5),
+                    ),
+                    contentPadding: PlatformResponsive.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                  items: _availableLGAs.isEmpty
+                      ? [
+                          DropdownMenuItem<String>(
+                            value: null,
+                            enabled: false,
+                            child: Text(
+                              'No LGAs available for this state',
+                              style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+                            ),
+                          )
+                        ]
+                      : _availableLGAs.map((lga) {
+                          return DropdownMenuItem<String>(
+                            value: lga,
+                            child: Text(lga, style: TextStyle(fontSize: 14.sp)),
+                          );
+                        }).toList(),
+                  onChanged: _availableLGAs.isEmpty
                       ? null
-                      : _cityController.text,
-                  decoration: _inputDecoration('Select city'),
-                  items: (citiesByState[_selectedState] ?? [])
-                      .map(
-                        (city) =>
-                            DropdownMenuItem(value: city, child: Text(city)),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      _cityController.text = value;
-                      setState(() {});
-                    }
-                  },
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'City is required'
-                      : null,
+                      : (value) {
+                          setState(() {
+                            _selectedLGA = value;
+                          });
+                        },
+                  validator: (value) => value == null ? 'LGA is required' : null,
                 ),
               ],
             ),
@@ -993,7 +574,6 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             },
           ),
         ),
-        // Business-specific fields - only for Advertiser and Host roles with BUSINESS account type
         if (_selectedAccountType == 'BUSINESS' &&
                 (widget.role.toUpperCase() == 'ADVERTISER' ||
                     widget.role.toUpperCase() == 'HOST') ||

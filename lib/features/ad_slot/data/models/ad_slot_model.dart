@@ -66,6 +66,27 @@ class AdSlot {
   });
 
   factory AdSlot.fromJson(Map<String, dynamic> json) {
+    // Parse platforms - handle both string array and object array formats
+    List<Platform> parsedPlatforms = [];
+    if (json['platforms'] != null) {
+      final platformsData = json['platforms'] as List;
+      for (var item in platformsData) {
+        if (item is String) {
+          // Backend sends string format: ["Instagram", "Facebook"]
+          parsedPlatforms.add(Platform(name: item, handle: ''));
+        } else if (item is Map<String, dynamic>) {
+          // Expected object format: [{"name": "Instagram", "handle": "@user"}]
+          parsedPlatforms.add(Platform.fromJson(item));
+        }
+      }
+    }
+
+    // Parse coverageAreas - handle null by converting to empty array
+    List<String> parsedCoverageAreas = [];
+    if (json['coverageAreas'] != null) {
+      parsedCoverageAreas = List<String>.from(json['coverageAreas']);
+    }
+
     return AdSlot(
       id: json['id'] ?? 0,
       userId: json['userId'] ?? 0,
@@ -73,16 +94,13 @@ class AdSlot {
       description: json['description'] ?? '',
       features: List<String>.from(json['features'] ?? []),
       partnerType: json['partnerType'] ?? '',
-      platforms: (json['platforms'] as List?)
-              ?.map((p) => Platform.fromJson(p))
-              .toList() ??
-          [],
+      platforms: parsedPlatforms,
       contentTypes: List<String>.from(json['contentTypes'] ?? []),
       price: json['price']?.toString() ?? '0',
       duration: json['duration'] ?? '',
       maxRevisions: json['maxRevisions'] ?? 0,
       isActive: json['isActive'] ?? false,
-      coverageAreas: List<String>.from(json['coverageAreas'] ?? []),
+      coverageAreas: parsedCoverageAreas,
       audienceSize: json['audienceSize'] ?? '',
       timeWindow: json['timeWindow'],
       status: json['status'] ?? '',

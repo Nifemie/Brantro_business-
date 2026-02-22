@@ -94,6 +94,29 @@ class CreativeModel {
   }
 
   List<String> get tagsList => tags.split(',').map((e) => e.trim()).toList();
+
+  // Get full image URL
+  String get thumbnailUrl {
+    if (thumbnail == null || thumbnail!.isEmpty) {
+      return '';
+    }
+    if (thumbnail!.startsWith('http')) {
+      return thumbnail!;
+    }
+    return 'https://realta360.b-cdn.net/$thumbnail';
+  }
+
+  // Strip HTML tags from description
+  String get cleanDescription {
+    return description
+        .replaceAll(RegExp(r'<[^>]*>'), '') // Remove HTML tags
+        .replaceAll('&nbsp;', ' ') // Replace non-breaking spaces
+        .replaceAll('&amp;', '&') // Replace ampersand
+        .replaceAll('&lt;', '<') // Replace less than
+        .replaceAll('&gt;', '>') // Replace greater than
+        .replaceAll('&quot;', '"') // Replace quotes
+        .trim(); // Remove leading/trailing whitespace
+  }
 }
 
 class CreativeOwner {

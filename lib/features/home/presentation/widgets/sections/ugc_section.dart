@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../core/utils/avatar_helper.dart';
 import '../../../../../core/utils/color_utils.dart';
 import '../../../../../core/utils/platform_responsive.dart';
 import '../../../../../core/widgets/skeleton_loading.dart';
@@ -16,14 +17,6 @@ class UGCSection extends ConsumerStatefulWidget {
 }
 
 class _UGCSectionState extends ConsumerState<UGCSection> {
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(ugcCreatorsProvider.notifier).fetchUgcCreators(page: 0, limit: 10);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final ugcState = ref.watch(ugcCreatorsProvider);
@@ -61,14 +54,13 @@ class _UGCSectionState extends ConsumerState<UGCSection> {
           ),
         ),
         SizedBox(height: 12.h),
-        if (ugcState.isInitialLoading)
-          SkeletonHorizontalList(
+        ugcState.when(
+          loading: () => SkeletonHorizontalList(
             cardWidth: 300.w,
             cardHeight: 400.h,
             itemCount: 3,
-          )
-        else if (ugcState.message != null && !ugcState.isDataAvailable)
-          SizedBox(
+          ),
+          error: (error, _) => SizedBox(
             height: 400.h,
             child: Center(
               child: Column(
@@ -87,7 +79,7 @@ class _UGCSectionState extends ConsumerState<UGCSection> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Text(
-                      ugcState.message ?? '',
+                      error.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                     ),
@@ -104,52 +96,66 @@ class _UGCSectionState extends ConsumerState<UGCSection> {
                 ],
               ),
             ),
-          )
-        else if ((ugcState.data ?? []).isEmpty)
-          SizedBox(
-            height: 400.h,
-            child: Center(child: Text('No UGC creators found')),
-          )
-        else
-          SizedBox(
-            height: 400.h,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: PlatformResponsive.symmetric(horizontal: 16),
-              children: (ugcState.data ?? []).map((creator) {
-                final location = [
-                  creator.city,
-                  creator.state,
-                  creator.country,
-                ].where((e) => e != null && e.isNotEmpty).join(', ');
-
-                return Padding(
-                  padding: EdgeInsets.only(right: 16.w),
-                  child: UgcCreatorCard(
-                    profileImage: creator.avatarUrl ?? '',
-                    name: creator.name,
-                    location: location.isEmpty ? 'Unknown' : location,
-                    workType: creator.additionalInfo?.availabilityType ?? '',
-                    categories: creator.additionalInfo?.niches ?? [],
-                    skills: creator.additionalInfo?.contentStyle ?? [],
-                    contentType: creator.additionalInfo?.contentFormats?.join(', ') ?? '',
-                    rating: creator.averageRating,
-                    likes: creator.totalLikes,
-                    onViewServices: () {
-                      context.push(
-                        '/seller-ad-slots/${creator.id}',
-                        extra: {
-                          'sellerName': creator.name,
-                          'sellerAvatar': creator.avatarUrl,
-                          'sellerType': 'UGC Creator',
-                        },
-                      );
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
           ),
+          data: (state) {
+            final creators = state.data ?? [];
+
+            if (creators.isEmpty) {
+              return SizedBox(
+                height: 400.h,
+                child: Center(child: Text('No UGC creators found')),
+              );
+            }
+
+            return SizedBox(
+              height: 400.h,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: PlatformResponsive.symmetric(horizontal: 16),
+                children: creators.map((creator) {
+                  final location = [
+                    creator.city,
+                    creator.state,
+                    creator.country,
+                  ].where((e) => e != null && e.isNotEmpty).join(', ');
+
+                  return Padding(
+                    padding: EdgeInsets.only(right: 16.w),
+                    child: UgcCreatorCard(
+                      profileImage: AvatarHelper.getAvatar(
+                        avatarUrl: creator.avatarUrl,
+                        userId: creator.id,
+                      ),
+                      name: creator.name,
+                      location: location.isEmpty ? 'Unknown' : location,
+                      workType: creator.additionalInfo?.availabilityType ?? '',
+                      categories: creator.additionalInfo?.niches ?? [],
+                      skills: creator.additionalInfo?.contentStyle ?? [],
+                      contentType:
+                          creator.additionalInfo?.contentFormats?.join(', ') ??
+                          '',
+                      rating: creator.averageRating,
+                      likes: creator.totalLikes,
+                      onViewServices: () {
+                        context.push(
+                          '/seller-ad-slots/${creator.id}',
+                          extra: {
+                            'sellerName': creator.name,
+                            'sellerAvatar': AvatarHelper.getAvatar(
+                              avatarUrl: creator.avatarUrl,
+                              userId: creator.id,
+                            ),
+                            'sellerType': 'UGC Creator',
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }

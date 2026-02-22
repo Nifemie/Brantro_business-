@@ -71,7 +71,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       if (category.contains('artist'))
         ref.read(artistsProvider.notifier).fetchArtists(page: 1, limit: 10)
       else if (category.contains('influencer'))
-        ref.read(influencersProvider.notifier).fetchInfluencers(page: 0, limit: 10)
+        ref
+            .read(influencersProvider.notifier)
+            .fetchInfluencers(page: 0, limit: 10)
       else if (category.contains('radio'))
         ref.read(radioStationsProvider.notifier).fetchRadioStations(0, 10)
       else if (category.contains('tv'))
@@ -79,15 +81,19 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       else if (category.contains('media'))
         ref.read(mediaHousesProvider.notifier).fetchMediaHouses(0, 10)
       else if (category.contains('designer') || category.contains('creative'))
-        ref.read(creativesProvider.notifier).fetchCreatives()
+        ref.read(creativesProvider.notifier).fetchCreatives(page: 0, limit: 10)
       else if (category.contains('ugc'))
-        ref.read(ugcCreatorsProvider.notifier).fetchUgcCreators(page: 0, limit: 10)
+        ref
+            .read(ugcCreatorsProvider.notifier)
+            .fetchUgcCreators(page: 0, limit: 10)
       else if (category.contains('film') || category.contains('producer'))
         ref.read(producersProvider.notifier).fetchProducers(page: 1, limit: 10)
       else if (category.contains('billboard'))
         ref.read(billboardsProvider.notifier).fetchBillboards(page: 0, size: 15)
       else if (category.contains('digital') || category.contains('screen'))
-        ref.read(digitalScreensProvider.notifier).fetchDigitalScreens(page: 0, size: 15),
+        ref
+            .read(digitalScreensProvider.notifier)
+            .fetchDigitalScreens(page: 0, size: 15),
     ]);
   }
 
@@ -124,135 +130,69 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
     // Watch providers for error state
     final adSlotState = ref.watch(adSlotProvider);
-    
-    // Check for network error based on category
+
+    // Check for network error based on category - only check for actual async errors
     bool categoryHasError = false;
-    bool categoryHasData = true;
-    
+
     if (category.contains('artist')) {
       final s = ref.watch(artistsProvider);
-      categoryHasError = s.message != null && !s.isDataAvailable;
-      categoryHasData = s.isDataAvailable;
+      categoryHasError = s.hasError;
     } else if (category.contains('influencer')) {
       final s = ref.watch(influencersProvider);
-      categoryHasError = s.message != null && !s.isDataAvailable;
-      categoryHasData = s.isDataAvailable;
+      categoryHasError = s.hasError;
     } else if (category.contains('ugc')) {
       final s = ref.watch(ugcCreatorsProvider);
-      categoryHasError = s.message != null && !s.isDataAvailable;
-      categoryHasData = s.isDataAvailable;
+      categoryHasError = s.hasError;
+    } else if (category.contains('tv') || category.contains('television')) {
+      final s = ref.watch(tvStationsProvider);
+      categoryHasError = s.hasError;
+    } else if (category.contains('radio')) {
+      final s = ref.watch(radioStationsProvider);
+      categoryHasError = s.hasError;
+    } else if (category.contains('designer') || category.contains('creative')) {
+      final s = ref.watch(creativesProvider);
+      categoryHasError = s.hasError;
     }
-    // ... add more as needed, but if adSlot fails it's already a good indicator
-    
-    final bool hideContent = (!adSlotState.isInitialLoading && !adSlotState.isDataAvailable && adSlotState.message != null) || categoryHasError;
+
+    // Only hide content if there's an actual network error
+    final bool hideContent = categoryHasError;
 
     return Material(
       type: MaterialType.transparency,
-      child: Container(
-        color: AppColors.backgroundPrimary,
-        child: Column(
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Column(
           children: [
-            // Category header image (if category is selected)
-            if (widget.category != null && _getCategoryImage() != null)
-              Stack(
-                children: [
-                  // Category image
-                  Container(
-                    height: 200.h,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(_getCategoryImage()!),
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                      ),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.3),
-                            Colors.black.withOpacity(0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Back button
-                  Positioned(
-                    top: 16.h,
-                    left: 16.w,
-                    child: SafeArea(
-                      bottom: false,
-                      child: GestureDetector(
-                        onTap: () => context.pop(),
-                        child: Container(
-                          padding: EdgeInsets.all(8.w),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.4),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                            size: 24.sp,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Category title overlay
-                  Positioned(
-                    bottom: 20.h,
-                    left: 16.w,
-                    right: 16.w,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.category!,
-                          style: AppTexts.h1(color: Colors.white),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          'Explore ${widget.category!.toLowerCase()}',
-                          style: AppTexts.bodyMedium(color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-            // Fixed top section with SafeArea
-            SafeArea(
-              bottom: false,
-              child: Container(
-                color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            // Blue Header with Search Bar
+            Container(
+              color: AppColors.primaryColor,
+              child: SafeArea(
+                bottom: false,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Search bar
-                    _buildSearchBar(category),
-                    SizedBox(height: 16.h),
-
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      child: _buildSearchBar(category),
+                    ),
+                    
                     // Filter & Sort row
-                    _buildFilterSortRow(category),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
+                      child: _buildFilterSortRow(category),
+                    ),
                   ],
                 ),
               ),
             ),
 
-            // Scrollable content - show role-specific cards or regular listings
+            // Scrollable content
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _onRefresh,
-                child: hideContent 
-                  ? _buildNetworkErrorPlaceholder() 
-                  : _getContentWidget(),
+                child: hideContent
+                    ? _buildNetworkErrorPlaceholder()
+                    : _getContentWidget(),
               ),
             ),
           ],
@@ -296,29 +236,30 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Available Campaigns Section
-          AvailableCampaignsSection(
-            initialCategory: category,
-            onSeeAll: () {
-              // TODO: Navigate to all campaigns
-            },
-          ),
-
-          SizedBox(height: 32.h),
+          // Available Campaigns Section - only show when no category is selected
+          if (widget.category == null || widget.category!.isEmpty) ...[
+            AvailableCampaignsSection(
+              initialCategory: category,
+              onSeeAll: () {
+                // TODO: Navigate to all campaigns
+              },
+            ),
+            SizedBox(height: 32.h),
+          ],
 
           // Digital Services Section (only show when no category selected)
           if (widget.category == null || widget.category!.isEmpty) ...[
             DigitalServicesSection(initialCategory: category),
             SizedBox(height: 32.h),
-            
+
             // Vetting Services Section
             const VettingServicesSection(),
             SizedBox(height: 32.h),
-            
+
             // Template Section
             const TemplateSection(),
             SizedBox(height: 32.h),
-            
+
             // Creatives Section
             const CreativesSection(),
             SizedBox(height: 32.h),
@@ -327,6 +268,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           // Top Profiles Section
           TopProfilesSection(
             initialCategory: category,
+            showSeeAll: widget.category == null || widget.category!.isEmpty, // Hide See All when category is selected
             onSeeAll: () {
               // TODO: Navigate to all profiles
             },
@@ -340,22 +282,59 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   Widget _buildSearchBar(String category) {
-    return SearchBarWidget(
-      controller: _state(category).searchController,
-      hintText: 'Search campaigns',
-      enableAdSlotSearch: true,
-      onSearch: () {
-        // Navigate to search results when user submits search
+    // Get the display name for the category
+    String searchPlaceholder = 'Search campaigns';
+    if (widget.category != null && widget.category!.isNotEmpty) {
+      final categoryName = _getCategoryDisplayName(category);
+      searchPlaceholder = 'Search $categoryName';
+    }
+
+    return GestureDetector(
+      onTap: () {
+        // Navigate to search results when user taps search
         if (_state(category).searchController.text.isNotEmpty) {
-          context.push('/search-results?query=${_state(category).searchController.text}');
+          context.push(
+            '/search-results?query=${_state(category).searchController.text}',
+          );
+        } else {
+          context.push('/search');
         }
       },
+      child: Container(
+        height: 44.h,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: Icon(
+                Icons.search,
+                color: AppColors.grey600,
+                size: 20.sp,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                searchPlaceholder,
+                style: TextStyle(
+                  color: AppColors.grey600,
+                  fontSize: 14.sp,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildFilterSortRow(String category) {
     final exploreState = _state(category);
-    final hasFilters = exploreState.filters.isNotEmpty &&
+    final hasFilters =
+        exploreState.filters.isNotEmpty &&
         (exploreState.filters['role'] != null ||
             exploreState.filters['category'] != null);
 
@@ -377,24 +356,24 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(
-                  color: hasFilters ? AppColors.primaryColor : AppColors.grey300,
-                  width: 1,
-                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.tune,
-                    color: hasFilters ? AppColors.primaryColor : AppColors.textPrimary,
+                    color: hasFilters
+                        ? AppColors.primaryColor
+                        : AppColors.textPrimary,
                     size: 20.sp,
                   ),
                   SizedBox(width: 8.w),
                   Text(
                     'Filter',
                     style: AppTexts.bodyMedium(
-                      color: hasFilters ? AppColors.primaryColor : AppColors.textPrimary,
+                      color: hasFilters
+                          ? AppColors.primaryColor
+                          : AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -427,7 +406,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: AppColors.grey300, width: 1),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -476,12 +454,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         padding: EdgeInsets.symmetric(vertical: 40.h),
         child: Column(
           children: [
-            Icon(Icons.inventory_2_outlined, size: 48.sp, color: AppColors.grey400),
-            SizedBox(height: 16.h),
-            Text(
-              'Coming soon',
-              style: AppTexts.h4(color: AppColors.grey500),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 48.sp,
+              color: AppColors.grey400,
             ),
+            SizedBox(height: 16.h),
+            Text('Coming soon', style: AppTexts.h4(color: AppColors.grey500)),
           ],
         ),
       ),

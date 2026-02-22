@@ -6,18 +6,19 @@ import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 import '../../logic/service_details_notifier.dart';
 import '../../data/models/service_model.dart';
-import '../../../../core/widgets/skeleton_loading.dart';
-import '../../../cart/logic/cart_notifier.dart';
 import '../../../cart/data/models/cart_item_model.dart';
+import '../../../cart/presentation/widgets/add_to_campaign_sheet.dart';
 
 class ServiceDetailsScreen extends ConsumerStatefulWidget {
   final String serviceId;
   final ServiceModel? initialData; // Optional data for optimistic UI
+  final bool isPurchased; // Flag to indicate if service is already purchased
 
   const ServiceDetailsScreen({
     super.key,
     required this.serviceId,
     this.initialData,
+    this.isPurchased = false,
   });
 
   @override
@@ -57,7 +58,9 @@ class _ServiceDetailsScreenState extends ConsumerState<ServiceDetailsScreen>
           ? _buildLoadingState() // Show skeleton loader
           : state.message != null && service == null
               ? _buildErrorState(state.message!)
-              : _buildContent(service!), // Service data (fresh or optimistic)
+              : service != null
+                  ? _buildContent(service)
+                  : _buildLoadingState(), // Fallback to loading if service is null
     );
   }
 
@@ -259,66 +262,65 @@ class _ServiceDetailsScreenState extends ConsumerState<ServiceDetailsScreen>
                     ),
 
                   // Action Buttons
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              // TODO: Contact provider
-                            },
-                            icon: Icon(Icons.chat_bubble_outline, size: 18.sp),
-                            label: Text('Contact'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primaryColor,
-                              side: BorderSide(color: AppColors.primaryColor),
-                              padding: EdgeInsets.symmetric(vertical: 14.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.r),
+                  if (!widget.isPurchased)
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                // TODO: Contact provider
+                              },
+                              icon: Icon(Icons.chat_bubble_outline, size: 18.sp),
+                              label: Text('Contact'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primaryColor,
+                                side: BorderSide(color: AppColors.primaryColor),
+                                padding: EdgeInsets.symmetric(vertical: 14.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              // Create cart item
-                              final cartItem = CartItem.fromService({
-                                'id': service.id,
-                                'title': service.title,
-                                'description': service.description,
-                                'price': service.price.toString(),
-                                'imageUrl': service.thumbnailUrl,
-                                'provider': service.createdBy?.name,
-                                'badge': service.typeBadge,
-                                'duration': '${service.deliveryDays} days',
-                              });
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                // Create cart item
+                                final cartItem = CartItem(
+                                  id: service.id.toString(),
+                                  type: 'service',
+                                  title: service.title,
+                                  description: service.cleanDescription,
+                                  price: service.formattedPrice,
+                                  imageUrl: service.thumbnailUrl,
+                                  sellerName: service.createdBy?.name,
+                                  sellerType: service.typeBadge,
+                                  duration: '${service.deliveryDays} days',
+                                );
 
-                              // Add to cart
-                              ref.read(cartProvider.notifier).addItem(cartItem);
-
-                              // Navigate to checkout
-                              context.push('/checkout?type=service');
-                            },
-                            icon: Icon(Icons.shopping_cart_outlined,
-                                size: 18.sp),
-                            label: Text('Order Service'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 14.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.r),
+                                // Show the add to campaign sheet
+                                AddToCampaignSheet.show(context, cartItem);
+                              },
+                              icon: Icon(Icons.shopping_cart_outlined,
+                                  size: 18.sp),
+                              label: Text('Order Service'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 14.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
                   SizedBox(height: 24.h),
 
@@ -465,8 +467,7 @@ class _ServiceDetailsScreenState extends ConsumerState<ServiceDetailsScreen>
             Text('Description', style: AppTexts.h4()),
             SizedBox(height: 12.h),
             Text(
-              // Simple strip HTML
-              service.description.replaceAll(RegExp(r'<[^>]*>'), ''),
+              service.cleanDescription,
               style: AppTexts.bodyMedium(color: AppColors.grey700),
             ),
             SizedBox(height: 24.h),

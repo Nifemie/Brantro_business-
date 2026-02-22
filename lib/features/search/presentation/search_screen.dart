@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
+import '../../../core/service/local_storage_service.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -13,36 +14,49 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  List<String> _searchHistory = [];
+  bool _isLoading = true;
 
-  // Sample data for last seen products
-  final List<String> lastSeenProducts = [
-    'assets/promotions/billboard1.jpg',
-    'assets/promotions/billboard2.jpg',
-    'assets/promotions/billboard3.jpg',
-    'assets/promotions/billboard1.jpg',
-    'assets/promotions/billboard2.jpg',
-    'assets/promotions/billboard3.jpg',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadSearchHistory();
+  }
 
-  // Sample data for last searches
-  List<String> lastSearches = [
-    'billboards',
-    'artists',
-    'influencers',
-    'radio stations',
-    'tv stations',
-  ];
+  Future<void> _loadSearchHistory() async {
+    final history = await LocalStorageService.getSearchHistory();
+    setState(() {
+      _searchHistory = history;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.trim().isEmpty) return;
+    
+    // Save to history
+    await LocalStorageService.addSearchHistory(query.trim());
+    
+    // Navigate to results
+    if (mounted) {
+      context.push('/search-results?query=${query.trim()}');
+    }
+  }
+
+  Future<void> _removeSearchItem(String query) async {
+    await LocalStorageService.removeSearchHistory(query);
+    await _loadSearchHistory();
+  }
+
+  Future<void> _clearAllHistory() async {
+    await LocalStorageService.clearSearchHistory();
+    await _loadSearchHistory();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _removeSearch(int index) {
-    setState(() {
-      lastSearches.removeAt(index);
-    });
   }
 
   @override
@@ -59,22 +73,11 @@ class _SearchScreenState extends State<SearchScreen> {
         title: _buildSearchBar(),
         titleSpacing: 0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 16.h),
-
-            // Last Seen Section
-            _buildLastSeenSection(),
-
-            SizedBox(height: 24.h),
-
-            // Last Search Section
-            _buildLastSearchSection(),
-          ],
-        ),
-      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _searchHistory.isEmpty
+              ? _buildEmptyState()
+              : _buildSearchHistory(),
     );
   }
 
@@ -90,11 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
         controller: _searchController,
         autofocus: true,
         style: AppTexts.bodyMedium(color: AppColors.textPrimary),
-        onSubmitted: (value) {
-          if (value.isNotEmpty) {
-            context.push('/search-results?query=$value');
-          }
-        },
+        onSubmitted: _performSearch,
         decoration: InputDecoration(
           hintText: 'Search ad slots & users',
           hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
@@ -106,34 +105,93 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildLastSeenSection() {
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search,
+              size: 64.sp,
+              color: AppColors.grey300,
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Search for ad slots and users',
+              style: AppTexts.h4(color: AppColors.grey600),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Find billboards, artists, influencers, and more',
+              style: AppTexts.bodySmall(color: AppColors.grey400),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchHistory() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Text(
-            'Last Seen',
-            style: AppTexts.h4(color: AppColors.textPrimary),
+          padding: EdgeInsets.all(16.w),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Searches',
+                style: AppTexts.h4(color: AppColors.textPrimary),
+              ),
+              TextButton(
+                onPressed: _clearAllHistory,
+                child: Text(
+                  'Clear All',
+                  style: AppTexts.bodySmall(color: AppColors.primaryColor),
+                ),
+              ),
+            ],
           ),
         ),
-        SizedBox(height: 12.h),
-        SizedBox(
-          height: 80.h,
+        Expanded(
           child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            itemCount: lastSeenProducts.length,
+            itemCount: _searchHistory.length,
             itemBuilder: (context, index) {
-              return Container(
-                width: 80.w,
-                margin: EdgeInsets.only(right: 12.w),
-                decoration: BoxDecoration(
-                  color: AppColors.grey100,
-                  borderRadius: BorderRadius.circular(8.r),
-                  image: DecorationImage(
-                    image: AssetImage(lastSeenProducts[index]),
-                    fit: BoxFit.cover,
+              final query = _searchHistory[index];
+              return InkWell(
+                onTap: () => _performSearch(query),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.history,
+                        color: AppColors.grey400,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          query,
+                          style: AppTexts.bodyMedium(color: AppColors.textPrimary),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          color: AppColors.grey400,
+                          size: 20.sp,
+                        ),
+                        onPressed: () => _removeSearchItem(query),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -141,71 +199,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildLastSearchSection() {
-    if (lastSearches.isEmpty) {
-      return SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Text(
-            'Last Search',
-            style: AppTexts.h4(color: AppColors.textPrimary),
-          ),
-        ),
-        SizedBox(height: 12.h),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: lastSearches.length,
-          itemBuilder: (context, index) {
-            return _buildSearchHistoryItem(
-              searchTerm: lastSearches[index],
-              onRemove: () => _removeSearch(index),
-              onTap: () {
-                context.push('/search-results?query=${lastSearches[index]}');
-              },
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSearchHistoryItem({
-    required String searchTerm,
-    required VoidCallback onRemove,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-        child: Row(
-          children: [
-            Icon(Icons.access_time, color: AppColors.grey400, size: 20.sp),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                searchTerm,
-                style: AppTexts.bodyMedium(color: AppColors.grey600),
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.close, color: AppColors.grey400, size: 20.sp),
-              onPressed: onRemove,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

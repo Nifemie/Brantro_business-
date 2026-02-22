@@ -10,28 +10,23 @@ import '../../../cart/presentation/widgets/add_to_campaign_sheet.dart';
 import '../../../cart/data/models/cart_item_model.dart';
 import '../../logic/creatives_notifier.dart';
 import '../../../../core/widgets/skeleton_loading.dart';
+import '../../../../core/data/data_state.dart';
+import '../../data/models/creative_model.dart';
 
 class CreativesListingScreen extends ConsumerStatefulWidget {
   const CreativesListingScreen({super.key});
 
   @override
-  ConsumerState<CreativesListingScreen> createState() => _CreativesListingScreenState();
+  ConsumerState<CreativesListingScreen> createState() =>
+      _CreativesListingScreenState();
 }
 
-class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen> {
+class _CreativesListingScreenState
+    extends ConsumerState<CreativesListingScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCreativeType;
   String? _selectedFormat;
   String _selectedSort = 'Recommended';
-  List _filteredCreatives = [];
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(creativesProvider.notifier).fetchCreatives(page: 0, size: 20);
-    });
-  }
 
   @override
   void dispose() {
@@ -39,22 +34,25 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
     super.dispose();
   }
 
-  void _applyFilters(List creatives) {
-    var filtered = List.from(creatives);
+  double _extractPrice(String priceStr) {
+    return double.tryParse(priceStr.replaceAll(RegExp(r'[₦,]'), '')) ?? 0;
+  }
 
-    // Filter by creative type
+  List<CreativeModel> _getProcessedCreatives(List<CreativeModel> creatives) {
+    var filtered = List<CreativeModel>.from(creatives);
+
     if (_selectedCreativeType != null) {
-      filtered = filtered.where((c) => c.type == _selectedCreativeType).toList();
+      filtered = filtered
+          .where((c) => c.type == _selectedCreativeType)
+          .toList();
     }
 
-    // Filter by format
     if (_selectedFormat != null) {
       filtered = filtered.where((c) => c.format == _selectedFormat).toList();
     }
 
-    // Filter by search
-    if (_searchController.text.isNotEmpty) {
-      final query = _searchController.text.toLowerCase();
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isNotEmpty) {
       filtered = filtered.where((c) {
         final title = c.title.toLowerCase();
         final description = c.description.toLowerCase();
@@ -62,21 +60,16 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
       }).toList();
     }
 
-    // Apply sorting
     switch (_selectedSort) {
       case 'Price: Low to High':
-        filtered.sort((a, b) {
-          final priceA = double.tryParse(a.price) ?? 0;
-          final priceB = double.tryParse(b.price) ?? 0;
-          return priceA.compareTo(priceB);
-        });
+        filtered.sort(
+          (a, b) => _extractPrice(a.price).compareTo(_extractPrice(b.price)),
+        );
         break;
       case 'Price: High to Low':
-        filtered.sort((a, b) {
-          final priceA = double.tryParse(a.price) ?? 0;
-          final priceB = double.tryParse(b.price) ?? 0;
-          return priceB.compareTo(priceA);
-        });
+        filtered.sort(
+          (a, b) => _extractPrice(b.price).compareTo(_extractPrice(a.price)),
+        );
         break;
       case 'Most Popular':
         filtered.sort((a, b) => b.downloads.compareTo(a.downloads));
@@ -86,27 +79,12 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
         break;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _filteredCreatives = filtered;
-        });
-      }
-    });
-  }
-
-  double _extractPrice(String priceStr) {
-    return double.tryParse(priceStr.replaceAll(RegExp(r'[₦,]'), '')) ?? 0;
+    return filtered;
   }
 
   @override
   Widget build(BuildContext context) {
     final creativesState = ref.watch(creativesProvider);
-
-    // Apply filters whenever data changes
-    if (creativesState.data != null && creativesState.data!.isNotEmpty) {
-      _applyFilters(creativesState.data!);
-    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -124,7 +102,7 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
               ],
             ),
           ),
-          Expanded(child: _buildContent()),
+          Expanded(child: _buildContent(creativesState)),
         ],
       ),
     );
@@ -170,10 +148,7 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
       hintText: 'Search creatives',
       enableAdSlotSearch: false,
       onSearch: () {
-        final creativesState = ref.read(creativesProvider);
-        if (creativesState.data != null) {
-          _applyFilters(creativesState.data!);
-        }
+        setState(() {});
       },
     );
   }
@@ -197,15 +172,14 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
         setState(() {
           _selectedCreativeType = value;
         });
-        final creativesState = ref.read(creativesProvider);
-        if (creativesState.data != null) {
-          _applyFilters(creativesState.data!);
-        }
       },
       offset: Offset(0, 50.h),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
       itemBuilder: (context) => [
-        PopupMenuItem(value: null, child: Text('All Types', style: AppTexts.bodyMedium())),
+        PopupMenuItem(
+          value: null,
+          child: Text('All Types', style: AppTexts.bodyMedium()),
+        ),
         ...[
           'Image',
           'Video',
@@ -215,10 +189,12 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
           'Audio',
           'Carousel',
           'Story / Vertical',
-        ].map((type) => PopupMenuItem(
-              value: type,
-              child: Text(type, style: AppTexts.bodyMedium()),
-            )),
+        ].map(
+          (type) => PopupMenuItem(
+            value: type,
+            child: Text(type, style: AppTexts.bodyMedium()),
+          ),
+        ),
       ],
       child: Container(
         height: 44.h,
@@ -255,15 +231,14 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
         setState(() {
           _selectedFormat = value;
         });
-        final creativesState = ref.read(creativesProvider);
-        if (creativesState.data != null) {
-          _applyFilters(creativesState.data!);
-        }
       },
       offset: Offset(0, 50.h),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
       itemBuilder: (context) => [
-        PopupMenuItem(value: null, child: Text('All Formats', style: AppTexts.bodyMedium())),
+        PopupMenuItem(
+          value: null,
+          child: Text('All Formats', style: AppTexts.bodyMedium()),
+        ),
         ...[
           'Standard',
           'Fullscreen',
@@ -271,10 +246,12 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
           'Landscape (Horizontal)',
           'Square',
           'Custom Size',
-        ].map((format) => PopupMenuItem(
-              value: format,
-              child: Text(format, style: AppTexts.bodyMedium()),
-            )),
+        ].map(
+          (format) => PopupMenuItem(
+            value: format,
+            child: Text(format, style: AppTexts.bodyMedium()),
+          ),
+        ),
       ],
       child: Container(
         height: 44.h,
@@ -311,25 +288,24 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
         setState(() {
           _selectedSort = value;
         });
-        final creativesState = ref.read(creativesProvider);
-        if (creativesState.data != null) {
-          _applyFilters(creativesState.data!);
-        }
       },
       offset: Offset(0, 50.h),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-      itemBuilder: (context) => [
-        'Recommended',
-        'Price: Low to High',
-        'Price: High to Low',
-        'Most Popular',
-        'Highest Rated',
-      ]
-          .map((sort) => PopupMenuItem(
-                value: sort,
-                child: Text(sort, style: AppTexts.bodyMedium()),
-              ))
-          .toList(),
+      itemBuilder: (context) =>
+          [
+                'Recommended',
+                'Price: Low to High',
+                'Price: High to Low',
+                'Most Popular',
+                'Highest Rated',
+              ]
+              .map(
+                (sort) => PopupMenuItem(
+                  value: sort,
+                  child: Text(sort, style: AppTexts.bodyMedium()),
+                ),
+              )
+              .toList(),
       child: Container(
         height: 44.h,
         padding: EdgeInsets.symmetric(horizontal: 12.w),
@@ -356,55 +332,61 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
     );
   }
 
-  Widget _buildContent() {
-    final creativesState = ref.watch(creativesProvider);
+  Widget _buildContent(AsyncValue<DataState<CreativeModel>> creativesState) {
+    return RefreshIndicator(
+      onRefresh: () => ref.read(creativesProvider.notifier).fetchCreatives(page: 0, size: 20),
+      child: creativesState.when(
+        loading: _buildLoadingState,
+        error: (error, _) => _buildErrorState(error.toString()),
+        data: (state) {
+          final creatives = state.data ?? [];
 
-    if (creativesState.isInitialLoading) {
-      return _buildLoadingState();
-    }
+          if (state.message != null && !state.isDataAvailable) {
+            return _buildErrorState(state.message!);
+          }
 
-    if (creativesState.message != null && !creativesState.isDataAvailable) {
-      return _buildErrorState(creativesState.message!);
-    }
+          if (creatives.isEmpty) {
+            return _buildEmptyState();
+          }
 
-    if ((creativesState.data ?? []).isEmpty) {
-      return _buildEmptyState();
-    }
+          final creativesToShow = _getProcessedCreatives(creatives);
 
-    final creativesToShow = _filteredCreatives.isEmpty &&
-            _selectedCreativeType == null &&
-            _selectedFormat == null &&
-            _selectedSort == 'Recommended'
-        ? creativesState.data ?? []
-        : _filteredCreatives;
+          if (creativesToShow.isEmpty) {
+            return _buildNoResultsState();
+          }
 
-    if (creativesToShow.isEmpty) {
-      return _buildNoResultsState();
-    }
+          return _buildCreativesList(creativesToShow);
+        },
+      ),
+    );
+  }
 
+  Widget _buildCreativesList(List<CreativeModel> creatives) {
     return SingleChildScrollView(
       child: SizedBox(
         height: 520.h,
         child: ListView.builder(
-          scrollDirection: Axis.horizontal,
+          scrollDirection: Axis.vertical,
           padding: EdgeInsets.all(16.w),
-          itemCount: creativesToShow.length,
+          itemCount: creatives.length,
           itemBuilder: (context, index) {
-            final creative = creativesToShow[index];
+            final creative = creatives[index];
             return Padding(
               padding: EdgeInsets.only(right: 16.w),
               child: SizedBox(
                 width: 320.w,
                 child: CreativeCard(
                   title: creative.title,
-                  description: creative.description,
+                  description: creative.cleanDescription,
                   fileSize: creative.fileSizeFormatted,
                   dimensions: creative.dimensionsFormatted,
-                  formats: List<String>.from(creative.fileFormat.map((f) => f.toString().toUpperCase())),
+                  formats: List<String>.from(
+                    creative.fileFormat.map((f) => f.toString().toUpperCase()),
+                  ),
                   downloads: creative.downloads,
                   rating: creative.averageRating,
                   price: creative.formattedPrice,
-                  imageUrl: creative.thumbnail,
+                  imageUrl: creative.thumbnailUrl,
                   tags: <String>[creative.type, creative.format],
                   onViewDetails: () {
                     context.push('/creative-details/${creative.id}');
@@ -414,9 +396,9 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
                       id: creative.id.toString(),
                       type: 'creative',
                       title: creative.title,
-                      description: creative.description,
+                      description: creative.cleanDescription,
                       price: creative.formattedPrice,
-                      imageUrl: creative.thumbnail,
+                      imageUrl: creative.thumbnailUrl,
                       sellerName: creative.owner?.name ?? 'Brantro Africa',
                       sellerType: creative.type,
                       metadata: {
@@ -488,7 +470,11 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.design_services_outlined, size: 48.sp, color: AppColors.grey400),
+          Icon(
+            Icons.design_services_outlined,
+            size: 48.sp,
+            color: AppColors.grey400,
+          ),
           SizedBox(height: 16.h),
           Text('No creatives available', style: AppTexts.h4()),
           SizedBox(height: 8.h),
@@ -520,12 +506,9 @@ class _CreativesListingScreenState extends ConsumerState<CreativesListingScreen>
               setState(() {
                 _selectedCreativeType = null;
                 _selectedFormat = null;
+                _selectedSort = 'Recommended';
                 _searchController.clear();
               });
-              final creativesState = ref.read(creativesProvider);
-              if (creativesState.data != null) {
-                _applyFilters(creativesState.data!);
-              }
             },
             child: Text('Clear Filters'),
           ),

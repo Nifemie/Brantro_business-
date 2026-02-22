@@ -36,6 +36,14 @@ class ReferenceGenerator {
     return '$prefix-$dateCode$timeCode';
   }
 
+  /// Generate a payment reference for Paystack
+  /// Example: generatePaymentReference('campaign') => 'PAY-CAMPAIGN-1738012345678-A3F'
+  static String generatePaymentReference(String orderType) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random = _generateRandomString(4);
+    return 'PAY-${orderType.toUpperCase()}-$timestamp-$random';
+  }
+
   static String _generateRandomString(int length) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();

@@ -60,6 +60,9 @@ class ApiEndpoints {
   
   // Service Order Endpoint
   static const String serviceOrder = '$apiVersion/service-order';
+  static const String myServices = '$apiVersion/service-order/mine';
+  static String updateServiceRequirements(int itemId) => '$apiVersion/service-order/items/$itemId/requirements';
+  static String cancelServiceOrder(int itemId) => '$apiVersion/service-order/items/$itemId/cancel';
   
   // Campaign Order Endpoint
   static const String campaignOrder = '$apiVersion/ad-campaign';
@@ -72,4 +75,9 @@ class ApiEndpoints {
   
   // Cancel Campaign Endpoint
   static String cancelCampaign(int campaignId) => '$apiVersion/ad-campaign/$campaignId/cancel';
+  
+  // Payment Endpoints
+  static const String paymentInitialize = '$apiVersion/payment/initialize';
+  static const String paymentVerify = '$apiVersion/payment/verify'; // + /:reference
+  static const String paymentStatus = '$apiVersion/payment/status'; // + /:reference
 }

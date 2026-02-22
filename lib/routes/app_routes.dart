@@ -38,6 +38,7 @@ import 'package:brantro/features/billboard/presentation/screens/asset_details_sc
 import 'package:brantro/features/KYC/data/kyc_models.dart';
 import 'package:brantro/features/Digital_services/presentation/screens/services_listing_screen.dart';
 import 'package:brantro/features/Digital_services/presentation/screens/service_details_screen.dart';
+import 'package:brantro/features/Digital_services/presentation/screens/my_services_screen.dart';
 import 'package:brantro/features/wallet/presentation/wallet_screen.dart';
 import 'package:brantro/features/wallet/presentation/transaction_history_screen.dart';
 import 'package:brantro/features/vetting/presentation/screens/vetting_listing_screen.dart';
@@ -58,9 +59,26 @@ import 'package:brantro/features/cart/presentation/screens/service_setup_screen.
 import 'package:brantro/features/cart/presentation/screens/campaign_setup_screen.dart';
 import 'package:brantro/features/campaign/presentation/screens/campaign_details_screen.dart';
 import 'package:brantro/features/Digital_services/data/models/service_model.dart';
+import 'package:brantro/core/service/session_service.dart';
 
 final router = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) async {
+    final isLoggedIn = await SessionService.isLoggedIn();
+    final isOnSplash = state.matchedLocation == '/';
+    final isOnAuth = state.matchedLocation.startsWith('/signin') ||
+        state.matchedLocation.startsWith('/signup') ||
+        state.matchedLocation.startsWith('/intro') ||
+        state.matchedLocation.startsWith('/forgot-password');
+
+    // If user is logged in and trying to access splash or auth screens, redirect to home
+    if (isLoggedIn && (isOnSplash || isOnAuth)) {
+      return '/home';
+    }
+
+    // Allow navigation to continue
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/',
@@ -339,6 +357,11 @@ final router = GoRouter(
           builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
+          path: 'profile',
+          name: 'profile',
+          builder: (context, state) => const ProfileDetailsScreen(),
+        ),
+        GoRoute(
           path: 'profile-details',
           name: 'profile-details',
           builder: (context, state) => const ProfileDetailsScreen(),
@@ -364,13 +387,25 @@ final router = GoRouter(
           name: 'service-details',
           builder: (context, state) {
             final serviceId = state.pathParameters['serviceId']!;
-            final initialData = state.extra as dynamic; // Can be ServiceModel or null
-            // Check if extra is ServiceModel, otherwise null
-            // (Dart type check would be needed if strictly importing model here)
+            
+            // Handle both Map and direct ServiceModel cases
+            ServiceModel? initialData;
+            bool isPurchased = false;
+            
+            if (state.extra is Map<String, dynamic>) {
+              final extra = state.extra as Map<String, dynamic>;
+              initialData = extra['initialData'] as ServiceModel?;
+              isPurchased = extra['isPurchased'] as bool? ?? false;
+            } else if (state.extra is ServiceModel) {
+              initialData = state.extra as ServiceModel;
+              isPurchased = false;
+            }
+            
             return ServiceDetailsScreen(
-                serviceId: serviceId, 
-                initialData: initialData is ServiceModel ? initialData : null
-            ); // ServiceModel import needed in app_routes if strictly typed
+              serviceId: serviceId,
+              initialData: initialData,
+              isPurchased: isPurchased,
+            );
           },
         ),
         GoRoute(
@@ -387,6 +422,11 @@ final router = GoRouter(
           path: 'my-templates',
           name: 'my-templates',
           builder: (context, state) => const MyTemplatesScreen(),
+        ),
+        GoRoute(
+          path: 'my-services',
+          name: 'my-services',
+          builder: (context, state) => const MyServicesScreen(),
         ),
         GoRoute(
           path: 'template-details/:templateId',

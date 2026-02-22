@@ -14,6 +14,9 @@ class FeaturedCampaignsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final adSlotState = ref.watch(adSlotProvider);
+    final hasData = (adSlotState.data ?? []).isNotEmpty;
+    final isLoading = adSlotState.isInitialLoading;
+    final hasError = adSlotState.message != null && !adSlotState.isDataAvailable;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,11 +44,11 @@ class FeaturedCampaignsSection extends ConsumerWidget {
         SizedBox(height: 12.h),
 
         // Content based on state
-        if (adSlotState.isInitialLoading && (adSlotState.data ?? []).isEmpty)
+        if (isLoading && !hasData)
           _buildLoadingState()
-        else if (adSlotState.message != null && !adSlotState.isDataAvailable && (adSlotState.data ?? []).isEmpty)
+        else if (hasError)
           _buildErrorState(adSlotState.message!, ref)
-        else if ((adSlotState.data ?? []).isEmpty)
+        else if (!hasData)
           _buildEmptyState()
         else
           _buildAdSlotsList(adSlotState.data ?? []),
@@ -114,7 +117,7 @@ class FeaturedCampaignsSection extends ConsumerWidget {
               color: AppColors.grey400,
             ),
             SizedBox(height: 16.h),
-            Text('No campaigns available', style: AppTexts.h4()),
+            Text('Campaigns are not available for now', style: AppTexts.h4()),
             SizedBox(height: 8.h),
             Text(
               'Check back later for new opportunities',

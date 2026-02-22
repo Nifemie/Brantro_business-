@@ -68,15 +68,21 @@ class PurchasedCreativeCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.grey200,
           ),
-          child: (creative.thumbnail != null && creative.thumbnail!.startsWith('http'))
+          child: creative.thumbnailUrl.startsWith('http')
               ? Image.network(
-                  creative.thumbnail!,
+                  creative.thumbnailUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return _buildPlaceholder();
                   },
                 )
-              : _buildPlaceholder(),
+              : Image.asset(
+                  creative.thumbnailUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _buildPlaceholder();
+                  },
+                ),
         ),
         Positioned(
           top: 12.h,

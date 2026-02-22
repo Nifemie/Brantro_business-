@@ -10,61 +10,74 @@ final apiClientProvider = Provider((ref) => ApiClient());
 
 // Repository provider
 final tvStationRepositoryProvider = Provider((ref) {
-  final apiClient = ref.watch(apiClientProvider);
+  final apiClient = ref.read(apiClientProvider);
   return TvStationRepository(apiClient);
 });
 
 // Notifier class
-class TvStationsNotifier extends StateNotifier<DataState<TvStationModel>> {
-  final TvStationRepository repository;
+class TvStationsNotifier extends AsyncNotifier<DataState<TvStationModel>> {
+  late final TvStationRepository repository;
 
-  TvStationsNotifier(this.repository) : super(DataState.initial());
+  @override
+  Future<DataState<TvStationModel>> build() async {
+    repository = ref.read(tvStationRepositoryProvider);
+
+    final response = await repository.getTvStations(page: 0, limit: 10);
+    log(
+      '[TvStationsNotifier] Successfully fetched ${response.page.length} TV stations',
+    );
+
+    return DataState<TvStationModel>(
+      data: response.page,
+      isDataAvailable: response.page.isNotEmpty,
+      currentPage: response.currentPage,
+      totalPages: response.totalPages,
+      message: response.page.isEmpty ? 'No TV stations available' : null,
+    );
+  }
 
   Future<void> fetchTvStations(int page, int limit) async {
-    log('[TvStationsNotifier] Fetching TV stations with page=$page, limit=$limit');
-    
-    state = state.copyWith(
-      isInitialLoading: true,
-      message: null,
-      isDataAvailable: false,
+    log(
+      '[TvStationsNotifier] Fetching TV stations with page=$page, limit=$limit',
     );
+    state = const AsyncLoading();
 
     try {
       final response = await repository.getTvStations(page: page, limit: limit);
-      log('[TvStationsNotifier] Successfully fetched ${response.page.length} TV stations');
-      
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: true,
-        data: response.page,
-        currentPage: response.currentPage,
-        totalPages: response.totalPages,
-        message: null,
+      log(
+        '[TvStationsNotifier] Successfully fetched ${response.page.length} TV stations',
       );
-    } catch (e, stack) {
-      log('[TvStationsNotifier] Error fetching TV stations: $e\n$stack');
-      state = state.copyWith(
-        isInitialLoading: false,
-        isDataAvailable: false,
-        message: e.toString().replaceAll('Exception: ', ''),
+
+      state = AsyncData(
+        DataState<TvStationModel>(
+          data: response.page,
+          isDataAvailable: response.page.isNotEmpty,
+          currentPage: response.currentPage,
+          totalPages: response.totalPages,
+          message: null,
+        ),
       );
+    } catch (e, stackTrace) {
+      log('[TvStationsNotifier] Error fetching TV stations: $e\n$stackTrace');
+      state = AsyncError(e, stackTrace);
     }
   }
 
   /// Clear any error messages
   void clearMessage() {
-    state = state.copyWith(message: null);
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(message: null));
   }
 
   /// Reset state to initial
   void reset() {
-    state = DataState.initial();
+    state = AsyncData(DataState.initial());
   }
 }
 
 // Provider
 final tvStationsProvider =
-    StateNotifierProvider<TvStationsNotifier, DataState<TvStationModel>>((ref) {
-      final repository = ref.watch(tvStationRepositoryProvider);
-      return TvStationsNotifier(repository);
-    });
+    AsyncNotifierProvider<TvStationsNotifier, DataState<TvStationModel>>(
+      TvStationsNotifier.new,
+    );

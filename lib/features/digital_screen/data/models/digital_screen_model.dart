@@ -108,6 +108,48 @@ class DigitalScreenModel {
       'category': category?.toJson(),
     };
   }
+
+  // Helper method to get full thumbnail URL
+  String get thumbnailUrl {
+    if (thumbnail == null || thumbnail!.isEmpty) {
+      return 'assets/promotions/billboard1.jpg'; // Default fallback
+    }
+    // If already a full URL, return as is
+    if (thumbnail!.startsWith('http')) {
+      return thumbnail!;
+    }
+    // Remove leading slash if present to avoid double slash
+    final cleanPath = thumbnail!.startsWith('/') ? thumbnail!.substring(1) : thumbnail!;
+    return 'https://realta360.b-cdn.net/$cleanPath';
+  }
+
+  // Helper method to get clean description without HTML tags
+  String get cleanDescription {
+    if (description.isEmpty) return '';
+    // Remove HTML tags using regex
+    return description
+        .replaceAll(RegExp(r'<[^>]*>'), '') // Remove all HTML tags
+        .replaceAll('&nbsp;', ' ') // Replace non-breaking spaces
+        .replaceAll('&amp;', '&') // Replace ampersand
+        .replaceAll('&lt;', '<') // Replace less than
+        .replaceAll('&gt;', '>') // Replace greater than
+        .replaceAll('&quot;', '"') // Replace quotes
+        .trim();
+  }
+
+  // Helper method to get formatted price
+  String get formattedPrice {
+    if (baseRateAmount == 0) return 'Contact for pricing';
+    return '₦${baseRateAmount.toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    )}';
+  }
+
+  // Helper method to get full location string
+  String get fullLocation {
+    return [city, state, country].where((e) => e.isNotEmpty).join(', ');
+  }
 }
 
 class ScreenOwner {

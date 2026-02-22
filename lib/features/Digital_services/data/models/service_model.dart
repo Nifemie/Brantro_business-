@@ -112,6 +112,10 @@ class ServiceModel {
         return type.replaceAll('_', ' ');
     }
   }
+
+  String get cleanDescription {
+    return description.replaceAll(RegExp(r'<[^>]*>'), '');
+  }
 }
 
 class ServiceCreator {

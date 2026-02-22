@@ -44,7 +44,7 @@ class CheckoutHeader extends ConsumerWidget {
                 text: 'Get More',
                 icon: Icons.add_circle_outline,
                 isPrimary: true,
-                onTap: () => context.push('/template'),
+                onTap: () => _navigateToListingScreen(context),
               ),
             ],
           ),
@@ -71,6 +71,22 @@ class CheckoutHeader extends ConsumerWidget {
       return 'Review selected creatives and complete payment.';
     }
     return 'Review selected templates and complete payment.';
+  }
+
+  void _navigateToListingScreen(BuildContext context) {
+    switch (checkoutType) {
+      case 'service':
+        context.push('/services');
+        break;
+      case 'creative':
+        context.push('/creatives');
+        break;
+      case 'campaign':
+        context.push('/explore?category=Ad Slots');
+        break;
+      default:
+        context.push('/templates');
+    }
   }
 }
 

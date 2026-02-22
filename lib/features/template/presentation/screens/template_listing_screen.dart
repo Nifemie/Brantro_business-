@@ -333,10 +333,10 @@ class _TemplateListingScreenState extends ConsumerState<TemplateListingScreen> {
       itemBuilder: (context, index) {
         final template = templates[index];
         return TemplateCard(
-          imageUrl: template.thumbnail,
+          imageUrl: template.thumbnailUrl,
           badge: template.type,
           title: template.title,
-          description: template.description,
+          description: template.cleanDescription,
           tags: template.tagsList,
           price: template.formattedPrice,
           originalPrice: template.formattedOriginalPrice,

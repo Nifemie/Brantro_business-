@@ -12,19 +12,11 @@ class DigitalScreenSection extends ConsumerStatefulWidget {
   const DigitalScreenSection({super.key});
 
   @override
-  ConsumerState<DigitalScreenSection> createState() => _DigitalScreenSectionState();
+  ConsumerState<DigitalScreenSection> createState() =>
+      _DigitalScreenSectionState();
 }
 
 class _DigitalScreenSectionState extends ConsumerState<DigitalScreenSection> {
-  @override
-  void initState() {
-    super.initState();
-    // Fetch digital screens on init (public endpoint - no auth required)
-    Future.microtask(() {
-      ref.read(digitalScreensProvider.notifier).fetchDigitalScreens(page: 0, size: 15);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final screensState = ref.watch(digitalScreensProvider);
@@ -62,14 +54,13 @@ class _DigitalScreenSectionState extends ConsumerState<DigitalScreenSection> {
           ),
         ),
         SizedBox(height: 12.h),
-        if (screensState.isInitialLoading)
-          SkeletonHorizontalList(
+        screensState.when(
+          loading: () => SkeletonHorizontalList(
             cardWidth: 320.w,
             cardHeight: 450.h,
             itemCount: 3,
-          )
-        else if (screensState.message != null && !screensState.isDataAvailable)
-          SizedBox(
+          ),
+          error: (error, _) => SizedBox(
             height: 450.h,
             child: Center(
               child: Column(
@@ -88,7 +79,7 @@ class _DigitalScreenSectionState extends ConsumerState<DigitalScreenSection> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Text(
-                      screensState.message ?? '',
+                      error.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                     ),
@@ -105,62 +96,77 @@ class _DigitalScreenSectionState extends ConsumerState<DigitalScreenSection> {
                 ],
               ),
             ),
-          )
-        else if ((screensState.data ?? []).isEmpty)
-          SizedBox(
-            height: 450.h,
-            child: Center(child: Text('No digital screens found')),
-          )
-        else
-          SizedBox(
-            height: 480.h,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: PlatformResponsive.symmetric(horizontal: 16),
-              children: (screensState.data ?? []).map((screen) {
-                final location = [
-                  screen.city,
-                  screen.state,
-                  screen.country,
-                ].where((e) => e.isNotEmpty).join(', ');
-
-                // Parse features string into list
-                final featuresList = screen.features?.split(',').map((e) => e.trim()).toList() ?? [];
-
-                return Padding(
-                  padding: EdgeInsets.only(right: 16.w),
-                  child: DigitalScreenCard(
-                    imageUrl: screen.thumbnail ?? 'assets/promotions/digital_screen1.jpg',
-                    screenName: screen.title,
-                    location: location.isEmpty ? screen.address : location,
-                    description: screen.description,
-                    features: featuresList,
-                    specifications: screen.specifications ?? '',
-                    priceStarting: '₦${screen.baseRateAmount.toStringAsFixed(0)}',
-                    priceUnit: '/${screen.baseRateUnit.toLowerCase()}',
-                    likes: screen.totalLikes,
-                    provider: screen.owner?.name ?? '',
-                    onLikeTap: () {},
-                    onBookScreen: () {
-                      // Navigate to specific slots for this digital screen
-                      context.push(
-                        '/seller-ad-slots/${screen.ownerId}',
-                        extra: {
-                          'sellerName': screen.title,
-                          'sellerAvatar': screen.thumbnail,
-                          'sellerType': 'Digital Screen',
-                        },
-                      );
-                    },
-                    onViewDetailsTap: () {
-                      // Navigate to digital screen details (unified screen)
-                      context.push('/asset-details', extra: screen);
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
           ),
+          data: (state) {
+            final screens = state.data ?? [];
+
+            if (screens.isEmpty) {
+              return SizedBox(
+                height: 450.h,
+                child: Center(child: Text('No digital screens found')),
+              );
+            }
+
+            return SizedBox(
+              height: 480.h,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: PlatformResponsive.symmetric(horizontal: 16),
+                children: screens.map((screen) {
+                  final location = [
+                    screen.city,
+                    screen.state,
+                    screen.country,
+                  ].where((e) => e.isNotEmpty).join(', ');
+
+                  // Parse features string into list
+                  final featuresList =
+                      screen.features
+                          ?.split(',')
+                          .map((e) => e.trim())
+                          .toList() ??
+                      [];
+
+                  return Padding(
+                    padding: EdgeInsets.only(right: 16.w),
+                    child: DigitalScreenCard(
+                      imageUrl: screen.thumbnailUrl,
+                      screenName: screen.title,
+                      location: screen.fullLocation.isEmpty 
+                          ? screen.address 
+                          : screen.fullLocation,
+                      description: screen.cleanDescription,
+                      features: featuresList,
+                      specifications: screen.specifications ?? '',
+                      priceStarting: screen.formattedPrice,
+                      priceUnit: screen.baseRateAmount > 0 
+                          ? '/${screen.baseRateUnit.toLowerCase()}' 
+                          : '',
+                      likes: screen.totalLikes,
+                      provider: screen.owner?.name ?? '',
+                      onLikeTap: () {},
+                      onBookScreen: () {
+                        // Navigate to specific slots for this digital screen
+                        context.push(
+                          '/seller-ad-slots/${screen.ownerId}',
+                          extra: {
+                            'sellerName': screen.title,
+                            'sellerAvatar': screen.thumbnailUrl,
+                            'sellerType': 'Digital Screen',
+                          },
+                        );
+                      },
+                      onViewDetailsTap: () {
+                        // Navigate to digital screen details (unified screen)
+                        context.push('/asset-details', extra: screen);
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }

@@ -42,12 +42,14 @@ class ExploreController extends StateNotifier<ExploreState> {
   final Ref ref;
 
   ExploreController(this.ref, String initialCategory)
-      : super(ExploreState(
+    : super(
+        ExploreState(
           category: initialCategory,
           filters: {},
           selectedSort: 'Rating',
           searchController: TextEditingController(),
-        ));
+        ),
+      );
 
   void initialize(String category) {
     updateCategory(category);
@@ -73,7 +75,7 @@ class ExploreController extends StateNotifier<ExploreState> {
     } else if (cat.contains('media')) {
       ref.read(mediaHousesProvider.notifier).fetchMediaHouses(0, 10);
     } else if (cat.contains('designer') || cat.contains('creative')) {
-      ref.read(creativesProvider.notifier).fetchCreatives();
+      ref.read(creativesProvider.notifier).fetchCreatives(page: 0, limit: 10);
     } else if (cat.contains('ugc')) {
       ref.read(ugcCreatorsProvider.notifier).fetchUgcCreators();
     } else if (cat.contains('film') || cat.contains('producer')) {
@@ -101,7 +103,9 @@ class ExploreController extends StateNotifier<ExploreState> {
 }
 
 final exploreControllerProvider =
-    StateNotifierProvider.family<ExploreController, ExploreState, String>(
-        (ref, initialCategory) {
-  return ExploreController(ref, initialCategory);
-});
+    StateNotifierProvider.family<ExploreController, ExploreState, String>((
+      ref,
+      initialCategory,
+    ) {
+      return ExploreController(ref, initialCategory);
+    });

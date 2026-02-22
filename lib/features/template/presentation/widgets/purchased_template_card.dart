@@ -68,15 +68,21 @@ class PurchasedTemplateCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.grey200,
           ),
-          child: template.thumbnail.startsWith('http')
+          child: template.thumbnailUrl.startsWith('http')
               ? Image.network(
-                  template.thumbnail,
+                  template.thumbnailUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return _buildPlaceholder();
                   },
                 )
-              : _buildPlaceholder(),
+              : Image.asset(
+                  template.thumbnailUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _buildPlaceholder();
+                  },
+                ),
         ),
         Positioned(
           top: 12.h,

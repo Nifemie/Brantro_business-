@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
 import '../../../core/service/session_service.dart';
+import '../../../core/utils/avatar_helper.dart';
 
 class ProfileDetailsScreen extends ConsumerStatefulWidget {
   const ProfileDetailsScreen({super.key});
@@ -38,7 +39,8 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
           'city': user?['city'] ?? '',
           'state': user?['state'] ?? '',
           'country': user?['country'] ?? '',
-          'avatarUrl': user?['avatarUrl'] ?? 'https://i.pravatar.cc/150?img=12',
+          'avatarUrl': user?['avatarUrl'] ?? '',
+          'userId': user?['id']?.toString() ?? user?['userId']?.toString() ?? 'user',
         };
         _isLoading = false;
       });
@@ -83,21 +85,7 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
 
                   // Profile Avatar
                   Center(
-                    child: Container(
-                      width: 120.w,
-                      height: 120.w,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primaryColor,
-                          width: 3,
-                        ),
-                        image: DecorationImage(
-                          image: NetworkImage(_userData?['avatarUrl'] ?? ''),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+                    child: _buildAvatar(),
                   ),
 
                   SizedBox(height: 32.h),
@@ -161,6 +149,31 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
     }
 
     return parts.isEmpty ? 'N/A' : parts.join(', ');
+  }
+
+  Widget _buildAvatar() {
+    final avatarUrl = AvatarHelper.getAvatar(
+      avatarUrl: _userData?['avatarUrl'],
+      userId: _userData?['userId'] ?? 'user',
+    );
+
+    return Container(
+      width: 120.w,
+      height: 120.w,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: AppColors.primaryColor,
+          width: 3,
+        ),
+        image: DecorationImage(
+          image: AvatarHelper.isDefaultAvatar(avatarUrl)
+              ? AssetImage(avatarUrl) as ImageProvider
+              : NetworkImage(avatarUrl),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
   }
 
   Widget _buildSectionHeader(String title) {

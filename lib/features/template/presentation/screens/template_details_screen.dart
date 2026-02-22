@@ -120,19 +120,22 @@ class _TemplateDetailsScreenState extends ConsumerState<TemplateDetailsScreen>
                 fit: StackFit.expand,
                 children: [
                   // Template Image
-                  (template.thumbnail.isNotEmpty && template.thumbnail.startsWith('http'))
-                      ? Image.network(
-                          template.thumbnail,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: AppColors.grey300,
-                            );
-                          },
-                        )
-                      : Container(
-                          color: AppColors.grey300,
+                  Image.network(
+                    template.thumbnailUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: AppColors.grey300,
+                        child: Center(
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: 48.sp,
+                            color: AppColors.grey400,
+                          ),
                         ),
+                      );
+                    },
+                  ),
                   // Gradient overlay
                   Container(
                     decoration: BoxDecoration(
@@ -469,7 +472,7 @@ class _TemplateDetailsScreenState extends ConsumerState<TemplateDetailsScreen>
             Text('Description', style: AppTexts.h4()),
             SizedBox(height: 12.h),
             Text(
-              template.description,
+              template.cleanDescription,
               style: AppTexts.bodyMedium(color: AppColors.grey700),
             ),
             SizedBox(height: 24.h),
