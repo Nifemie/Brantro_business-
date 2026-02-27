@@ -126,6 +126,9 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
   }
 
   Future<void> login(LoginRequest request) async {
+    log('[AuthNotifier] Login attempt started');
+    log('[AuthNotifier] Username: ${request.username}');
+    
     state = state.copyWith(
       isInitialLoading: true,
       message: null,
@@ -133,12 +136,22 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
     );
 
     try {
+      log('[AuthNotifier] Calling repository.login...');
       final response = await _repository.login(request);
+      
+      log('[AuthNotifier] Repository returned response');
+      log('[AuthNotifier] Response success: ${response.success}');
+      log('[AuthNotifier] Response message: ${response.message}');
+      log('[AuthNotifier] User data: ${response.user?.toJson()}');
+      log('[AuthNotifier] Access token present: ${response.accessToken != null}');
 
       // Save session data to SessionService
       if (response.user != null && response.accessToken != null) {
+        log('[AuthNotifier] Saving session...');
         await SessionService.saveSession(response);
         log('[AuthNotifier] Session saved successfully');
+      } else {
+        log('[AuthNotifier] WARNING: User or token is null, session not saved');
       }
 
       state = state.copyWith(
@@ -150,13 +163,19 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
       );
 
       log('[AuthNotifier] Login successful: ${response.message}');
+      log('[AuthNotifier] State updated - isDataAvailable: ${state.isDataAvailable}');
     } catch (e, stack) {
+      log('[AuthNotifier] Login FAILED with exception');
+      log('[AuthNotifier] Exception type: ${e.runtimeType}');
+      log('[AuthNotifier] Exception message: $e');
+      
       state = state.copyWith(
         isInitialLoading: false,
         isDataAvailable: false,
         message: e.toString().replaceAll('Exception: ', ''),
       );
       log('[AuthNotifier] Login error: $e\n$stack');
+      log('[AuthNotifier] State updated - message: ${state.message}');
     }
   }
 

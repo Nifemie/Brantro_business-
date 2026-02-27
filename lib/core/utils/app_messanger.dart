@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:brantro/core/utils/color_utils.dart';
+import 'package:brantro_business/core/utils/color_utils.dart';
 
 enum MessageType { success, error, warning, info }
 

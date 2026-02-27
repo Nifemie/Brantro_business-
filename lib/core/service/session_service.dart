@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'local_storage_service.dart';
 
 // TODO: Create these model files when implementing authentication
-// import 'package:brantro/features/auth/models/login.dart';
-// import 'package:brantro/features/auth/models/user.dart';
+// import 'package:brantro_business/features/auth/models/login.dart';
+// import 'package:brantro_business/features/auth/models/user.dart';
 
 class SessionService {
   late BuildContext context;

@@ -87,20 +87,44 @@ class AuthRepository {
   /// Login user
   Future<LoginResponse> login(LoginRequest request) async {
     try {
+      print('========================================');
+      print('[AuthRepository] Login attempt with username: ${request.username}');
+      print('[AuthRepository] Posting to ${ApiEndpoints.login}...');
+      
       final response = await apiClient.post(
         ApiEndpoints.login,
         data: request.toJson(),
       );
 
+      print('[AuthRepository] Login response status: ${response.statusCode}');
+      print('[AuthRepository] Login response data: ${response.data}');
+
       final loginResponse = LoginResponse.fromJson(response.data);
+      
+      print('[AuthRepository] Parsed login response - Success: ${loginResponse.success}');
+      print('[AuthRepository] User role: ${loginResponse.user?.role}');
+      print('[AuthRepository] User ID: ${loginResponse.user?.id}');
+      print('[AuthRepository] Access token present: ${loginResponse.accessToken != null}');
+      print('========================================');
+      
       return loginResponse;
     } on DioException catch (e) {
+      print('========================================');
+      print('[AuthRepository] DioException occurred');
+      print('[AuthRepository] Status code: ${e.response?.statusCode}');
+      print('[AuthRepository] Response data: ${e.response?.data}');
+      print('[AuthRepository] Error message: ${e.message}');
+      print('========================================');
+      
       throw Exception(
         e.response?.data['message'] ??
             e.response?.data['error'] ??
             'Login failed. Please check your credentials.',
       );
     } catch (e) {
+      print('========================================');
+      print('[AuthRepository] Unexpected error: $e');
+      print('========================================');
       throw Exception('An unexpected error occurred: $e');
     }
   }

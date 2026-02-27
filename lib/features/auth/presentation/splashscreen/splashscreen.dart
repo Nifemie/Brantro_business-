@@ -4,86 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/service/session_service.dart';
 
-// Provider for animation controllers
-final splashAnimationProvider =
-    StateNotifierProvider.autoDispose<
-      SplashAnimationNotifier,
-      SplashAnimationState
-    >((ref) {
-      return SplashAnimationNotifier(ref);
-    });
-
-class SplashAnimationState {
-  final AnimationController? scaleController;
-  final AnimationController? backgroundController;
-  final AnimationController? textController;
-  final bool isAnimating;
-
-  SplashAnimationState({
-    this.scaleController,
-    this.backgroundController,
-    this.textController,
-    this.isAnimating = false,
-  });
-
-  SplashAnimationState copyWith({
-    AnimationController? scaleController,
-    AnimationController? backgroundController,
-    AnimationController? textController,
-    bool? isAnimating,
-  }) {
-    return SplashAnimationState(
-      scaleController: scaleController ?? this.scaleController,
-      backgroundController: backgroundController ?? this.backgroundController,
-      textController: textController ?? this.textController,
-      isAnimating: isAnimating ?? this.isAnimating,
-    );
-  }
-}
-
-class SplashAnimationNotifier extends StateNotifier<SplashAnimationState> {
-  final Ref ref;
-
-  SplashAnimationNotifier(this.ref) : super(SplashAnimationState());
-
-  void initializeAnimations(TickerProvider tickerProvider) {
-    final scaleController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: tickerProvider,
-    );
-    final backgroundController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: tickerProvider,
-    );
-    final textController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: tickerProvider,
-    );
-
-    state = state.copyWith(
-      scaleController: scaleController,
-      backgroundController: backgroundController,
-      textController: textController,
-    );
-
-    ref.onDispose(() {
-      scaleController.dispose();
-      backgroundController.dispose();
-      textController.dispose();
-    });
-  }
-
-  Future<void> startAnimationSequence() async {
-    state = state.copyWith(isAnimating: true);
-    await Future.delayed(const Duration(milliseconds: 500));
-    await state.scaleController?.forward();
-    await state.backgroundController?.forward();
-    await state.textController?.forward();
-    await Future.delayed(const Duration(milliseconds: 800));
-    state = state.copyWith(isAnimating: false);
-  }
-}
-
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -93,19 +13,126 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _textController;
+  late AnimationController _subtitleController;
+  late AnimationController _shimmerController;
+  
+  late Animation<double> _logoScale;
+  late Animation<double> _logoRotation;
+  late Animation<double> _textOpacity;
+  late Animation<Offset> _textSlide;
+  late Animation<double> _subtitleOpacity;
+  late Animation<Offset> _subtitleSlide;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final notifier = ref.read(splashAnimationProvider.notifier);
-      notifier.initializeAnimations(this);
-      _startSequence();
-    });
+    _initializeAnimations();
+    _startAnimationSequence();
   }
 
-  Future<void> _startSequence() async {
-    final notifier = ref.read(splashAnimationProvider.notifier);
-    await notifier.startAnimationSequence();
+  void _initializeAnimations() {
+    // Logo animation controller
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    // Text animation controller
+    _textController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    // Subtitle animation controller
+    _subtitleController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    // Shimmer effect controller
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    // Logo animations
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    _logoRotation = Tween<double>(begin: -0.2, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: Curves.easeOutBack,
+      ),
+    );
+
+    // Text animations
+    _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _textController,
+        curve: Curves.easeIn,
+      ),
+    );
+
+    _textSlide = Tween<Offset>(
+      begin: const Offset(0.0, 0.5),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _textController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    // Subtitle animations
+    _subtitleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _subtitleController,
+        curve: Curves.easeIn,
+      ),
+    );
+
+    _subtitleSlide = Tween<Offset>(
+      begin: const Offset(0.0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _subtitleController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
+  Future<void> _startAnimationSequence() async {
+    // Delay before starting
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    // Start logo animation
+    _logoController.forward();
+    
+    // Wait for logo to be halfway through
+    await Future.delayed(const Duration(milliseconds: 600));
+    
+    // Start text animation
+    _textController.forward();
+    
+    // Start shimmer effect
+    _shimmerController.repeat();
+    
+    // Wait a bit then start subtitle
+    await Future.delayed(const Duration(milliseconds: 400));
+    _subtitleController.forward();
+    
+    // Wait for animations to complete
+    await Future.delayed(const Duration(milliseconds: 1500));
+    
+    // Check session and navigate
     _checkSession();
   }
 
@@ -116,8 +143,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final isLoggedIn = await SessionService.isLoggedIn();
     
     if (isLoggedIn) {
-      // Redirect to home if authenticated
-      context.pushReplacement('/home');
+      // Redirect to dashboard if authenticated
+      context.pushReplacement('/dashboard');
     } else {
       // Redirect to intro if not authenticated
       context.pushReplacement('/intro');
@@ -125,121 +152,168 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   @override
+  void dispose() {
+    _logoController.dispose();
+    _textController.dispose();
+    _subtitleController.dispose();
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final animationState = ref.watch(splashAnimationProvider);
-    final scaleController = animationState.scaleController;
-    final backgroundController = animationState.backgroundController;
-    final textController = animationState.textController;
-
-    if (scaleController == null ||
-        backgroundController == null ||
-        textController == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    final scaleAnimation = Tween<double>(begin: 60.0, end: 120.0).animate(
-      CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
-    );
-
-    final borderRadiusAnimation = Tween<double>(begin: 12.0, end: 60.0).animate(
-      CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
-    );
-
-    final backgroundAnimation =
-        ColorTween(
-          begin: const Color(0xFFFFFFFF),
-          end: const Color(0xFFFFFFFF),
-        ).animate(
-          CurvedAnimation(
-            parent: backgroundController,
-            curve: Curves.easeInOut,
-          ),
-        );
-
-    final textSlideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: const Offset(0.0, 0.0),
-    ).animate(CurvedAnimation(parent: textController, curve: Curves.easeOut));
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
-      child: AnimatedBuilder(
-        animation: Listenable.merge([
-          scaleController,
-          backgroundController,
-          textController,
-        ]),
-        builder: (context, child) {
-          return Scaffold(
-            backgroundColor: backgroundAnimation.value,
-            body: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Logo animation with bounce
-                  Container(
-                    width: scaleAnimation.value,
-                    height: scaleAnimation.value,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(
-                        borderRadiusAnimation.value,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          borderRadiusAnimation.value,
-                        ),
-                        child: Image.asset(
-                          'assets/icons/launcher.png',
-                          width: scaleAnimation.value * 0.8,
-                          height: scaleAnimation.value * 0.8,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // App name slide-in from right with fade
-                  SlideTransition(
-                    position: textSlideAnimation,
-                    child: FadeTransition(
-                      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-                        CurvedAnimation(
-                          parent: textController,
-                          curve: Curves.easeOut,
-                        ),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.only(left: 16),
-                        child: Text(
-                          'Brantro',
-                          style: TextStyle(
-                            color: Color(0xFFF06909),
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'SF Pro',
-                            letterSpacing: 0.5,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF1A1A1A),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1A1A1A),
+                const Color(0xFF2D2D2D),
+                const Color(0xFF1A1A1A),
+              ],
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Animated Logo
+                AnimatedBuilder(
+                  animation: _logoController,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _logoScale.value,
+                      child: Transform.rotate(
+                        angle: _logoRotation.value,
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFF06909).withOpacity(0.3),
+                                blurRadius: 30,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: Image.asset(
+                              'assets/icons/launcher.png',
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // Animated App Name
+                SlideTransition(
+                  position: _textSlide,
+                  child: FadeTransition(
+                    opacity: _textOpacity,
+                    child: AnimatedBuilder(
+                      animation: _shimmerController,
+                      builder: (context, child) {
+                        return ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: const [
+                                Colors.white,
+                                Color(0xFFF06909),
+                                Colors.white,
+                              ],
+                              stops: [
+                                _shimmerController.value - 0.3,
+                                _shimmerController.value,
+                                _shimmerController.value + 0.3,
+                              ],
+                            ).createShader(bounds);
+                          },
+                          child: const Text(
+                            'Brantro',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                ],
-              ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Animated Subtitle
+                SlideTransition(
+                  position: _subtitleSlide,
+                  child: FadeTransition(
+                    opacity: _subtitleOpacity,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF06909).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFFF06909).withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'BUSINESS',
+                        style: TextStyle(
+                          color: Color(0xFFF06909),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 60),
+                
+                // Loading indicator
+                FadeTransition(
+                  opacity: _subtitleOpacity,
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        const Color(0xFFF06909).withOpacity(0.8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

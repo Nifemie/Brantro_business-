@@ -89,12 +89,26 @@ class ApiClient {
   }
 
   Future<Response> post(String path, {Map<String, dynamic>? data}) async {
+    print('[ApiClient] POST request to: $baseUrl$path');
+    print('[ApiClient] Request data: $data');
+    
     final options = Options();
     options.headers ??= {};
     options.headers!['Authorization'] = 'Bearer $apiToken';
     final requireAuth = _requiresAuth(path);
     await _withAuth(options, requireAuth: requireAuth);
-    return await dio.post(path, data: data, options: options);
+    
+    print('[ApiClient] Request headers: ${options.headers}');
+    
+    try {
+      final response = await dio.post(path, data: data, options: options);
+      print('[ApiClient] Response status: ${response.statusCode}');
+      print('[ApiClient] Response data: ${response.data}');
+      return response;
+    } catch (e) {
+      print('[ApiClient] Request FAILED with error: $e');
+      rethrow;
+    }
   }
 
   Future<Response> postFormData(String path, {required FormData data}) async {

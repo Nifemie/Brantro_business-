@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:brantro/core/utils/color_utils.dart'; // Add import
+import 'package:brantro_business/core/utils/color_utils.dart'; // Add import
 
 class PrimaryButton extends StatelessWidget {
   final String text;

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:brantro/controllers/re_useable/app_color.dart';
+import 'package:brantro_business/controllers/re_useable/app_color.dart';
 
 class IntroWrapper extends StatefulWidget {
   const IntroWrapper({super.key});
@@ -116,7 +116,7 @@ class _IntroWrapperState extends State<IntroWrapper> {
 
                   // Title
                   Text(
-                    'Smart Advertising',
+                    'Grow Your Business',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -128,7 +128,7 @@ class _IntroWrapperState extends State<IntroWrapper> {
 
                   // Description
                   const Text(
-                    'Reach Your Audience - Sell & Advertise',
+                    'Manage bookings, showcase services, and reach thousands of advertisers',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white,
@@ -181,29 +181,11 @@ class _IntroWrapperState extends State<IntroWrapper> {
                         ),
                       ),
                       child: const Text(
-                        'Log In',
+                        'Log into Dashboard',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Continue as Guest Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: () => context.go('/home'),
-                      child: const Text(
-                        'Continue as Guest',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
                         ),
                       ),
                     ),

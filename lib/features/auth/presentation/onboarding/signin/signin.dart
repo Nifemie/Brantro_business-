@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:brantro/features/auth/logic/auth_notifiers.dart';
-import 'package:brantro/features/auth/data/models/login_request.dart';
-import 'package:brantro/core/utils/app_messanger.dart';
-import 'package:brantro/core/utils/device_utils.dart';
-import 'package:brantro/core/utils/color_utils.dart';
-import 'package:brantro/controllers/re_useable/app_button.dart';
-import 'package:brantro/core/service/session_service.dart';
+import 'package:brantro_business/features/auth/logic/auth_notifiers.dart';
+import 'package:brantro_business/features/auth/data/models/login_request.dart';
+import 'package:brantro_business/core/utils/app_messanger.dart';
+import 'package:brantro_business/core/utils/device_utils.dart';
+import 'package:brantro_business/core/utils/color_utils.dart';
+import 'package:brantro_business/controllers/re_useable/app_button.dart';
+import 'package:brantro_business/core/service/session_service.dart';
 import '../../../../../core/utils/platform_responsive.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -29,7 +29,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _hasStoredUsername = false;
 
   Future<void> _login() async {
+    print('========================================');
+    print('[SignInScreen] Login button pressed!');
+    print('[SignInScreen] Form validation starting...');
+    
     if (_formKey.currentState!.validate()) {
+      print('[SignInScreen] Form validation passed');
+      print('[SignInScreen] Username: ${_usernameController.text.trim()}');
+      print('[SignInScreen] Password length: ${_passwordController.text.length}');
+      
       setState(() => _isLoading = true);
 
       final request = LoginRequest(
@@ -37,24 +45,51 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         password: _passwordController.text,
       );
 
+      print('[SignInScreen] LoginRequest created, calling auth notifier...');
       await ref.read(authNotifierProvider.notifier).login(request);
+      print('[SignInScreen] Auth notifier login completed');
       
       if (!mounted) return;
       setState(() => _isLoading = false);
 
       final authState = ref.read(authNotifierProvider);
+      
+      print('[SignInScreen] Auth state after login:');
+      print('[SignInScreen] - isDataAvailable: ${authState.isDataAvailable}');
+      print('[SignInScreen] - message: ${authState.message}');
+      print('[SignInScreen] - user role: ${authState.singleData?.role}');
 
       if (authState.isDataAvailable) {
+        print('[SignInScreen] Login successful, checking user role...');
         // Check user role BEFORE navigation
         final userRole = authState.singleData?.role?.toUpperCase();
         
-        // Only allow USER and ADVERTISER roles (this is a buyer/advertiser app, not for sellers)
-        if (userRole == 'USER' || userRole == 'ADVERTISER') {
-          // Role is valid - navigate to home
+        // Only allow SELLER roles and ADMIN (this is a seller/business app)
+        // Seller roles: ARTIST, INFLUENCER, HOST, TV_STATION, RADIO_STATION, MEDIA_HOUSE, DESIGNER, PRODUCER, UGC_CREATOR, TALENT_MANAGER, SCREEN_BILLBOARD
+        final sellerRoles = [
+          'ADMIN',
+          'ARTIST',
+          'INFLUENCER', 
+          'HOST',
+          'TV_STATION',
+          'RADIO_STATION',
+          'MEDIA_HOUSE',
+          'DESIGNER',
+          'CREATIVE',
+          'PRODUCER',
+          'UGC_CREATOR',
+          'TALENT_MANAGER',
+          'SCREEN_BILLBOARD',
+        ];
+        
+        if (sellerRoles.contains(userRole)) {
+          print('[SignInScreen] User role "$userRole" is valid for seller app');
+          // Role is valid - navigate to dashboard
           if (!mounted) return;
           setState(() => _isLoading = false);
           
-          context.pushReplacement('/home');
+          print('[SignInScreen] Navigating to dashboard...');
+          context.pushReplacement('/dashboard');
           
           // Show welcome message after navigation
           Future.delayed(const Duration(milliseconds: 500), () async {
@@ -80,26 +115,30 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             );
           });
         } else {
-          // User has a seller/provider role - not allowed in this app
+          print('[SignInScreen] User role "$userRole" is NOT allowed in seller app');
+          // User has a buyer/advertiser role - not allowed in this app
           // Stay on signin screen and show error
           if (!mounted) return;
           setState(() => _isLoading = false);
           
           AppMessenger.show(
             context,
-            message: 'This app is for buyers and advertisers only. Please use the seller app to manage your services.',
+            message: 'This app is for sellers and service providers only. Please use the buyer app to browse and book services.',
             type: MessageType.error,
           );
           
           // Clear the session so they can't bypass
           await SessionService.clearSession();
+          print('[SignInScreen] Session cleared for unauthorized role');
         }
       } else if (authState.message != null) {
+        print('[SignInScreen] Login failed with message: ${authState.message}');
         // Check if the error is about inactive account
         final errorMessage = authState.message!.toLowerCase();
         if (errorMessage.contains('inactive') || 
             errorMessage.contains('not activated') ||
             errorMessage.contains('not verified')) {
+          print('[SignInScreen] Account inactive/not verified, redirecting to verification');
           // Show error message
           AppMessenger.show(
             context,
@@ -120,6 +159,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           });
         } else {
           // Other errors - just show the message
+          print('[SignInScreen] Showing error to user: ${authState.message}');
           setState(() => _hasIncorrectCred = true);
           AppMessenger.show(
             context,
@@ -127,8 +167,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             type: MessageType.error,
           );
         }
+      } else {
+        print('[SignInScreen] No data available and no error message - unexpected state');
       }
+    } else {
+      print('[SignInScreen] Form validation FAILED');
     }
+    print('========================================');
   }
 
   Future<void> _initialize() async {
@@ -227,14 +272,29 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               ),
                             ),
                           ),
-                          PlatformResponsive.sizedBoxW(6),
-                          Text(
-                            'Brantro',
-                            style: TextStyle(
-                              fontSize: 24.rsp,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          PlatformResponsive.sizedBoxW(12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Brantro',
+                                style: TextStyle(
+                                  fontSize: 24.rsp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              Text(
+                                'Business',
+                                style: TextStyle(
+                                  fontSize: 14.rsp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryColor,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -242,20 +302,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                       // Welcome text
                       Text(
-                        'Welcome Back',
+                        'Seller Portal',
                         style: TextStyle(
-                          fontSize: 28.sp,
+                          fontSize: 32.sp,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          height: 1.2,
                         ),
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        'Enter details to Login into your account',
+                        'Manage your services and grow your business',
                         style: TextStyle(
-                          fontSize: 16.sp,
+                          fontSize: 15.sp,
                           color: Colors.white70,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       SizedBox(height: 40.h),
@@ -316,9 +377,43 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       SizedBox(height: 40.h),
 
                       FullWidthButton(
-                        text: 'Login',
+                        text: 'Login to Dashboard',
                         isLoading: _isLoading,
                         onPressed: _login,
+                      ),
+                      SizedBox(height: 16.h),
+
+                      // Business benefits section
+                      Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: AppColors.primaryColor.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.business_center,
+                              color: AppColors.primaryColor,
+                              size: 24.sp,
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Text(
+                                'For Sellers & Service Providers Only',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       SizedBox(height: 24.h),
 
@@ -367,7 +462,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account yet? ",
+                            "New seller? ",
                             style: TextStyle(
                               fontSize: 14.sp,
                               color: Colors.white70,
@@ -376,11 +471,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           GestureDetector(
                             onTap: () => context.push('/signup'),
                             child: Text(
-                              'Open account',
+                              'Register your business',
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: AppColors.primaryColor,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),

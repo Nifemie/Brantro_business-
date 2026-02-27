@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:brantro/features/auth/logic/auth_notifiers.dart';
-import 'package:brantro/features/auth/data/models/verify_otp_request.dart';
-import 'package:brantro/features/auth/data/models/validate_account_request.dart';
-import 'package:brantro/core/utils/color_utils.dart';
+import 'package:brantro_business/features/auth/logic/auth_notifiers.dart';
+import 'package:brantro_business/features/auth/data/models/verify_otp_request.dart';
+import 'package:brantro_business/features/auth/data/models/validate_account_request.dart';
+import 'package:brantro_business/core/utils/color_utils.dart';
 import '../../../../../controllers/re_useable/app_button.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 

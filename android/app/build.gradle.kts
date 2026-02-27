@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.brantro"
+    namespace = "com.example.brantro_business"
     compileSdk = 36  // Required by multiple plugins
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.brantro"
+        applicationId = "com.example.brantro_business"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion  // Required by paystack_flutter_sdk
