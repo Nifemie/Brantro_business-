@@ -8,13 +8,16 @@ class TopPagesTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 10,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -59,7 +62,7 @@ class TopPagesTable extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: DataTable(
               headingRowColor: MaterialStateProperty.all(
-                const Color(0xFFEFF1F5),
+                isDark ? Colors.grey[850] : const Color(0xFFEFF1F5),
               ),
               dataRowMinHeight: 60.h,
               dataRowMaxHeight: 60.h,

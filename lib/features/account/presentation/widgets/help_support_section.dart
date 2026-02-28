@@ -9,10 +9,13 @@ class HelpSupportSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Column(
@@ -42,24 +45,40 @@ class HelpSupportSection extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.grey700, size: 20.sp),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                title,
-                style: AppTexts.bodyMedium(color: AppColors.grey700),
-              ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isDark ? Colors.white70 : AppColors.grey700,
+                  size: 20.sp,
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTexts.bodyMedium(
+                      color: isDark ? Colors.white : AppColors.grey700,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: isDark ? Colors.white38 : AppColors.grey400,
+                  size: 20.sp,
+                ),
+              ],
             ),
-            Icon(Icons.chevron_right, color: AppColors.grey400, size: 20.sp),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

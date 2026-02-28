@@ -1,0 +1,249 @@
+Brantro Business App (Provider Dashboard) — (PRD)
+1) Purpose
+Brantro Business App is a mobile dashboard for service/product providers on Brantro to
+manage what they sell, fulfill orders, and manage earnings.
+● Who can use it: Billboard owners, Screen owners, Influencers, Artists, UGC creators,
+Digital creators, Creative designers, Template sellers, Service providers.
+● Who cannot use it: Advertisers / consumers (they buy from the marketplace but do
+not login to this app).
+● API source: All APIs are already documented in Postman.
+● Reference: Existing Brantro web app is the functional/UI reference.
+2) Goals
+1. Let providers signup/login and manage their business profile.
+2. Let providers post and manage listings (ad slots, screens, services, templates,
+creatives, etc.).
+3. Let providers receive and manage orders (approve/decline where applicable, deliver,
+track status).
+4. Let providers track earnings, wallet balances, transactions, and withdraw funds.
+5. Provide notifications and basic performance analytics.
+3) User Roles & Capabilities
+A single user account may have one or multiple provider types (e.g., Screen
+Owner + Influencer).
+A) Billboard Owner
+● Create and manage billboard inventory (location, size, availability, pricing, photos).
+● Receive booking orders and accept/decline (if platform supports manual approval).
+● Provide proof-of-placement where required (photos/videos).
+● Track wallet earnings and withdrawals.
+B) Screen Owner (Digital Screens)
+● Create/manage screen inventory (venue, screen specs, play schedule, impressions if
+available).
+● Accept/decline bookings (if required).
+● Upload proof-of-play (photos/videos/logs) where required.
+● Earnings + withdrawals.
+C) Influencer / UGC Creator / Creator / Artist
+● Create/manage service offerings (packages, pricing, deliverables, turnaround time).
+● Receive service orders, chat/clarify requirements, submit deliverables.
+● Order status updates, revisions if supported.
+● Earnings + withdrawals.
+D) Creative / Designer (Creative Designs)
+● Publish creative products or design services (depending on your marketplace model).
+● Deliver files, manage revisions, track orders.
+● Earnings + withdrawals.
+E) Template Seller
+● Publish templates (category, preview images, file formats, license terms).
+● Handle template purchases (usually auto-delivery, or manual delivery if your process
+needs it).
+● Earnings + withdrawals.
+4) Core Modules (What must be built)
+4.1 Authentication & Account
+● Signup (email/phone), login, logout
+● OTP/email verification (if in API)
+● Forgot password / reset password
+● Device/session security (token storage, refresh tokens)
+● Role selection during onboarding (pick provider types)
+Screens
+● Splash
+● Login
+● Signup
+● Verify OTP/email
+● Forgot Password
+● Reset Password
+4.2 Onboarding & Profile Management
+● Business/provider profile:
+○ Display name / brand name
+○ Bio/about
+○ Category/provider type(s)
+○ Service areas / locations
+○ Social media handles
+○ Portfolio/media uploads
+● KYC (if required by platform to withdraw):
+○ Personal details, ID upload, bank details, business docs (optional)
+○ KYC status and review feedback
+Screens
+● Provider type selection
+● Profile setup wizard
+● Profile view/edit
+● KYC & Payout setup
+● Verification status
+4.3 Listings / Inventory Management (Provider “Products”)
+This is the heart of the app: providers create what they sell.
+Listing Types (based on your platform model)
+1. Billboards
+2. Screens
+3. Services (influencer packages, UGC packages, design services)
+4. Templates
+5. Creatives / Design Products (if sold as items)
+Common listing fields
+● Title
+● Category/type
+● Price (fixed or starting price)
+● Availability status (Active/Paused/Sold out)
+● Description
+● Media (photos/videos)
+● Delivery timeline / schedule
+● Location (for billboards/screens) + map coordinates if available
+● Policies: revision policy, cancellation terms, content restrictions
+Screens
+● Listings home (tabs by listing type)
+● Listing detail
+● Create listing (wizard)
+● Edit listing
+● Pause/Activate listing
+● Media manager
+4.4 Availability & Scheduling (Billboards/Screens)
+● Availability calendar:
+○ Block dates
+○ Mark booked periods
+○ Define timeslots (if screens have times)
+● Pricing rules (if supported):
+○ Per day/week/month
+○ Peak pricing (optional)
+Screens
+● Availability calendar
+● Timeslots (for screen owners) if needed
+● Pricing setup
+4.5 Orders Management
+Providers must manage orders made for their offerings.
+Order states (typical)
+● Pending (awaiting provider action)
+● Accepted / Rejected (if manual approval)
+● In Progress
+● Delivered / Proof submitted
+● Revision requested (optional)
+● Completed
+● Cancelled / Disputed (if supported)
+Provider actions
+● View order details
+● Accept/Decline order (where applicable)
+● Confirm requirements (brief, assets, instructions)
+● Submit deliverables (file upload / links)
+● Mark as delivered
+● Respond to revision request (if supported)
+● Track payment status (paid, escrow, released, pending)
+Screens
+● Orders list (filters: pending, active, completed)
+● Order details (timeline + actions)
+● Delivery submission (upload files)
+● Proof submission (billboard/screen proof)
+● Order chat/messages (if supported by API)
+4.6 Wallet & Payouts (Earnings)
+Providers need a full wallet experience:
+● Wallet balance
+● Pending earnings (if escrow is used)
+● Transaction history
+● Withdrawal request
+● Withdrawal history + statuses (pending/processing/completed/failed)
+● Bank account management (if API supports)
+● Fees breakdown (platform fee, tax, payout fee)
+Screens
+● Wallet dashboard
+● Transactions list
+● Transaction details
+● Withdraw funds (amount + destination bank)
+● Withdrawal history
+● Bank account / payout settings
+4.7 Notifications & Alerts
+● Push notifications + in-app notifications for:
+○ New order
+○ Order accepted/rejected
+○ Payment updates
+○ Withdrawal updates
+○ Message received
+○ KYC status updates
+○ System announcements
+Screens
+● Notifications list
+● Notification detail
+4.8 Messaging (If supported)
+● Provider ↔ advertiser messaging only inside order context
+● Attach files/images
+● Basic moderation tools (report/block if supported)
+Screens
+● Conversations
+● Chat thread (per order)
+● Attachment preview
+4.9 Analytics & Performance (Basic)
+● Revenue summary (today/this week/this month)
+● Orders count (pending/active/completed)
+● Top-performing listings
+● Ratings/reviews summary (if supported)
+Screens
+● Dashboard home (KPIs)
+● Analytics detail (charts optional)
+4.10 Settings
+● Profile settings
+● Security (change password, logout all sessions)
+● Notification preferences
+● Help/Support
+● Terms & policies
+● Delete account (if supported)
+5) Home Dashboard (Provider Landing)
+After login, provider sees:
+● Quick stats (orders, earnings, pending actions)
+● “New orders” queue
+● Wallet snapshot
+● Listings snapshot
+● Latest notifications
+6) Permissions & Access Rules
+● Only provider accounts can authenticate into the Business App.
+● Advertiser accounts must be blocked at login (API should return role; app enforces).
+● A provider can have multiple provider types; UI should adapt:
+○ show relevant listing tabs/modules
+○ hide irrelevant modules
+7) Key User Flows
+Flow A: Provider Onboarding
+Signup → Verify → Select provider type(s) → Setup profile → Setup payout/KYC → Create first
+listing.
+Flow B: Create Listing
+Listings → Create → Fill details → Upload media → Set price/availability → Publish.
+Flow C: Order Handling (Manual approval)
+New order notification → Order details → Accept/Decline → Work in progress → Deliver/Proof
+→ Completion → Earnings released to wallet.
+Flow D: Withdraw Funds
+Wallet → Withdraw → Enter amount → Select bank → Confirm → Track withdrawal status.
+8) Non-Functional Requirements
+● Platform: Androidand IOS
+● Performance: fast list rendering, pagination, caching
+● Offline tolerance: show last cached data where possible (orders/listings)
+● Security: secure token storage, biometric lock optional, prevent screenshots on
+sensitive screens (optional)
+● Uploads: robust file upload with retry and progress
+● Logging: crash reporting + event tracking (optional)
+9) API Integration Notes (from Postman)
+Developer should implement strictly using Postman collections:
+● Auth endpoints
+● Role/profile endpoints
+● Listings endpoints (billboard/screen/service/template/creative)
+● Orders endpoints + status transitions
+● Wallet endpoints (balance, transactions, withdrawals)
+● Notifications endpoints
+● Messaging endpoints (if any)
+● Media upload endpoints
+Important: App should follow the same status transitions and validations used on the web
+app.
+10) Out of Scope (Explicit)
+● Advertiser browsing/buying flow
+● Consumer marketplace features
+● Public marketing pages
+● Admin dashboard features
+11) Delivery Checklist for Mobile Developer
+1. Navigation structure (bottom tabs + nested stacks)
+2. Authentication + role restriction
+3. Provider onboarding + profile + KYC
+4. Listings CRUD for each provider type
+5. Orders management + status actions + file uploads
+6. Wallet + withdrawals + transaction history
+7. Notifications (push + in-app)
+8. Messaging (if available)
+9. Analytics dashboard (basic)
+10. QA: edge cases (network failure, upload retry, pagination, token refresh)

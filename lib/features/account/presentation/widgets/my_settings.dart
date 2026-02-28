@@ -11,6 +11,9 @@ class MySettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return FutureBuilder<bool>(
       future: SessionService.isLoggedIn(),
       builder: (context, snapshot) {
@@ -19,7 +22,7 @@ class MySettings extends StatelessWidget {
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 16.w),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Column(
@@ -163,25 +166,33 @@ class MySettings extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: AppTexts.bodyMedium(color: AppColors.grey700),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: AppTexts.bodyMedium(
+                    color: isDark ? Colors.white : AppColors.grey700,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: isDark ? Colors.white38 : AppColors.grey400,
+                  size: 20.sp,
+                ),
+              ],
             ),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.grey400,
-              size: 20.sp,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

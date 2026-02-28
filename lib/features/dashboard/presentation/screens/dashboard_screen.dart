@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:brantro_business/features/dashboard/presentation/widgets/dashboard_app_bar.dart';
 import 'package:brantro_business/features/dashboard/presentation/widgets/alert_banner.dart';
@@ -10,15 +11,63 @@ import 'package:brantro_business/features/dashboard/presentation/widgets/top_pag
 import 'package:brantro_business/features/dashboard/presentation/widgets/recent_orders_table.dart';
 import 'package:brantro_business/features/dashboard/presentation/widgets/sidebar_menu.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  DateTime? _lastBackPressed;
+
+  Future<bool> _onWillPop() async {
+    // Always prevent going back from dashboard (which would go to splash)
+    final now = DateTime.now();
+    final backButtonHasNotBeenPressedOrSnackBarHasBeenClosed =
+        _lastBackPressed == null ||
+            now.difference(_lastBackPressed!) > const Duration(seconds: 2);
+
+    if (backButtonHasNotBeenPressedOrSnackBarHasBeenClosed) {
+      _lastBackPressed = now;
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Press back again to exit'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16.w),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+    
+    // Exit the app
+    SystemNavigator.pop();
+    return true;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      drawer: const SidebarMenu(),
-      body: SafeArea(
+    final theme = Theme.of(context);
+    
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          await _onWillPop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        drawer: const SidebarMenu(),
+        body: SafeArea(
         child: Column(
           children: [
             const DashboardAppBar(),
@@ -33,12 +82,12 @@ class DashboardScreen extends StatelessWidget {
                   padding: EdgeInsets.all(16.w),
                   child: Column(
                     children: [
-                      const AlertBanner(
-                        message:
-                            'We regret to inform you that our server is under maintenance. We will be back shortly.',
-                      ),
+                      // const AlertBanner(
+                      //   message:
+                      //       'We regret to inform you that our server is under maintenance. We will be back shortly.',
+                      // ),
 
-                      SizedBox(height: 16.h),
+                      // SizedBox(height: 16.h),
                       StatCard(
                         icon: Icons.local_fire_department_rounded,
                         iconColor: Colors.orange,
@@ -112,6 +161,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

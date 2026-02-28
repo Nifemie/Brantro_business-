@@ -8,10 +8,13 @@ class SocialAccountsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Column(
@@ -111,52 +114,62 @@ class SocialAccountsSection extends StatelessWidget {
     bool isConnected = true,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        child: Row(
-          children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: AppColors.grey200, // Use consistent grey background for all
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Icon(
-                icon,
-                color: color, // Keep brand color for the icon itself
-                size: 20.sp,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    platform,
-                    style: AppTexts.bodyMedium(color: AppColors.grey700),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            child: Row(
+              children: [
+                Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : AppColors.grey200,
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    username,
-                    style: AppTexts.bodySmall(
-                      color: isConnected ? AppColors.grey600 : AppColors.grey400,
-                    ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 20.sp,
                   ),
-                ],
-              ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        platform,
+                        style: AppTexts.bodyMedium(
+                          color: isDark ? Colors.white : AppColors.grey700,
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        username,
+                        style: AppTexts.bodySmall(
+                          color: isConnected 
+                              ? (isDark ? Colors.white60 : AppColors.grey600)
+                              : (isDark ? Colors.white38 : AppColors.grey400),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isConnected ? Icons.edit_outlined : Icons.add,
+                  color: isDark ? Colors.white38 : AppColors.grey400,
+                  size: 20.sp,
+                ),
+              ],
             ),
-            Icon(
-              isConnected ? Icons.edit_outlined : Icons.add,
-              color: AppColors.grey400,
-              size: 20.sp,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

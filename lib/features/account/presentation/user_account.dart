@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/service/session_service.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
-import 'widgets/account_header.dart';
+import '../../dashboard/presentation/widgets/dashboard_app_bar.dart';
+import '../../dashboard/presentation/widgets/sidebar_menu.dart';
+import '../logic/profile_provider.dart';
 import 'widgets/profile_header_widget.dart';
+import 'widgets/kyc_verification_banner.dart';
 import 'widgets/action_buttons.dart';
 import 'widgets/help_support_section.dart';
 import 'widgets/account_menu_section.dart';
@@ -65,33 +68,40 @@ class _UserAccountState extends ConsumerState<UserAccount> {
     // Force rebuild by invalidating providers when screen is built
     ref.invalidate(profileHeaderProvider);
     
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
-        children: [
-          const AccountHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  SizedBox(height: 12.h),
-                  const ProfileHeaderWidget(),
-                  SizedBox(height: 16.h),
-                  const ActionButtons(),
-                  SizedBox(height: 8.h),
-                  const HelpSupportSection(),
-                  SizedBox(height: 8.h),
-                  const AccountMenuSection(),
-                  SizedBox(height: 8.h),
-                  const SocialAccountsSection(),
-                  SizedBox(height: 8.h),
-                  const MySettings(),
-                  SizedBox(height: 24.h),
-                ],
+      backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: const SidebarMenu(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const DashboardAppBar(title: 'PROFILE'),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    SizedBox(height: 12.h),
+                    const ProfileHeaderWidget(),
+                    SizedBox(height: 16.h),
+                    const KycVerificationBanner(),
+                    SizedBox(height: 8.h),
+                    const ActionButtons(),
+                    SizedBox(height: 8.h),
+                    const HelpSupportSection(),
+                    SizedBox(height: 8.h),
+                    const AccountMenuSection(),
+                    SizedBox(height: 8.h),
+                    const SocialAccountsSection(),
+                    SizedBox(height: 8.h),
+                    const MySettings(),
+                    SizedBox(height: 24.h),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

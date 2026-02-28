@@ -3,73 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
-import '../../../../controllers/re_useable/app_texts.dart';
-import '../../../../core/service/session_service.dart';
 import '../../../../core/utils/avatar_helper.dart';
-
-// Profile Header Data Model
-class ProfileHeaderData {
-  final String avatarUrl;
-  final String fullName;
-  final String email;
-  final String role;
-  final String memberSince;
-  final String userId; // Add userId for avatar helper
-
-  const ProfileHeaderData({
-    required this.avatarUrl,
-    required this.fullName,
-    required this.email,
-    required this.role,
-    required this.memberSince,
-    required this.userId,
-  });
-}
-
-// Profile Header provider
-final profileHeaderProvider = FutureProvider<ProfileHeaderData>((ref) async {
-  final isLoggedIn = await SessionService.isLoggedIn();
-  
-  // If not logged in, return guest data
-  if (!isLoggedIn) {
-    return const ProfileHeaderData(
-      avatarUrl: '',
-      fullName: 'Guest',
-      email: '',
-      role: 'GUEST',
-      memberSince: '',
-      userId: 'guest',
-    );
-  }
-  
-  // For logged-in users, fetch real data
-  final user = await SessionService.getUser();
-  final fullName = await SessionService.getUserFullname();
-  final email = await SessionService.getUsername();
-  
-  // Extract year from user data if available
-  String memberSince = 'Member since 2025';
-  if (user != null && user['createdAt'] != null) {
-    try {
-      final createdAt = DateTime.parse(user['createdAt']);
-      memberSince = 'Member since ${createdAt.year}';
-    } catch (e) {
-      // Use default if parsing fails
-    }
-  }
-  
-  // Get user ID for avatar helper
-  final userId = user?['id']?.toString() ?? user?['userId']?.toString() ?? 'user';
-  
-  return ProfileHeaderData(
-    avatarUrl: user?['avatarUrl'] ?? '',
-    fullName: fullName ?? user?['name'] ?? 'User',
-    email: email ?? user?['emailAddress'] ?? '',
-    role: user?['role'] ?? 'USER',
-    memberSince: memberSince,
-    userId: userId,
-  );
-});
+import '../../logic/profile_provider.dart';
 
 // Profile Header Widget
 class ProfileHeaderWidget extends ConsumerWidget {
@@ -85,177 +20,409 @@ class ProfileHeaderWidget extends ConsumerWidget {
     final profileDataAsync = ref.watch(profileHeaderProvider);
 
     return profileDataAsync.when(
-      data: (profileData) => _buildHeader(profileData),
+      data: (profileData) => _buildHeader(context, profileData),
       loading: () => _buildLoadingSkeleton(),
-      error: (_, __) => _buildHeader(const ProfileHeaderData(
-        avatarUrl: '',
-        fullName: 'User',
-        email: '',
-        role: 'USER',
-        memberSince: 'Member since 2025',
-        userId: 'user',
-      )),
+      error: (_, __) => _buildHeader(
+        context,
+        const ProfileHeaderData(
+          avatarUrl: '',
+          fullName: 'User',
+          email: '',
+          role: 'USER',
+          experience: '0+ Years',
+          productions: 0,
+          genres: [],
+          userId: 'user',
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(ProfileHeaderData profileData) {
-    // Get avatar using AvatarHelper
+  Widget _buildHeader(BuildContext context, ProfileHeaderData profileData) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final avatarUrl = AvatarHelper.getAvatar(
       avatarUrl: profileData.avatarUrl,
       userId: profileData.userId,
     );
 
-    return Builder(
-      builder: (context) => GestureDetector(
-        onTap: () {
-          context.push('/profile-details');
-        },
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.3) : AppColors.shadow,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-          margin: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+        ],
+      ),
+      child: Column(
+        children: [
+          // Banner Image with Profile Picture Overlay
+          Stack(
+            clipBehavior: Clip.none,
             children: [
-              // Avatar with Camera Icon
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Avatar
-                  Container(
-                    width: 102.w,
-                    height: 102.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.grey200,
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AvatarHelper.isDefaultAvatar(avatarUrl)
-                            ? AssetImage(avatarUrl) as ImageProvider
-                            : NetworkImage(avatarUrl),
-                        fit: BoxFit.cover,
+              // Banner Image
+              Container(
+                height: 200.h,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16.r),
+                    topRight: Radius.circular(16.r),
+                  ),
+                  image: DecorationImage(
+                    image: profileData.bannerUrl.isNotEmpty
+                        ? NetworkImage(profileData.bannerUrl)
+                        : const AssetImage('assets/promotions/billboard1.jpg')
+                            as ImageProvider,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+
+              // Profile Picture (Overlapping)
+              Positioned(
+                bottom: -50.h,
+                left: 20.w,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 100.w,
+                      height: 100.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                        image: DecorationImage(
+                          image: AvatarHelper.isDefaultAvatar(avatarUrl)
+                              ? AssetImage(avatarUrl) as ImageProvider
+                              : NetworkImage(avatarUrl),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-
-                  // Camera Icon Button
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: onEditPhoto ?? () {},
-                      child: Container(
-                        width: 32.w,
-                        height: 32.w,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 2,
+                    // Camera icon for editing
+                    if (onEditPhoto != null)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: onEditPhoto,
+                          child: Container(
+                            width: 32.w,
+                            height: 32.w,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 16.sp,
+                            ),
                           ),
                         ),
-                        child: Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 16.sp,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 60.h),
+
+          // Name and Role
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profileData.fullName,
+                            style: TextStyle(
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : AppColors.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            _formatRole(profileData.role),
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: isDark ? Colors.white70 : AppColors.grey600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton(
+                      icon: Icon(
+                        Icons.more_horiz,
+                        color: isDark ? Colors.white70 : AppColors.grey600,
+                      ),
+                      color: theme.cardTheme.color,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit,
+                                size: 20.sp,
+                                color: isDark ? Colors.white70 : AppColors.grey700,
+                              ),
+                              SizedBox(width: 12.w),
+                              Text(
+                                'Edit Profile',
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : AppColors.grey700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          onTap: () {
+                            Future.delayed(Duration.zero, () {
+                              context.push('/edit-profile');
+                            });
+                          },
+                        ),
+                        PopupMenuItem(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.share,
+                                size: 20.sp,
+                                color: isDark ? Colors.white70 : AppColors.grey700,
+                              ),
+                              SizedBox(width: 12.w),
+                              Text(
+                                'Share Profile',
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : AppColors.grey700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16.h),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // TODO: Navigate to messages
+                        },
+                        icon: Icon(Icons.chat_bubble_outline, size: 18.sp),
+                        label: Text('Message'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
                         ),
                       ),
                     ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // TODO: Follow/Unfollow
+                        },
+                        icon: Icon(Icons.add, size: 18.sp),
+                        label: Text('Follow'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.secondaryColor,
+                          side: BorderSide(
+                            color: AppColors.secondaryColor,
+                            width: 1.5,
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 24.h),
+
+                // Stats Section
+                Row(
+                  children: [
+                    _buildStatItem(
+                      icon: Icons.access_time,
+                      iconColor: AppColors.secondaryColor,
+                      label: 'Experience',
+                      value: profileData.experience,
+                    ),
+                    SizedBox(width: 24.w),
+                    _buildStatItem(
+                      icon: Icons.emoji_events,
+                      iconColor: AppColors.secondaryColor,
+                      label: 'Productions',
+                      value: '${profileData.productions} Items',
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 20.h),
+
+                // Genres Section
+                if (profileData.genres.isNotEmpty) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.music_note,
+                        color: AppColors.secondaryColor,
+                        size: 24.sp,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              profileData.genres.join(', '),
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              'Genres / Niche',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.grey600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
+                  SizedBox(height: 20.h),
                 ],
-              ),
-
-              SizedBox(height: 16.h),
-
-              // Full Name
-              Text(
-                profileData.fullName,
-                style: AppTexts.h3(color: AppColors.textPrimary),
-                textAlign: TextAlign.center,
-              ),
-
-              if (profileData.email.isNotEmpty && profileData.role != 'GUEST') ...[
-                SizedBox(height: 4.h),
-                Text(
-                  profileData.email,
-                  style: AppTexts.bodySmall(color: AppColors.grey600),
-                  textAlign: TextAlign.center,
-                ),
               ],
-
-              SizedBox(height: 12.h),
-
-              // Role Badge - only show for non-guest users
-              if (profileData.role != 'GUEST')
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  child: Text(
-                    _formatRole(profileData.role),
-                    style: AppTexts.labelSmall(color: AppColors.primaryColor),
-                  ),
-                ),
-
-              if (profileData.memberSince.isNotEmpty && profileData.role != 'GUEST') ...[
-                SizedBox(height: 8.h),
-                // Member Since
-                Text(
-                  profileData.memberSince,
-                  style: AppTexts.bodySmall(color: AppColors.grey600),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+  }) {
+    return Expanded(
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          
+          return Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(icon, color: iconColor, size: 24.sp),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: isDark ? Colors.white70 : AppColors.grey600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Widget _buildLoadingSkeleton() {
     return Container(
-      width: double.infinity,
+      margin: EdgeInsets.symmetric(horizontal: 16.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
       child: Column(
         children: [
           Container(
-            width: 102.w,
-            height: 102.w,
+            height: 200.h,
             decoration: BoxDecoration(
               color: AppColors.grey200,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16.r),
+                topRight: Radius.circular(16.r),
+              ),
             ),
           ),
-          SizedBox(height: 16.h),
-          Container(
-            width: 150.w,
-            height: 20.h,
-            decoration: BoxDecoration(
-              color: AppColors.grey200,
-              borderRadius: BorderRadius.circular(4.r),
+          SizedBox(height: 60.h),
+          Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              children: [
+                Container(
+                  width: 150.w,
+                  height: 20.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.grey200,
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+                SizedBox(height: 40.h),
+              ],
             ),
           ),
         ],
@@ -264,7 +431,6 @@ class ProfileHeaderWidget extends ConsumerWidget {
   }
 
   String _formatRole(String role) {
-    // Convert SUPER_ADMIN to Super Admin, etc.
     return role
         .split('_')
         .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())

@@ -8,6 +8,9 @@ class RecentOrdersPagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Padding(
       padding: EdgeInsets.all(20.w),
       child: Wrap(
@@ -43,15 +46,15 @@ class RecentOrdersPagination extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildPageButton(icon: Icons.chevron_left, isActive: false),
+              _buildPageButton(context, icon: Icons.chevron_left, isActive: false),
               SizedBox(width: 8.w),
-              _buildPageButton(text: '1', isActive: true),
+              _buildPageButton(context, text: '1', isActive: true),
               SizedBox(width: 8.w),
-              _buildPageButton(text: '2', isActive: false),
+              _buildPageButton(context, text: '2', isActive: false),
               SizedBox(width: 8.w),
-              _buildPageButton(text: '3', isActive: false),
+              _buildPageButton(context, text: '3', isActive: false),
               SizedBox(width: 8.w),
-              _buildPageButton(icon: Icons.chevron_right, isActive: false),
+              _buildPageButton(context, icon: Icons.chevron_right, isActive: false),
             ],
           ),
         ],
@@ -59,16 +62,20 @@ class RecentOrdersPagination extends StatelessWidget {
     );
   }
 
-  Widget _buildPageButton({
+  Widget _buildPageButton(
+    BuildContext context, {
     String? text,
     IconData? icon,
     required bool isActive,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       width: 36.w,
       height: 36.w,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primaryColor : Colors.white,
+        color: isActive ? AppColors.primaryColor : theme.cardTheme.color,
         shape: BoxShape.circle,
         border: isActive ? null : Border.all(color: AppColors.borderDefault),
       ),

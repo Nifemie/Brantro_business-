@@ -17,14 +17,17 @@ class _PerformanceChartState extends State<PerformanceChart> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 10,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -60,7 +63,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFFEFF1F5)
+                              ? (isDark ? Colors.grey[800] : const Color(0xFFEFF1F5))
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(

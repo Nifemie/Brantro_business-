@@ -9,13 +9,15 @@ class RecentOrdersTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.05),
             blurRadius: 10,
             spreadRadius: 2,
             offset: const Offset(0, 4),

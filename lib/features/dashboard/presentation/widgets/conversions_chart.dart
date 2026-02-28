@@ -9,14 +9,17 @@ class ConversionsChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 10,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -85,7 +88,9 @@ class ConversionsChart extends StatelessWidget {
                 // TODO: Navigate to conversions details
               },
               style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFFEFF1F5),
+                backgroundColor: isDark 
+                    ? Colors.grey[800]
+                    : const Color(0xFFEFF1F5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.r),
                 ),

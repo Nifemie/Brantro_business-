@@ -1,85 +1,77 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '/core/utils/color_utils.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../controllers/re_useable/app_color.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    return ThemeData(
-      primaryColor: AppColors.primaryColor,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryColor,
-        brightness: Brightness.light,
+  // Light Theme
+  static ThemeData lightTheme = ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+    primaryColor: AppColors.primaryColor,
+    scaffoldBackgroundColor: Colors.grey[50],
+    colorScheme: ColorScheme.light(
+      primary: AppColors.primaryColor,
+      secondary: AppColors.secondaryColor,
+      surface: Colors.white,
+      error: Colors.red,
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      iconTheme: IconThemeData(color: Colors.grey[700]),
+      titleTextStyle: TextStyle(
+        color: Colors.grey[800],
+        fontSize: 18.sp,
+        fontWeight: FontWeight.w600,
       ),
-      useMaterial3: true,
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-        ),
-        surfaceTintColor: Colors.white,
-        titleTextStyle: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.black,
-        ),
+    ),
+    cardTheme: CardThemeData(
+      color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.r),
       ),
-      bottomAppBarTheme: const BottomAppBarThemeData(color: Colors.white),
-      cardColor: Colors.grey[200],
-      textTheme: const TextTheme(
-        labelSmall: TextStyle(color: Colors.black),
-        labelMedium: TextStyle(
-          fontFamily: 'SF Pro',
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          height: 1.33,
-          letterSpacing: 0.06,
-        ),
-      ),
-      unselectedWidgetColor: Colors.grey,
-    );
-  }
+    ),
+    textTheme: TextTheme(
+      bodyLarge: TextStyle(color: AppColors.textPrimary),
+      bodyMedium: TextStyle(color: AppColors.textPrimary),
+      bodySmall: TextStyle(color: AppColors.grey600),
+    ),
+  );
 
-  static ThemeData get darkTheme {
-    return ThemeData(
-      primaryColor: AppColors.primaryColor,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryColor,
-        brightness: Brightness.dark,
+  // Dark Theme
+  static ThemeData darkTheme = ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    primaryColor: AppColors.primaryColor,
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    colorScheme: ColorScheme.dark(
+      primary: AppColors.primaryColor,
+      secondary: AppColors.secondaryColor,
+      surface: const Color(0xFF1E1E1E),
+      error: Colors.red,
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: const Color(0xFF1E1E1E),
+      elevation: 0,
+      iconTheme: const IconThemeData(color: Colors.white70),
+      titleTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 18.sp,
+        fontWeight: FontWeight.w600,
       ),
-      useMaterial3: true,
-      scaffoldBackgroundColor: Colors.black,
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-        ),
-        surfaceTintColor: Colors.black,
-        titleTextStyle: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
+    ),
+    cardTheme: CardThemeData(
+      color: const Color(0xFF1E1E1E),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.r),
       ),
-      bottomAppBarTheme: const BottomAppBarThemeData(color: Colors.black),
-      cardColor: const Color(0xFF2B2725),
-      textTheme: const TextTheme(
-        labelSmall: TextStyle(color: Color(0xFFF9FAFB)),
-        labelMedium: TextStyle(
-          fontFamily: 'SF Pro',
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          height: 1.33,
-          letterSpacing: 0.06,
-        ),
-      ),
-      unselectedWidgetColor: Colors.grey,
-    );
-  }
+    ),
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: Colors.white),
+      bodyMedium: TextStyle(color: Colors.white),
+      bodySmall: TextStyle(color: Colors.white70),
+    ),
+  );
 }

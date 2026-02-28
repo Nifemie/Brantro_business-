@@ -29,15 +29,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _hasStoredUsername = false;
 
   Future<void> _login() async {
-    print('========================================');
-    print('[SignInScreen] Login button pressed!');
-    print('[SignInScreen] Form validation starting...');
-    
     if (_formKey.currentState!.validate()) {
-      print('[SignInScreen] Form validation passed');
-      print('[SignInScreen] Username: ${_usernameController.text.trim()}');
-      print('[SignInScreen] Password length: ${_passwordController.text.length}');
-      
       setState(() => _isLoading = true);
 
       final request = LoginRequest(
@@ -45,29 +37,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         password: _passwordController.text,
       );
 
-      print('[SignInScreen] LoginRequest created, calling auth notifier...');
       await ref.read(authNotifierProvider.notifier).login(request);
-      print('[SignInScreen] Auth notifier login completed');
       
       if (!mounted) return;
       setState(() => _isLoading = false);
 
       final authState = ref.read(authNotifierProvider);
-      
-      print('[SignInScreen] Auth state after login:');
-      print('[SignInScreen] - isDataAvailable: ${authState.isDataAvailable}');
-      print('[SignInScreen] - message: ${authState.message}');
-      print('[SignInScreen] - user role: ${authState.singleData?.role}');
 
       if (authState.isDataAvailable) {
-        print('[SignInScreen] Login successful, checking user role...');
         // Check user role BEFORE navigation
-        final userRole = authState.singleData?.role?.toUpperCase();
+        final userRole = authState.singleData?.role?.toUpperCase()?.trim();
         
         // Only allow SELLER roles and ADMIN (this is a seller/business app)
-        // Seller roles: ARTIST, INFLUENCER, HOST, TV_STATION, RADIO_STATION, MEDIA_HOUSE, DESIGNER, PRODUCER, UGC_CREATOR, TALENT_MANAGER, SCREEN_BILLBOARD
         final sellerRoles = [
           'ADMIN',
+          'SUPER_ADMIN',
           'ARTIST',
           'INFLUENCER', 
           'HOST',
@@ -82,13 +66,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           'SCREEN_BILLBOARD',
         ];
         
-        if (sellerRoles.contains(userRole)) {
-          print('[SignInScreen] User role "$userRole" is valid for seller app');
+        // Check if role is in allowed list (case-insensitive)
+        final isAllowedRole = userRole != null && sellerRoles.any(
+          (role) => role.toUpperCase() == userRole
+        );
+        
+        if (isAllowedRole) {
           // Role is valid - navigate to dashboard
           if (!mounted) return;
           setState(() => _isLoading = false);
           
-          print('[SignInScreen] Navigating to dashboard...');
           context.pushReplacement('/dashboard');
           
           // Show welcome message after navigation
@@ -107,7 +94,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 duration: const Duration(seconds: 3),
                 behavior: SnackBarBehavior.floating,
                 margin: EdgeInsets.only(
-                  bottom: 80.h, // Position above bottom nav
+                  bottom: 80.h,
                   left: 16.w,
                   right: 16.w,
                 ),
@@ -115,9 +102,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             );
           });
         } else {
-          print('[SignInScreen] User role "$userRole" is NOT allowed in seller app');
           // User has a buyer/advertiser role - not allowed in this app
-          // Stay on signin screen and show error
           if (!mounted) return;
           setState(() => _isLoading = false);
           
@@ -129,16 +114,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           
           // Clear the session so they can't bypass
           await SessionService.clearSession();
-          print('[SignInScreen] Session cleared for unauthorized role');
         }
       } else if (authState.message != null) {
-        print('[SignInScreen] Login failed with message: ${authState.message}');
         // Check if the error is about inactive account
         final errorMessage = authState.message!.toLowerCase();
         if (errorMessage.contains('inactive') || 
             errorMessage.contains('not activated') ||
             errorMessage.contains('not verified')) {
-          print('[SignInScreen] Account inactive/not verified, redirecting to verification');
           // Show error message
           AppMessenger.show(
             context,
@@ -159,7 +141,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           });
         } else {
           // Other errors - just show the message
-          print('[SignInScreen] Showing error to user: ${authState.message}');
           setState(() => _hasIncorrectCred = true);
           AppMessenger.show(
             context,
@@ -167,13 +148,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             type: MessageType.error,
           );
         }
-      } else {
-        print('[SignInScreen] No data available and no error message - unexpected state');
       }
-    } else {
-      print('[SignInScreen] Form validation FAILED');
     }
-    print('========================================');
   }
 
   Future<void> _initialize() async {
@@ -380,40 +356,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         text: 'Login to Dashboard',
                         isLoading: _isLoading,
                         onPressed: _login,
-                      ),
-                      SizedBox(height: 16.h),
-
-                      // Business benefits section
-                      Container(
-                        padding: EdgeInsets.all(16.w),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: AppColors.primaryColor.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.business_center,
-                              color: AppColors.primaryColor,
-                              size: 24.sp,
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Text(
-                                'For Sellers & Service Providers Only',
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                       SizedBox(height: 24.h),
 

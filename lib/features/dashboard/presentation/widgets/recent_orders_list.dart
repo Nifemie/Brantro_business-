@@ -8,10 +8,15 @@ class RecentOrdersList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        headingRowColor: MaterialStateProperty.all(AppColors.grey50),
+        headingRowColor: MaterialStateProperty.all(
+          isDark ? Colors.grey[850] : AppColors.grey50,
+        ),
         headingRowHeight: 80.h,
         dataRowMinHeight: 80.h,
         dataRowMaxHeight: 80.h,
@@ -19,7 +24,7 @@ class RecentOrdersList extends StatelessWidget {
         columnSpacing: 45.w,
         dividerThickness: 1,
         headingTextStyle: AppTexts.labelLarge(
-          color: AppColors.primaryColor,
+          color: isDark ? Colors.white : Colors.black,
         ).copyWith(fontWeight: FontWeight.bold),
         columns: const [
           DataColumn(label: Text('Order\nID.')),
@@ -34,6 +39,7 @@ class RecentOrdersList extends StatelessWidget {
         ],
         rows: [
           _buildRow(
+            context,
             id: '#1001',
             date: '29\nApril\n2024',
             imagePath: 'assets/products/tshirt.png',
@@ -46,6 +52,7 @@ class RecentOrdersList extends StatelessWidget {
             statusColor: AppColors.success,
           ),
           _buildRow(
+            context,
             id: '#1002',
             date: '29\nApril\n2024',
             imagePath: 'assets/products/handbag.png',
@@ -55,9 +62,10 @@ class RecentOrdersList extends StatelessWidget {
             address: 'SULLIVAN/Kentucky',
             payment: 'Google\nPay',
             status: 'Delivered',
-            statusColor: AppColors.secondaryColor, // Orange
+            statusColor: AppColors.secondaryColor,
           ),
           _buildRow(
+            context,
             id: '#1003',
             date: '29\nApril\n2024',
             imagePath: 'assets/products/dress.png',
@@ -70,6 +78,7 @@ class RecentOrdersList extends StatelessWidget {
             statusColor: AppColors.success,
           ),
           _buildRow(
+            context,
             id: '#1004',
             date: '29\nApril\n2024',
             imagePath: 'assets/products/cap.png',
@@ -79,9 +88,10 @@ class RecentOrdersList extends StatelessWidget {
             address: 'Atlanta/Georgia',
             payment: 'Pay Pal',
             status: 'Processing',
-            statusColor: AppColors.warning, // Yellow
+            statusColor: AppColors.warning,
           ),
           _buildRow(
+            context,
             id: '#1005',
             date: '29\nApril\n2024',
             imagePath: 'assets/products/pants.png',
@@ -98,7 +108,8 @@ class RecentOrdersList extends StatelessWidget {
     );
   }
 
-  DataRow _buildRow({
+  DataRow _buildRow(
+    BuildContext context, {
     required String id,
     required String date,
     required String imagePath,
@@ -110,8 +121,9 @@ class RecentOrdersList extends StatelessWidget {
     required String status,
     required Color statusColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final style = AppTexts.bodyMedium(
-      color: AppColors.grey700,
+      color: isDark ? Colors.white : AppColors.grey700,
     ).copyWith(height: 1.5, fontSize: 13.sp);
 
     return DataRow(
