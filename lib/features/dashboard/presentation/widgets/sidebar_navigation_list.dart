@@ -86,8 +86,7 @@ class SidebarNavigationList extends ConsumerWidget {
           if (item.containsKey('children')) {
             final itemTitle = item['title'] as String;
             final isActive =
-                activeItem == itemTitle ||
-                activeItem.startsWith('$itemTitle-');
+                activeItem == itemTitle || activeItem.startsWith('$itemTitle-');
 
             return SidebarExpandableDrawerItem(
               icon: item['icon'] as IconData,
@@ -107,14 +106,24 @@ class SidebarNavigationList extends ConsumerWidget {
                   isActive: isSubActive,
                   onTap: () {
                     ref.read(activeNavigationProvider.notifier).state = itemKey;
-                    
+
                     // Navigate based on the item
-                    if (itemTitle == 'Templates' && childTitle == 'Marketplace') {
+                    if (itemTitle == 'Templates' &&
+                        childTitle == 'Marketplace') {
                       Navigator.pop(context); // Close drawer
                       context.go('/template-marketplace');
-                    } else if (itemTitle == 'Creatives' && childTitle == 'Marketplace') {
+                    } else if (itemTitle == 'Creatives' &&
+                        childTitle == 'Marketplace') {
                       Navigator.pop(context); // Close drawer
                       context.go('/creative-marketplace');
+                    } else if (itemTitle == 'Services' &&
+                        childTitle == 'Marketplace') {
+                      Navigator.pop(context); // Close drawer
+                      context.go('/service-marketplace');
+                    } else if (itemTitle == 'Manage Billboard' &&
+                        childTitle == 'Billboard') {
+                      Navigator.pop(context); // Close drawer
+                      context.go('/manage-billboard');
                     }
                   },
                 );
@@ -126,7 +135,8 @@ class SidebarNavigationList extends ConsumerWidget {
               title: item['title'] as String,
               isActive: activeItem == item['title'],
               onTap: () {
-                ref.read(activeNavigationProvider.notifier).state = item['title'] as String;
+                ref.read(activeNavigationProvider.notifier).state =
+                    item['title'] as String;
                 if (item['title'] == 'Dashboard') {
                   Navigator.pop(context); // Close drawer
                   context.go('/dashboard'); // Navigate to dashboard

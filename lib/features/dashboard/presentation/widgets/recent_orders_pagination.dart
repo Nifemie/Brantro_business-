@@ -10,7 +10,7 @@ class RecentOrdersPagination extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Padding(
       padding: EdgeInsets.all(20.w),
       child: Wrap(
@@ -46,7 +46,11 @@ class RecentOrdersPagination extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildPageButton(context, icon: Icons.chevron_left, isActive: false),
+              _buildPageButton(
+                context,
+                icon: Icons.chevron_left,
+                isActive: false,
+              ),
               SizedBox(width: 8.w),
               _buildPageButton(context, text: '1', isActive: true),
               SizedBox(width: 8.w),
@@ -54,7 +58,11 @@ class RecentOrdersPagination extends StatelessWidget {
               SizedBox(width: 8.w),
               _buildPageButton(context, text: '3', isActive: false),
               SizedBox(width: 8.w),
-              _buildPageButton(context, icon: Icons.chevron_right, isActive: false),
+              _buildPageButton(
+                context,
+                icon: Icons.chevron_right,
+                isActive: false,
+              ),
             ],
           ),
         ],
@@ -70,7 +78,7 @@ class RecentOrdersPagination extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       width: 36.w,
       height: 36.w,

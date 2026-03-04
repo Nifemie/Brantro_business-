@@ -11,7 +11,7 @@ class ConversionsChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -88,7 +88,7 @@ class ConversionsChart extends StatelessWidget {
                 // TODO: Navigate to conversions details
               },
               style: TextButton.styleFrom(
-                backgroundColor: isDark 
+                backgroundColor: isDark
                     ? Colors.grey[800]
                     : const Color(0xFFEFF1F5),
                 shape: RoundedRectangleBorder(

@@ -10,11 +10,11 @@ class RecentOrdersList extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        headingRowColor: MaterialStateProperty.all(
+        headingRowColor: WidgetStateProperty.all(
           isDark ? Colors.grey[850] : AppColors.grey50,
         ),
         headingRowHeight: 80.h,

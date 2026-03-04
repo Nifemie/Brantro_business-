@@ -26,11 +26,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final now = DateTime.now();
     final backButtonHasNotBeenPressedOrSnackBarHasBeenClosed =
         _lastBackPressed == null ||
-            now.difference(_lastBackPressed!) > const Duration(seconds: 2);
+        now.difference(_lastBackPressed!) > const Duration(seconds: 2);
 
     if (backButtonHasNotBeenPressedOrSnackBarHasBeenClosed) {
       _lastBackPressed = now;
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -47,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
       return false;
     }
-    
+
     // Exit the app
     SystemNavigator.pop();
     return true;
@@ -56,7 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
@@ -68,100 +68,100 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         drawer: const SidebarMenu(),
         body: SafeArea(
-        child: Column(
-          children: [
-            const DashboardAppBar(),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  // TODO: Implement refresh logic when backend is ready
-                  await Future.delayed(const Duration(seconds: 1));
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.all(16.w),
-                  child: Column(
-                    children: [
-                      // const AlertBanner(
-                      //   message:
-                      //       'We regret to inform you that our server is under maintenance. We will be back shortly.',
-                      // ),
+          child: Column(
+            children: [
+              const DashboardAppBar(),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    // TODO: Implement refresh logic when backend is ready
+                    await Future.delayed(const Duration(seconds: 1));
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.all(16.w),
+                    child: Column(
+                      children: [
+                        // const AlertBanner(
+                        //   message:
+                        //       'We regret to inform you that our server is under maintenance. We will be back shortly.',
+                        // ),
 
-                      // SizedBox(height: 16.h),
-                      StatCard(
-                        icon: Icons.local_fire_department_rounded,
-                        iconColor: Colors.orange,
-                        title: 'Total Orders',
-                        value: '13,647',
-                        percentageChange: 2.3,
-                        isPositive: true,
-                        changeLabel: 'Last Week',
-                        onViewMore: () {
-                          // TODO: Navigate to orders screen
-                        },
-                      ),
+                        // SizedBox(height: 16.h),
+                        StatCard(
+                          icon: Icons.local_fire_department_rounded,
+                          iconColor: Colors.orange,
+                          title: 'Total Orders',
+                          value: '13,647',
+                          percentageChange: 2.3,
+                          isPositive: true,
+                          changeLabel: 'Last Week',
+                          onViewMore: () {
+                            // TODO: Navigate to orders screen
+                          },
+                        ),
 
-                      SizedBox(height: 16.h),
-                      StatCard(
-                        icon: Icons.emoji_events_rounded,
-                        iconColor: Colors.orange,
-                        title: 'New Leads',
-                        value: '9,526',
-                        percentageChange: 8.1,
-                        isPositive: true,
-                        changeLabel: 'Last Week',
-                        onViewMore: () {
-                          // TODO: Navigate to leads screen
-                        },
-                      ),
+                        SizedBox(height: 16.h),
+                        StatCard(
+                          icon: Icons.emoji_events_rounded,
+                          iconColor: Colors.orange,
+                          title: 'New Leads',
+                          value: '9,526',
+                          percentageChange: 8.1,
+                          isPositive: true,
+                          changeLabel: 'Last Week',
+                          onViewMore: () {
+                            // TODO: Navigate to leads screen
+                          },
+                        ),
 
-                      SizedBox(height: 16.h),
-                      StatCard(
-                        icon: Icons.shopping_bag_rounded,
-                        iconColor: Colors.orange,
-                        title: 'Deals',
-                        value: '976',
-                        percentageChange: 0.3,
-                        isPositive: false,
-                        changeLabel: 'Last Week',
-                        onViewMore: () {
-                          // TODO: Navigate to deals screen
-                        },
-                      ),
+                        SizedBox(height: 16.h),
+                        StatCard(
+                          icon: Icons.shopping_bag_rounded,
+                          iconColor: Colors.orange,
+                          title: 'Deals',
+                          value: '976',
+                          percentageChange: 0.3,
+                          isPositive: false,
+                          changeLabel: 'Last Week',
+                          onViewMore: () {
+                            // TODO: Navigate to deals screen
+                          },
+                        ),
 
-                      SizedBox(height: 16.h),
-                      StatCard(
-                        icon: Icons.monetization_on_rounded,
-                        iconColor: Colors.orange,
-                        title: 'Booked Revenue',
-                        value: '₦123.6k',
-                        percentageChange: 10.6,
-                        isPositive: false,
-                        changeLabel: 'Last Week',
-                        onViewMore: () {
-                          // TODO: Navigate to revenue screen
-                        },
-                      ),
+                        SizedBox(height: 16.h),
+                        StatCard(
+                          icon: Icons.monetization_on_rounded,
+                          iconColor: Colors.orange,
+                          title: 'Booked Revenue',
+                          value: '₦123.6k',
+                          percentageChange: 10.6,
+                          isPositive: false,
+                          changeLabel: 'Last Week',
+                          onViewMore: () {
+                            // TODO: Navigate to revenue screen
+                          },
+                        ),
 
-                      SizedBox(height: 20.h),
-                      const PerformanceChart(),
+                        SizedBox(height: 20.h),
+                        const PerformanceChart(),
 
-                      SizedBox(height: 20.h),
-                      const ConversionsChart(),
+                        SizedBox(height: 20.h),
+                        const ConversionsChart(),
 
-                      SizedBox(height: 20.h),
-                      const TopPagesTable(),
+                        SizedBox(height: 20.h),
+                        const TopPagesTable(),
 
-                      SizedBox(height: 20.h),
-                      const RecentOrdersTable(),
-                    ],
+                        SizedBox(height: 20.h),
+                        const RecentOrdersTable(),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

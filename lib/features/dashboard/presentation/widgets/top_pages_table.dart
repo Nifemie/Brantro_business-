@@ -10,7 +10,7 @@ class TopPagesTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
@@ -61,7 +61,7 @@ class TopPagesTable extends StatelessWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              headingRowColor: MaterialStateProperty.all(
+              headingRowColor: WidgetStateProperty.all(
                 isDark ? Colors.grey[850] : const Color(0xFFEFF1F5),
               ),
               dataRowMinHeight: 60.h,

@@ -19,7 +19,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -63,7 +63,9 @@ class _PerformanceChartState extends State<PerformanceChart> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? (isDark ? Colors.grey[800] : const Color(0xFFEFF1F5))
+                              ? (isDark
+                                    ? Colors.grey[800]
+                                    : const Color(0xFFEFF1F5))
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(

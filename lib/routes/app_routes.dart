@@ -16,6 +16,9 @@ import 'package:brantro_business/features/template/presentation/screen/upload_te
 import 'package:brantro_business/features/creative/presentation/screen/creative_marketplace/creative_marketplace.dart';
 import 'package:brantro_business/features/creative/presentation/screen/upload_creative/upload_creative_screen.dart';
 import 'package:brantro_business/features/notification/presentation/screens/notification_screen.dart';
+import 'package:brantro_business/features/services/presentation/screen/service_marketplace/service_marketplace.dart';
+import 'package:brantro_business/features/manage_billboard/presentation/screen/manage_billboard/manage_billboard.dart';
+import 'package:brantro_business/features/manage_billboard/presentation/screen/ads_slots/ads_slots_screen.dart';
 import 'package:brantro_business/core/service/session_service.dart';
 
 final router = GoRouter(
@@ -23,7 +26,8 @@ final router = GoRouter(
   redirect: (context, state) async {
     final isLoggedIn = await SessionService.isLoggedIn();
     final isOnSplash = state.matchedLocation == '/';
-    final isOnAuth = state.matchedLocation.startsWith('/signin') ||
+    final isOnAuth =
+        state.matchedLocation.startsWith('/signin') ||
         state.matchedLocation.startsWith('/signup') ||
         state.matchedLocation.startsWith('/intro') ||
         state.matchedLocation.startsWith('/forgot-password');
@@ -115,54 +119,80 @@ final router = GoRouter(
         return ResetPasswordScreen(identity: identity);
       },
     ),
-    
+
     // Dashboard Route
     GoRoute(
       path: '/dashboard',
       name: 'dashboard',
       builder: (context, state) => const DashboardScreen(),
     ),
-    
+
     // Profile/Account Route
     GoRoute(
       path: '/profile',
       name: 'profile',
       builder: (context, state) => const UserAccount(),
     ),
-    
+
     // Template Marketplace Route
     GoRoute(
       path: '/template-marketplace',
       name: 'template-marketplace',
       builder: (context, state) => const TemplateMarketplaceScreen(),
     ),
-    
+
     // Upload Template Route
     GoRoute(
       path: '/upload-template',
       name: 'upload-template',
       builder: (context, state) => const UploadTemplateScreen(),
     ),
-    
+
     // Creative Marketplace Route
     GoRoute(
       path: '/creative-marketplace',
       name: 'creative-marketplace',
       builder: (context, state) => const CreativeMarketplaceScreen(),
     ),
-    
+
     // Upload Creative Route
     GoRoute(
       path: '/upload-creative',
       name: 'upload-creative',
       builder: (context, state) => const UploadCreativeScreen(),
     ),
-    
+
     // Notifications Route
     GoRoute(
       path: '/notifications',
       name: 'notifications',
       builder: (context, state) => const NotificationScreen(),
+    ),
+
+    // Service Marketplace Route
+    GoRoute(
+      path: '/service-marketplace',
+      name: 'service-marketplace',
+      builder: (context, state) => const ServiceMarketplaceScreen(),
+    ),
+
+    // Manage Billboard Route
+    GoRoute(
+      path: '/manage-billboard',
+      name: 'manage-billboard',
+      builder: (context, state) => const ManageBillboardScreen(),
+    ),
+
+    // Ads Slots Route
+    GoRoute(
+      path: '/ads-slots',
+      name: 'ads-slots',
+      builder: (context, state) {
+        final extra = (state.extra ?? {}) as Map;
+        final billboardTitle =
+            extra['billboardTitle']?.toString() ?? 'Billboard';
+        return AdsSlotsScreen(billboardTitle: billboardTitle);
+      },
     ),
   ],
 );
