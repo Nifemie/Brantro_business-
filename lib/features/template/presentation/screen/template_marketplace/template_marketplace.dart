@@ -55,80 +55,89 @@ class _TemplateMarketplaceScreenState extends ConsumerState<TemplateMarketplaceS
             children: [
               const DashboardAppBar(title: 'TEMPLATES'),
               
-              // Search Filter Card - Now Reusable!
-              SearchFilterCard(
-                title: 'All Templates',
-                searchController: _searchController,
-                searchHint: 'Search templates...',
-                onFilterTap: () async {
-                  final filters = await showModalBottomSheet<Map<String, String?>>(
-                    context: context,
-                    isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => DraggableScrollableSheet(
-                    initialChildSize: 0.9,
-                    minChildSize: 0.5,
-                    maxChildSize: 0.95,
-                    builder: (context, scrollController) => FilterSheet(
-                      title: 'Template Filters',
-                      sections: [
-                        FilterSection(
-                          title: 'Categories',
-                          options: [
-                            'All',
-                            'Billboard',
-                            'Wall Location',
-                            'Digital Screen',
-                            'Canva Templates',
-                            'Radio & TV Creatives',
-                            'Brand Kits',
-                            'Flyers & Posters',
-                            'Media Proposals',
-                            'Pitch Decks',
-                            'Motion Graphics',
-                          ],
-                        ),
-                        FilterSection(
-                          title: 'Cost',
-                          options: ['Free', 'Paid', 'Sold'],
-                        ),
-                        FilterSection(
-                          title: 'Rating',
-                          options: [
-                            '1 ⭐ & Above',
-                            '2 ⭐ & Above',
-                            '3 ⭐ & Above',
-                            '4 ⭐ & Above',
-                            '5 ⭐',
-                          ],
-                        ),
-                      ],
-                      onApply: (selectedFilters) {
-                        // TODO: Apply filters
-                        print('Selected filters: $selectedFilters');
+              // Content with collapsible search card
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    // Search Filter Card as Sliver
+                    SliverToBoxAdapter(
+                      child: SearchFilterCard(
+                        title: 'All Templates',
+                        searchController: _searchController,
+                        searchHint: 'Search templates...',
+                        onFilterTap: () async {
+                          final filters = await showModalBottomSheet<Map<String, String?>>(
+                            context: context,
+                            isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => DraggableScrollableSheet(
+                            initialChildSize: 0.9,
+                            minChildSize: 0.5,
+                            maxChildSize: 0.95,
+                            builder: (context, scrollController) => FilterSheet(
+                              title: 'Template Filters',
+                              sections: [
+                                FilterSection(
+                                  title: 'Categories',
+                                  options: [
+                                    'All',
+                                    'Billboard',
+                                    'Wall Location',
+                                    'Digital Screen',
+                                    'Canva Templates',
+                                    'Radio & TV Creatives',
+                                    'Brand Kits',
+                                    'Flyers & Posters',
+                                    'Media Proposals',
+                                    'Pitch Decks',
+                                    'Motion Graphics',
+                                  ],
+                                ),
+                                FilterSection(
+                                  title: 'Cost',
+                                  options: ['Free', 'Paid', 'Sold'],
+                                ),
+                                FilterSection(
+                                  title: 'Rating',
+                                  options: [
+                                    '1 ⭐ & Above',
+                                    '2 ⭐ & Above',
+                                    '3 ⭐ & Above',
+                                    '4 ⭐ & Above',
+                                    '5 ⭐',
+                                  ],
+                                ),
+                              ],
+                              onApply: (selectedFilters) {
+                                // TODO: Apply filters
+                                print('Selected filters: $selectedFilters');
+                              },
+                            ),
+                          ),
+                        );
                       },
+                      onActionButtonTap: () {
+                        context.push('/upload-template');
+                      },
+                      actionButtonLabel: 'Upload Template',
+                      actionButtonIcon: Icons.upload,
                     ),
-                  ),
-                );
-              },
-              onActionButtonTap: () {
-                context.push('/upload-template');
-              },
-              actionButtonLabel: 'Upload Template',
-              actionButtonIcon: Icons.upload,
-            ),
-            
-            // Empty State - Takes remaining space
-            Expanded(
-              child: const EmptyState(
-                icon: Icons.warning_amber_rounded,
-                title: 'Templates',
-                message: 'No template found',
+                    ),
+                    
+                    // Empty State
+                    SliverFillRemaining(
+                      child: const EmptyState(
+                        icon: Icons.warning_amber_rounded,
+                        title: 'Templates',
+                        message: 'No template found',
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

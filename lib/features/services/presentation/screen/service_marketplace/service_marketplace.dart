@@ -5,11 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
-import 'package:brantro_business/core/widgets/marketplace_search_bar.dart';
+import '../../../../../core/widgets/search_filter_card.dart';
+import '../../../../../core/widgets/filter_sheet.dart';
+import '../../../../../core/widgets/empty_state.dart';
 import 'widgets/service_list.dart';
-import 'widgets/simple_search_bar.dart';
-import 'widgets/service_filter_panel.dart';
-import 'widgets/product_price_filter.dart';
 
 class ServiceMarketplaceScreen extends ConsumerStatefulWidget {
   const ServiceMarketplaceScreen({super.key});
@@ -21,7 +20,16 @@ class ServiceMarketplaceScreen extends ConsumerStatefulWidget {
 
 class _ServiceMarketplaceScreenState
     extends ConsumerState<ServiceMarketplaceScreen> {
-  String _selectedStatus = '';
+  final TextEditingController _searchController = TextEditingController();
+  
+  // TODO: Replace with actual data from API/Provider
+  final bool _hasServices = true; // Change to false when no data
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<bool> _onWillPop() async {
     if (mounted) {
@@ -47,62 +55,111 @@ class _ServiceMarketplaceScreenState
         body: SafeArea(
           child: Column(
             children: [
-              const DashboardAppBar(title: 'SERVICE GRID'),
-              Padding(
-                padding: EdgeInsets.all(16.w),
-                child: MarketplaceSearchBar(
-                  currentStatus: _selectedStatus,
-                  onAddServicePressed: () {},
-                  onStatusChanged: (status) {
-                    setState(() {
-                      _selectedStatus = status == 'All' ? '' : status;
-                    });
-                  },
-                  onSearchChanged: (value) {},
-                ),
-              ),
+              const DashboardAppBar(title: 'SERVICES'),
+              
+              // Content with collapsible search card
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // Our 3 Mock Service Cards
-                      const ServiceList(),
-
-                      SizedBox(height: 16.h),
-
-                      // The new Simple Search Bar
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: const SimpleSearchBar(),
+                child: CustomScrollView(
+                  slivers: [
+                    // Search Filter Card as Sliver
+                    SliverToBoxAdapter(
+                      child: SearchFilterCard(
+                        title: 'All Services',
+                        searchController: _searchController,
+                        searchHint: 'Search services...',
+                        onFilterTap: _showFilters,
+                        onActionButtonTap: _addService,
+                        actionButtonLabel: 'Add Service',
+                        actionButtonIcon: Icons.add_business,
                       ),
-
-                      SizedBox(height: 24.h),
-
-                      // The new comprehensive Filter Sidebar Panel
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: const ServiceFilterPanel(),
-                      ),
-
-                      SizedBox(height: 24.h),
-
-                      // The new Product Price Filter Panel
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: ProductPriceFilter(
-                          onPriceChanged: (range) {
-                            // TODO: Handle price filtering
-                          },
-                        ),
-                      ),
-
-                      SizedBox(height: 48.h), // Bottom padding
-                    ],
-                  ),
+                    ),
+                    
+                    // Content - Empty State or Service List
+                    _hasServices
+                        ? SliverFillRemaining(
+                            child: const ServiceList(),
+                          )
+                        : SliverFillRemaining(
+                            child: const EmptyState(
+                              icon: Icons.business_center_outlined,
+                              title: 'No Services Yet',
+                              message: 'Start by adding your first service',
+                              showIconBackground: false,
+                            ),
+                          ),
+                  ],
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showFilters() async {
+    final filters = await showModalBottomSheet<Map<String, String?>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => FilterSheet(
+          title: 'Service Filters',
+          sections: [
+            FilterSection(
+              title: 'Category',
+              options: [
+                'All',
+                'Graphic Design',
+                'Video Production',
+                'Content Writing',
+                'Photography',
+                'Marketing',
+                'Consulting',
+                'Other',
+              ],
+            ),
+            FilterSection(
+              title: 'Price Range',
+              options: ['Under ₦10,000', '₦10,000 - ₦50,000', '₦50,000 - ₦100,000', 'Above ₦100,000'],
+            ),
+            FilterSection(
+              title: 'Status',
+              options: ['Active', 'Inactive', 'Pending'],
+            ),
+            FilterSection(
+              title: 'Rating',
+              options: [
+                '1 ⭐ & Above',
+                '2 ⭐ & Above',
+                '3 ⭐ & Above',
+                '4 ⭐ & Above',
+                '5 ⭐',
+              ],
+            ),
+          ],
+          onApply: (selectedFilters) {
+            // TODO: Apply filters
+            print('Selected filters: $selectedFilters');
+          },
+        ),
+      ),
+    );
+  }
+
+  void _addService() {
+    // TODO: Navigate to add service screen
+    // context.push('/add-service');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Add Service feature coming soon'),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(16.w),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.r),
         ),
       ),
     );

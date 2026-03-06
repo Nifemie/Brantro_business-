@@ -7,8 +7,6 @@ import 'package:brantro_business/features/dashboard/presentation/widgets/stat_ca
 import 'package:brantro_business/features/dashboard/presentation/widgets/performance_chart.dart';
 
 import 'package:brantro_business/features/dashboard/presentation/widgets/conversions_chart.dart';
-import 'package:brantro_business/features/dashboard/presentation/widgets/top_pages_table.dart';
-import 'package:brantro_business/features/dashboard/presentation/widgets/recent_orders_table.dart';
 import 'package:brantro_business/features/dashboard/presentation/widgets/sidebar_menu.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -70,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              const DashboardAppBar(),
+              const DashboardAppBar(showBackButton: false),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
@@ -148,12 +146,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                         SizedBox(height: 20.h),
                         const ConversionsChart(),
-
-                        SizedBox(height: 20.h),
-                        const TopPagesTable(),
-
-                        SizedBox(height: 20.h),
-                        const RecentOrdersTable(),
                       ],
                     ),
                   ),

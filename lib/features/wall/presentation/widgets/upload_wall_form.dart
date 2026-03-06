@@ -1,0 +1,185 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+class UploadWallForm extends StatelessWidget {
+  final TextEditingController titleController;
+  final TextEditingController descriptionController;
+  final TextEditingController featuresController;
+  final TextEditingController addressController;
+  final TextEditingController rateAmountController;
+  final TextEditingController totalSlotsController;
+  final TextEditingController latitudeController;
+  final TextEditingController longitudeController;
+  
+  final String? selectedType;
+  final String? selectedCategory;
+  final String? selectedCountry;
+  final String? selectedState;
+  final String? selectedCity;
+  final String? selectedRateUnit;
+  final String? thumbnailImage;
+  
+  final ValueChanged<String?> onTypeChanged;
+  final ValueChanged<String?> onCategoryChanged;
+  final ValueChanged<String?> onCountryChanged;
+  final ValueChanged<String?> onStateChanged;
+  final ValueChanged<String?> onCityChanged;
+  final ValueChanged<String?> onRateUnitChanged;
+  final ValueChanged<String?> onThumbnailChanged;
+
+  const UploadWallForm({
+    super.key,
+    required this.titleController,
+    required this.descriptionController,
+    required this.featuresController,
+    required this.addressController,
+    required this.rateAmountController,
+    required this.totalSlotsController,
+    required this.latitudeController,
+    required this.longitudeController,
+    required this.selectedType,
+    required this.selectedCategory,
+    required this.selectedCountry,
+    required this.selectedState,
+    required this.selectedCity,
+    required this.selectedRateUnit,
+    required this.thumbnailImage,
+    required this.onTypeChanged,
+    required this.onCategoryChanged,
+    required this.onCountryChanged,
+    required this.onStateChanged,
+    required this.onCityChanged,
+    required this.onRateUnitChanged,
+    required this.onThumbnailChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title Field
+        TextFormField(
+          controller: titleController,
+          decoration: InputDecoration(
+            labelText: 'Wall Title',
+            hintText: 'Enter wall name',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter wall title';
+            }
+            return null;
+          },
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Description Field
+        TextFormField(
+          controller: descriptionController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            labelText: 'Description',
+            hintText: 'Enter wall description',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Address Field
+        TextFormField(
+          controller: addressController,
+          decoration: InputDecoration(
+            labelText: 'Address',
+            hintText: 'Enter wall address',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter address';
+            }
+            return null;
+          },
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Features Field
+        TextFormField(
+          controller: featuresController,
+          decoration: InputDecoration(
+            labelText: 'Size/Features',
+            hintText: 'e.g., 30ft x 15ft',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Rate Amount Field
+        TextFormField(
+          controller: rateAmountController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'Price',
+            hintText: 'Enter price',
+            prefixText: '₦',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter price';
+            }
+            return null;
+          },
+        ),
+
+        SizedBox(height: 24.h),
+
+        // Note
+        Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.blue,
+                size: 20.sp,
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Text(
+                  'Fill in all required fields to upload your wall',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: Colors.blue,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}

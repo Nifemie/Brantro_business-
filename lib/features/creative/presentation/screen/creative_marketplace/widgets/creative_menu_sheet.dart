@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-void showCreativeMenuSheet(BuildContext context, String title) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (context) => CreativeMenuSheet(title: title),
-  );
-}
-
 class CreativeMenuSheet extends StatelessWidget {
-  final String title;
+  final String creativeName;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onViewDetails;
 
   const CreativeMenuSheet({
     super.key,
-    required this.title,
+    required this.creativeName,
+    this.onEdit,
+    this.onDelete,
+    this.onViewDetails,
   });
 
   @override
@@ -53,20 +51,20 @@ class CreativeMenuSheet extends StatelessWidget {
                   _MenuOption(
                     icon: Icons.edit_outlined,
                     title: 'Edit Creative',
-                    onTap: () {
+                    onTap: onEdit ?? () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edit $title')),
+                        SnackBar(content: Text('Edit $creativeName')),
                       );
                     },
                   ),
                   _MenuOption(
                     icon: Icons.visibility_outlined,
                     title: 'View Details',
-                    onTap: () {
+                    onTap: onViewDetails ?? () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('View details for $title')),
+                        SnackBar(content: Text('View details for $creativeName')),
                       );
                     },
                   ),
@@ -76,7 +74,7 @@ class CreativeMenuSheet extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Share $title')),
+                        SnackBar(content: Text('Share $creativeName')),
                       );
                     },
                   ),
@@ -84,10 +82,10 @@ class CreativeMenuSheet extends StatelessWidget {
                     icon: Icons.delete_outline,
                     title: 'Delete',
                     isDestructive: true,
-                    onTap: () {
+                    onTap: onDelete ?? () {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Delete $title')),
+                        SnackBar(content: Text('Delete $creativeName')),
                       );
                     },
                   ),

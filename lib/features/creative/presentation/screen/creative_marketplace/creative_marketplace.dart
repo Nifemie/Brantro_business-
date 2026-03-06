@@ -8,7 +8,8 @@ import '../../../../../core/widgets/empty_state.dart';
 import '../../../../../core/widgets/filter_sheet.dart';
 import '../../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
-import 'widgets/creative_list.dart';
+import 'widgets/creative_card.dart';
+import 'widgets/creative_menu_sheet.dart';
 
 class CreativeMarketplaceScreen extends ConsumerStatefulWidget {
   const CreativeMarketplaceScreen({super.key});
@@ -22,6 +23,37 @@ class _CreativeMarketplaceScreenState extends ConsumerState<CreativeMarketplaceS
   
   // TODO: Replace with actual data from API/Provider
   final bool _hasCreatives = true; // Change to true when you have data
+  
+  // Mock data - TODO: Replace with actual data from API/Provider
+  final List<Map<String, dynamic>> _mockCreatives = [
+    {
+      'bannerImage': 'assets/promotions/billboard1.jpg',
+      'title': 'Liquid Logo Animation Loop',
+      'category': 'VIDEO',
+      'type': 'STANDARD',
+      'duration': '10s',
+      'size': '3.6MB',
+      'isActive': true,
+    },
+    {
+      'bannerImage': 'assets/promotions/billboard2.jpg',
+      'title': 'Modern Brand Identity Kit',
+      'category': 'DESIGN',
+      'type': 'PREMIUM',
+      'duration': '5 Files',
+      'size': '12MB',
+      'isActive': true,
+    },
+    {
+      'bannerImage': 'assets/promotions/billboard3.jpg',
+      'title': 'Social Media Content Pack',
+      'category': 'DESIGN',
+      'type': 'STANDARD',
+      'duration': '20 Files',
+      'size': '8.5MB',
+      'isActive': false,
+    },
+  ];
   
   @override
   void dispose() {
@@ -56,27 +88,89 @@ class _CreativeMarketplaceScreenState extends ConsumerState<CreativeMarketplaceS
             children: [
               const DashboardAppBar(title: 'CREATIVES'),
               
-              // Search Filter Card - Reusable Widget
-              SearchFilterCard(
-                title: 'All Creatives',
-                searchController: _searchController,
-                searchHint: 'Search creatives...',
-                onFilterTap: _showFilters,
-                onActionButtonTap: _uploadCreative,
-                actionButtonLabel: 'Upload Creative',
-                actionButtonIcon: Icons.upload,
-              ),
-              
-              // Content - Empty State or Creative List
+              // Content with collapsible search card
               Expanded(
-                child: _hasCreatives 
-                    ? const CreativeList() 
-                    : const EmptyState(
-                        icon: Icons.people_outline,
-                        title: 'No Creatives Yet',
-                        message: 'Start by uploading your first creative',
-                        showIconBackground: false,
+                child: CustomScrollView(
+                  slivers: [
+                    // Search Filter Card as Sliver
+                    SliverToBoxAdapter(
+                      child: SearchFilterCard(
+                        title: 'All Creatives',
+                        searchController: _searchController,
+                        searchHint: 'Search creatives...',
+                        onFilterTap: _showFilters,
+                        onActionButtonTap: _uploadCreative,
+                        actionButtonLabel: 'Upload Creative',
+                        actionButtonIcon: Icons.upload,
                       ),
+                    ),
+                    
+                    // Content - Empty State or Creative List
+                    _hasCreatives
+                        ? SliverPadding(
+                            padding: EdgeInsets.all(16.w),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final creative = _mockCreatives[index];
+                                  return CreativeCard(
+                                    bannerImage: creative['bannerImage'] as String,
+                                    title: creative['title'] as String,
+                                    category: creative['category'] as String,
+                                    type: creative['type'] as String,
+                                    duration: creative['duration'] as String,
+                                    size: creative['size'] as String,
+                                    isActive: creative['isActive'] as bool,
+                                    onViewOrders: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('View orders for ${creative['title']}')),
+                                      );
+                                    },
+                                    onMenuTap: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) => CreativeMenuSheet(
+                                          creativeName: creative['title'] as String,
+                                          onEdit: () {
+                                            Navigator.pop(context);
+                                            print('Edit ${creative['title']}');
+                                          },
+                                          onDelete: () async {
+                                            Navigator.pop(context);
+                                            final confirm = await _showDeleteConfirmation(context, creative['title'] as String);
+                                            if (confirm == true) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('Creative deleted successfully'),
+                                                  backgroundColor: Colors.green,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          onViewDetails: () {
+                                            Navigator.pop(context);
+                                            print('View details for ${creative['title']}');
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                childCount: _mockCreatives.length,
+                              ),
+                            ),
+                          )
+                        : SliverFillRemaining(
+                            child: const EmptyState(
+                              icon: Icons.people_outline,
+                              title: 'No Creatives Yet',
+                              message: 'Start by uploading your first creative',
+                              showIconBackground: false,
+                            ),
+                          ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -140,5 +234,26 @@ class _CreativeMarketplaceScreenState extends ConsumerState<CreativeMarketplaceS
 
   void _uploadCreative() {
     context.push('/upload-creative');
+  }
+
+  Future<bool?> _showDeleteConfirmation(BuildContext context, String creativeName) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Creative'),
+        content: Text('Are you sure you want to delete "$creativeName"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 }

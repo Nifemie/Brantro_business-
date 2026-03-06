@@ -2,16 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:marquee/marquee.dart';
 import '../../../../core/theme/theme_provider.dart';
 import 'app_popup_menu.dart';
 
-class DashboardAppBar extends ConsumerWidget {
+class DashboardAppBar extends ConsumerStatefulWidget {
   final String title;
+  final bool showBackButton;
 
-  const DashboardAppBar({super.key, this.title = 'WELCOME!'});
+  const DashboardAppBar({
+    super.key, 
+    this.title = 'WELCOME!',
+    this.showBackButton = true,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardAppBar> createState() => _DashboardAppBarState();
+}
+
+class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
+  bool _shouldAnimate = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkIfShouldAnimate();
+  }
+
+  void _checkIfShouldAnimate() {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: widget.title,
+        style: TextStyle(
+          fontSize: 18.sp,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final availableWidth = screenWidth - 250.w;
+
+    if (mounted && textPainter.width > availableWidth) {
+      setState(() {
+        _shouldAnimate = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -29,72 +72,109 @@ class DashboardAppBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-            icon: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 14.w,
-                  height: 2.h,
-                  decoration: BoxDecoration(
+          // Back button or Menu button
+          widget.showBackButton
+              ? IconButton(
+                  onPressed: () {
+                    context.pop();
+                  },
+                  icon: Icon(
+                    Icons.arrow_back,
                     color: isDark ? Colors.white70 : Colors.grey[700],
-                    borderRadius: BorderRadius.circular(2.r),
+                    size: 24.sp,
                   ),
-                ),
-                SizedBox(height: 4.h),
-                Container(
-                  width: 22.w,
-                  height: 2.h,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white70 : Colors.grey[700],
-                    borderRadius: BorderRadius.circular(2.r),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(minWidth: 40.w),
+                )
+              : IconButton(
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                  icon: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 14.w,
+                        height: 2.h,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white70 : Colors.grey[700],
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Container(
+                        width: 22.w,
+                        height: 2.h,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white70 : Colors.grey[700],
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 14.w,
+                            height: 2.h,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white70 : Colors.grey[700],
+                              borderRadius: BorderRadius.circular(2.r),
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          Container(
+                            width: 4.w,
+                            height: 2.h,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white70 : Colors.grey[700],
+                              borderRadius: BorderRadius.circular(2.r),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(minWidth: 40.w),
                 ),
-                SizedBox(height: 4.h),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 14.w,
-                      height: 2.h,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white70 : Colors.grey[700],
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                    SizedBox(width: 4.w),
-                    Container(
-                      width: 4.w,
-                      height: 2.h,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white70 : Colors.grey[700],
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints(minWidth: 40.w),
-          ),
           SizedBox(width: 8.w),
           Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.grey[900],
-                letterSpacing: 0.5,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+            child: _shouldAnimate
+                ? SizedBox(
+                    height: 24.h,
+                    child: Marquee(
+                      text: widget.title,
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.grey[900],
+                        letterSpacing: 0.5,
+                      ),
+                      scrollAxis: Axis.horizontal,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      blankSpace: 50.w,
+                      velocity: 30.0,
+                      pauseAfterRound: const Duration(seconds: 1),
+                      startPadding: 10.w,
+                      accelerationDuration: const Duration(seconds: 1),
+                      accelerationCurve: Curves.linear,
+                      decelerationDuration: const Duration(milliseconds: 500),
+                      decelerationCurve: Curves.easeOut,
+                    ),
+                  )
+                : Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.grey[900],
+                      letterSpacing: 0.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
           ),
           SizedBox(width: 8.w),
           IconButton(
@@ -131,7 +211,7 @@ class DashboardAppBar extends ConsumerWidget {
                 child: Container(
                   padding: EdgeInsets.all(4.w),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF05252), // Lighter red from screenshot
+                    color: Color(0xFFF05252),
                     shape: BoxShape.circle,
                   ),
                   constraints: BoxConstraints(minWidth: 18.w, minHeight: 18.h),

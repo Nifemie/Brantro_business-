@@ -37,6 +37,10 @@ class AppPopupMenu extends ConsumerWidget {
                 : BorderSide.none,
           ),
           padding: EdgeInsets.zero,
+          constraints: BoxConstraints(
+            minWidth: MediaQuery.of(context).size.width - 32.w,
+            maxWidth: MediaQuery.of(context).size.width - 32.w,
+          ),
           child: CircleAvatar(
             radius: 16.r,
             backgroundColor: Colors.transparent,
