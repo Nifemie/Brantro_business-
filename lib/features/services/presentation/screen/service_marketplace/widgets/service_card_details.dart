@@ -247,7 +247,7 @@ class ServiceCardDetails extends StatelessWidget {
     return PopupMenuItem<String>(
       value: value,
       child: Container(
-        width: 140.w, // Made it wider to match the screenshot
+        width: 140.w,
         child: Row(
           children: [
             Icon(icon, color: iconColor, size: 20.sp),

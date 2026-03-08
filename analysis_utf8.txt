@@ -1,0 +1,9 @@
+﻿Analyzing 3 items...                                            
+
+  error - The named parameter 'fontWeight' isn't defined - lib\features\account\presentation\widgets\media_selection_card.dart:36:13 - undefined_named_parameter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\widgets\media_selection_card.dart:62:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\widgets\media_selection_card.dart:90:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\widgets\media_selection_card.dart:93:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\widgets\media_selection_card.dart:116:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\widgets\media_selection_card.dart:118:60 - deprecated_member_use
+

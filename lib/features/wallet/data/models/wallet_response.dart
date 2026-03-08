@@ -12,10 +12,12 @@ class WalletResponse {
   });
 
   factory WalletResponse.fromJson(Map<String, dynamic> json) {
+    final payloadData = json['payload'] ?? json['data'] ?? json;
+
     return WalletResponse(
-      success: json['success'] as bool,
-      message: json['message'] as String,
-      payload: WalletModel.fromJson(json['payload'] as Map<String, dynamic>),
+      success: json['success'] as bool? ?? true, // Assume true if not present
+      message: json['message'] as String? ?? 'Success',
+      payload: WalletModel.fromJson(payloadData as Map<String, dynamic>),
     );
   }
 

@@ -5,8 +5,6 @@ import '../data/wallet_repository.dart';
 import '../data/models/wallet_model.dart';
 
 // Providers
-final apiClientProvider = Provider((ref) => ApiClient());
-
 final walletRepositoryProvider = Provider((ref) {
   final apiClient = ref.watch(apiClientProvider);
   return WalletRepository(apiClient);
@@ -27,11 +25,11 @@ class WalletState {
   });
 
   factory WalletState.initial() => const WalletState(
-        isLoading: false,
-        isRefreshing: false,
-        wallet: null,
-        errorMessage: null,
-      );
+    isLoading: false,
+    isRefreshing: false,
+    wallet: null,
+    errorMessage: null,
+  );
 
   WalletState copyWith({
     bool? isLoading,
@@ -57,14 +55,13 @@ class WalletNotifier extends StateNotifier<WalletState> {
   Future<void> fetchWallet() async {
     log('[WalletNotifier] Fetching wallet');
 
-    state = state.copyWith(
-      isLoading: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
       final response = await _repository.getWallet();
-      log('[WalletNotifier] Successfully fetched wallet: ${response.payload.balance}');
+      log(
+        '[WalletNotifier] Successfully fetched wallet: ${response.payload.balance}',
+      );
 
       state = state.copyWith(
         isLoading: false,
@@ -83,14 +80,13 @@ class WalletNotifier extends StateNotifier<WalletState> {
   Future<void> refreshWallet() async {
     log('[WalletNotifier] Refreshing wallet');
 
-    state = state.copyWith(
-      isRefreshing: true,
-      errorMessage: null,
-    );
+    state = state.copyWith(isRefreshing: true, errorMessage: null);
 
     try {
       final response = await _repository.refreshWallet();
-      log('[WalletNotifier] Successfully refreshed wallet: ${response.payload.balance}');
+      log(
+        '[WalletNotifier] Successfully refreshed wallet: ${response.payload.balance}',
+      );
 
       state = state.copyWith(
         isRefreshing: false,
@@ -116,9 +112,9 @@ class WalletNotifier extends StateNotifier<WalletState> {
 }
 
 // Provider
-final walletProvider = StateNotifierProvider<WalletNotifier, WalletState>(
-  (ref) {
-    final repository = ref.watch(walletRepositoryProvider);
-    return WalletNotifier(repository);
-  },
-);
+final walletProvider = StateNotifierProvider<WalletNotifier, WalletState>((
+  ref,
+) {
+  final repository = ref.watch(walletRepositoryProvider);
+  return WalletNotifier(repository);
+});

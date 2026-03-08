@@ -11,6 +11,13 @@ import 'package:brantro_business/features/auth/presentation/onboarding/forget_pa
 import 'package:brantro_business/features/auth/presentation/onboarding/forget_password/reset_password.dart';
 import 'package:brantro_business/features/dashboard/presentation/screens/dashboard_shell.dart';
 import 'package:brantro_business/features/account/presentation/user_account.dart';
+import 'package:brantro_business/features/wallet/presentation/transaction_history_screen.dart';
+
+import 'package:brantro_business/features/account/presentation/settings_screen.dart';
+import 'package:brantro_business/features/account/presentation/payment_settings_screen.dart';
+import 'package:brantro_business/features/account/presentation/address_book_screen.dart';
+import 'package:brantro_business/features/account/presentation/account_management_screen.dart';
+import 'package:brantro_business/features/account/presentation/edit_profile_screen.dart';
 import 'package:brantro_business/features/template/presentation/screen/template_marketplace/template_marketplace.dart';
 import 'package:brantro_business/features/template/presentation/screen/upload_template/upload_template_screen.dart';
 import 'package:brantro_business/features/creative/presentation/screen/creative_marketplace/creative_marketplace.dart';
@@ -145,6 +152,11 @@ final router = GoRouter(
       name: 'dashboard',
       builder: (context, state) => const DashboardShell(),
     ),
+    GoRoute(
+      path: '/wallet/transactions',
+      name: 'wallet-transactions',
+      builder: (context, state) => const TransactionHistoryScreen(),
+    ),
 
     // Orders Route
     GoRoute(
@@ -169,6 +181,38 @@ final router = GoRouter(
       path: '/profile',
       name: 'profile',
       builder: (context, state) => const UserAccount(),
+    ),
+
+    // Edit Profile Route
+    GoRoute(
+      path: '/edit-profile',
+      name: 'edit-profile',
+      builder: (context, state) {
+        final userData = (state.extra as Map<String, dynamic>?);
+        return EditProfileScreen(userData: userData);
+      },
+    ),
+
+    // Settings Route
+    GoRoute(
+      path: '/settings',
+      name: 'settings',
+      builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/payment-settings',
+      name: 'payment-settings',
+      builder: (context, state) => const PaymentSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/address-book',
+      name: 'address-book',
+      builder: (context, state) => const AddressBookScreen(),
+    ),
+    GoRoute(
+      path: '/account-management',
+      name: 'account-management',
+      builder: (context, state) => const AccountManagementScreen(),
     ),
 
     // Template Marketplace Route

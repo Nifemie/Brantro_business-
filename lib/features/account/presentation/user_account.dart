@@ -28,16 +28,16 @@ class _UserAccountState extends ConsumerState<UserAccount> {
   Widget build(BuildContext context) {
     // Force rebuild by invalidating providers when screen is built
     ref.invalidate(profileHeaderProvider);
-    
+
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const SidebarMenu(),
       body: SafeArea(
         child: Column(
           children: [
-            const DashboardAppBar(title: 'PROFILE'),
+            const DashboardAppBar(title: 'PROFILE', showBackButton: false),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(

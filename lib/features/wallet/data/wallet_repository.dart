@@ -17,26 +17,44 @@ class WalletRepository {
 
       final response = await apiClient.get(ApiEndpoints.walletMe);
 
-      log('[WalletRepository] Wallet response received: ${response.statusCode}');
+      log(
+        '[WalletRepository] Wallet response received: ${response.statusCode}',
+      );
       final walletResponse = WalletResponse.fromJson(response.data);
-      log('[WalletRepository] Wallet balance: ${walletResponse.payload.balance}');
+      log(
+        '[WalletRepository] Wallet balance: ${walletResponse.payload.balance}',
+      );
       return walletResponse;
     } on DioException catch (e) {
-      log('[WalletRepository] DioException: ${e.message}');
-      log('[WalletRepository] Status Code: ${e.response?.statusCode}');
-      log('[WalletRepository] Error Response: ${e.response?.data}');
+      final statusCode = e.response?.statusCode;
+      final responseData = e.response?.data;
+      final fullUrl = '${e.requestOptions.baseUrl}${e.requestOptions.path}';
 
-      final errorMessage = e.response?.statusCode == 401
-          ? 'Unauthorized: Please log in again'
-          : e.response?.statusCode == 403
-              ? 'Forbidden: You do not have access to wallet'
-              : e.response?.data['message'] ??
-                  e.response?.data['error'] ??
-                  'Failed to fetch wallet. Please try again.';
+      log('[WalletRepository] Fetch FAILED');
+      log('[WalletRepository] URL: $fullUrl');
+      log('[WalletRepository] Status Code: $statusCode');
+      log('[WalletRepository] Error Data: $responseData');
+      log('[WalletRepository] Message: ${e.message}');
+
+      String errorMessage = 'Failed to fetch wallet. Please try again.';
+
+      if (statusCode == 404) {
+        errorMessage =
+            'Wallet service not found (404). Please contact support.';
+      } else if (statusCode == 401) {
+        errorMessage = 'Unauthorized: Please log in again';
+      } else if (statusCode == 403) {
+        errorMessage = 'Forbidden: You do not have access to wallet';
+      } else if (statusCode != null && statusCode >= 500) {
+        errorMessage = 'Server error ($statusCode). Please try again later.';
+      } else if (responseData is Map) {
+        errorMessage =
+            responseData['message'] ?? responseData['error'] ?? errorMessage;
+      }
 
       throw Exception(errorMessage);
     } catch (e) {
-      log('[WalletRepository] Error: $e');
+      log('[WalletRepository] Unexpected Error: $e');
       throw Exception('An unexpected error occurred: $e');
     }
   }
@@ -56,15 +74,16 @@ class WalletRepository {
 
       final response = await apiClient.get(
         ApiEndpoints.walletTransactions,
-        query: {
-          'page': page,
-          'size': size,
-        },
+        query: {'page': page, 'size': size},
       );
 
-      log('[WalletRepository] Transactions response received: ${response.statusCode}');
+      log(
+        '[WalletRepository] Transactions response received: ${response.statusCode}',
+      );
       final transactionsResponse = TransactionsResponse.fromJson(response.data);
-      log('[WalletRepository] Fetched ${transactionsResponse.payload.transactions.length} transactions');
+      log(
+        '[WalletRepository] Fetched ${transactionsResponse.payload.transactions.length} transactions',
+      );
       return transactionsResponse;
     } on DioException catch (e) {
       log('[WalletRepository] DioException: ${e.message}');
@@ -74,10 +93,10 @@ class WalletRepository {
       final errorMessage = e.response?.statusCode == 401
           ? 'Unauthorized: Please log in again'
           : e.response?.statusCode == 403
-              ? 'Forbidden: You do not have access to transactions'
-              : e.response?.data['message'] ??
-                  e.response?.data['error'] ??
-                  'Failed to fetch transactions. Please try again.';
+          ? 'Forbidden: You do not have access to transactions'
+          : e.response?.data['message'] ??
+                e.response?.data['error'] ??
+                'Failed to fetch transactions. Please try again.';
 
       throw Exception(errorMessage);
     } catch (e) {

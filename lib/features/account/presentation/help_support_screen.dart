@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
+import 'widgets/support/support_components.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
@@ -32,36 +33,44 @@ class HelpSupportScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 16.h),
-            
+
             // Contact Us Section
-            _buildSection(
+            SupportSection(
               title: 'Contact Us',
               children: [
-                _buildContactItem(
+                SupportMenuItem(
                   icon: Icons.edit_outlined,
                   title: 'Submit a Report',
                   subtitle: 'Fill out our contact form',
+                  iconColor: AppColors.primaryColor,
+                  iconContainerColor: AppColors.primaryColor.withOpacity(0.1),
                   onTap: () => context.push('/contact-us'),
                 ),
                 _buildDivider(),
-                _buildContactItem(
+                SupportMenuItem(
                   icon: Icons.email_outlined,
                   title: 'Email Us',
                   subtitle: 'support@brantro.com',
+                  iconColor: AppColors.primaryColor,
+                  iconContainerColor: AppColors.primaryColor.withOpacity(0.1),
                   onTap: () => _launchEmail('support@brantro.com'),
                 ),
                 _buildDivider(),
-                _buildContactItem(
+                SupportMenuItem(
                   icon: Icons.phone_outlined,
                   title: 'Call Us',
                   subtitle: '+234 800 123 4567',
+                  iconColor: AppColors.primaryColor,
+                  iconContainerColor: AppColors.primaryColor.withOpacity(0.1),
                   onTap: () => _launchPhone('+2348001234567'),
                 ),
                 _buildDivider(),
-                _buildContactItem(
+                SupportMenuItem(
                   icon: Icons.chat_bubble_outline,
                   title: 'WhatsApp',
                   subtitle: 'Chat with us on WhatsApp',
+                  iconColor: AppColors.primaryColor,
+                  iconContainerColor: AppColors.primaryColor.withOpacity(0.1),
                   onTap: () => _launchWhatsApp('+2348001234567'),
                 ),
               ],
@@ -70,10 +79,10 @@ class HelpSupportScreen extends StatelessWidget {
             SizedBox(height: 16.h),
 
             // Quick Help Section
-            _buildSection(
+            SupportSection(
               title: 'Quick Help',
               children: [
-                _buildMenuItem(
+                SupportMenuItem(
                   icon: Icons.chat_outlined,
                   title: 'Live Chat',
                   subtitle: 'Chat with our support team',
@@ -83,7 +92,7 @@ class HelpSupportScreen extends StatelessWidget {
                   },
                 ),
                 _buildDivider(),
-                _buildMenuItem(
+                SupportMenuItem(
                   icon: Icons.question_answer_outlined,
                   title: 'FAQs',
                   subtitle: 'Find answers to common questions',
@@ -93,7 +102,7 @@ class HelpSupportScreen extends StatelessWidget {
                   },
                 ),
                 _buildDivider(),
-                _buildMenuItem(
+                SupportMenuItem(
                   icon: Icons.report_problem_outlined,
                   title: 'Report a Problem',
                   subtitle: 'Let us know if something is wrong',
@@ -108,10 +117,10 @@ class HelpSupportScreen extends StatelessWidget {
             SizedBox(height: 16.h),
 
             // Resources Section
-            _buildSection(
+            SupportSection(
               title: 'Resources',
               children: [
-                _buildMenuItem(
+                SupportMenuItem(
                   icon: Icons.help_outline,
                   title: 'Help Center',
                   subtitle: 'Browse our help articles',
@@ -121,7 +130,7 @@ class HelpSupportScreen extends StatelessWidget {
                   },
                 ),
                 _buildDivider(),
-                _buildMenuItem(
+                SupportMenuItem(
                   icon: Icons.video_library_outlined,
                   title: 'Video Tutorials',
                   subtitle: 'Learn how to use Brantro',
@@ -136,26 +145,16 @@ class HelpSupportScreen extends StatelessWidget {
             SizedBox(height: 16.h),
 
             // Legal Section
-            _buildSection(
+            SupportSection(
               title: 'Legal',
               children: [
-                _buildMenuItem(
+                SupportMenuItem(
                   icon: Icons.description_outlined,
                   title: 'Terms of Service',
                   subtitle: 'Read our terms and conditions',
                   onTap: () {
                     // TODO: Navigate to Terms of Service
                     _showComingSoonDialog(context, 'Terms of Service');
-                  },
-                ),
-                _buildDivider(),
-                _buildMenuItem(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Privacy Policy',
-                  subtitle: 'Learn how we protect your data',
-                  onTap: () {
-                    // TODO: Navigate to Privacy Policy
-                    _showComingSoonDialog(context, 'Privacy Policy');
                   },
                 ),
               ],
@@ -187,121 +186,10 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection({
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Text(
-              title,
-              style: AppTexts.labelMedium(color: AppColors.grey600),
-            ),
-          ),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(10.w),
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Icon(icon, color: AppColors.primaryColor, size: 24.sp),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    subtitle,
-                    style: AppTexts.bodySmall(color: AppColors.grey600),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: AppColors.grey400, size: 20.sp),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.grey700, size: 24.sp),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    subtitle,
-                    style: AppTexts.bodySmall(color: AppColors.grey600),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: AppColors.grey400, size: 20.sp),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildDivider() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: AppColors.grey200,
-      ),
+      child: Divider(height: 1, thickness: 1, color: AppColors.grey200),
     );
   }
 

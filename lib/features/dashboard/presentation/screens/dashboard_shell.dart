@@ -7,7 +7,7 @@ import 'package:brantro_business/features/dashboard/presentation/widgets/dashboa
 import 'package:brantro_business/features/dashboard/presentation/widgets/sidebar_menu.dart';
 import 'package:brantro_business/features/dashboard/presentation/screens/home_screen.dart';
 import 'package:brantro_business/features/orders/presentation/screens/orders_screen.dart';
-import 'package:brantro_business/features/dashboard/presentation/screens/wallet_screen.dart';
+import 'package:brantro_business/features/wallet/presentation/wallet_screen.dart';
 import 'package:brantro_business/features/account/presentation/user_account.dart';
 import 'package:brantro_business/core/widgets/bottom_nav_bar.dart';
 import 'package:brantro_business/features/dashboard/logic/dashboard_navigation_provider.dart';
@@ -44,7 +44,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     final now = DateTime.now();
     final backButtonHasNotBeenPressedOrSnackBarHasBeenClosed =
         _lastBackPressed == null ||
-            now.difference(_lastBackPressed!) > const Duration(seconds: 2);
+        now.difference(_lastBackPressed!) > const Duration(seconds: 2);
 
     if (backButtonHasNotBeenPressedOrSnackBarHasBeenClosed) {
       _lastBackPressed = now;
@@ -89,10 +89,12 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         body: SafeArea(
           child: Column(
             children: [
-              if (currentIndex != 3) const DashboardAppBar(showBackButton: false),
-              Expanded(
-                child: _screens[currentIndex],
-              ),
+              if (currentIndex != 2 && currentIndex != 3)
+                DashboardAppBar(
+                  showBackButton: false,
+                  title: currentIndex == 2 ? 'WALLET' : 'WELCOME!',
+                ),
+              Expanded(child: _screens[currentIndex]),
             ],
           ),
         ),
@@ -109,7 +111,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
 
   void _showQuickActionMenu(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -233,11 +235,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
                 color: AppColors.secondaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12.r),
               ),
-              child: Icon(
-                icon,
-                color: AppColors.secondaryColor,
-                size: 24.sp,
-              ),
+              child: Icon(icon, color: AppColors.secondaryColor, size: 24.sp),
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -254,10 +252,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
                   SizedBox(height: 2.h),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
                   ),
                 ],
               ),

@@ -12,13 +12,12 @@ class MySettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
+
     return FutureBuilder<bool>(
       future: SessionService.isLoggedIn(),
       builder: (context, snapshot) {
         final isLoggedIn = snapshot.data ?? false;
-        
+
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 16.w),
           decoration: BoxDecoration(
@@ -45,21 +44,21 @@ class MySettings extends StatelessWidget {
               _buildSettingItem(
                 title: 'Payment Settings',
                 onTap: () {
-                  // TODO: Navigate to Payment Settings
+                  context.push('/payment-settings');
                 },
               ),
               _buildDivider(),
               _buildSettingItem(
                 title: 'Address Book',
                 onTap: () {
-                  // TODO: Navigate to Address Book
+                  context.push('/address-book');
                 },
               ),
               _buildDivider(),
               _buildSettingItem(
                 title: 'Account Management',
                 onTap: () {
-                  // TODO: Navigate to Account Management
+                  context.push('/account-management');
                 },
               ),
               _buildDivider(),
@@ -117,16 +116,18 @@ class MySettings extends StatelessWidget {
             // Clear session data
             final prefs = await SharedPreferences.getInstance();
             await prefs.clear(); // Clear all data
-            
+
             // Navigate to signin
             context.pushReplacement('/signin');
-            
+
             // Show success message after navigation
             Future.delayed(const Duration(milliseconds: 500), () {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('You have been logged out successfully'),
+                    content: const Text(
+                      'You have been logged out successfully',
+                    ),
                     backgroundColor: AppColors.success,
                     duration: const Duration(seconds: 2),
                     behavior: SnackBarBehavior.floating,
@@ -169,7 +170,7 @@ class MySettings extends StatelessWidget {
     return Builder(
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         return InkWell(
           onTap: onTap,
           child: Padding(
@@ -199,11 +200,7 @@ class MySettings extends StatelessWidget {
   Widget _buildDivider() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: AppColors.grey200,
-      ),
+      child: Divider(height: 1, thickness: 1, color: AppColors.grey200),
     );
   }
 }

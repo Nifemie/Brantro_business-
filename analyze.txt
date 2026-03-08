@@ -1,0 +1,19 @@
+﻿Analyzing presentation...                                       
+
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\wallet\presentation\transaction_history_screen.dart:66:25 - invalid_null_aware_operator
+warning - Dead code - lib\features\wallet\presentation\transaction_history_screen.dart:161:85 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\wallet\presentation\transaction_history_screen.dart:161:88 - dead_null_aware_expression
+warning - Unused import: '../data/models/transaction_model.dart' - lib\features\wallet\presentation\wallet_screen.dart:10:8 - unused_import
+warning - Unused import: '../../../core/widgets/skeleton_loading.dart' - lib\features\wallet\presentation\wallet_screen.dart:16:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\balance_card.dart:37:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\balance_card.dart:55:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\balance_card.dart:56:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\balance_card.dart:119:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\quick_action_button.dart:31:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\quick_action_button.dart:32:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\quick_action_button.dart:45:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\transaction_card.dart:60:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\transaction_card.dart:61:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\transaction_card.dart:75:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\wallet\presentation\widgets\transaction_card.dart:231:27 - deprecated_member_use
+

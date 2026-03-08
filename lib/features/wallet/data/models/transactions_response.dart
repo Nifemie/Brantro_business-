@@ -12,10 +12,10 @@ class TransactionsResponse {
   });
 
   factory TransactionsResponse.fromJson(Map<String, dynamic> json) {
-    final success = json['success'] as bool;
-    final message = json['message'] as String;
-    final payloadData = json['payload'];
-    
+    final success = json['success'] as bool? ?? true;
+    final message = json['message'] as String? ?? 'Success';
+    final payloadData = json['payload'] ?? json['data'] ?? json;
+
     // Handle null payload (e.g., "Record not found")
     if (payloadData == null) {
       return TransactionsResponse(
@@ -29,9 +29,11 @@ class TransactionsResponse {
         ),
       );
     }
-    
-    final payload = TransactionsPayload.fromJson(payloadData as Map<String, dynamic>);
-    
+
+    final payload = TransactionsPayload.fromJson(
+      payloadData as Map<String, dynamic>,
+    );
+
     return TransactionsResponse(
       success: success,
       message: message,
@@ -55,12 +57,12 @@ class TransactionsPayload {
 
   factory TransactionsPayload.fromJson(Map<String, dynamic> json) {
     final pageList = json['page'] as List? ?? [];
-    
+
     final transactions = pageList
         .where((e) => e != null && e is Map<String, dynamic>)
         .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
         .toList();
-    
+
     return TransactionsPayload(
       transactions: transactions,
       currentPage: json['currentPage']?.toString() ?? '0',

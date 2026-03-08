@@ -5,6 +5,8 @@ import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
 import '../logic/contact_notifier.dart';
 import '../data/models/contact_message_request.dart';
+import 'widgets/contact/contact_form_fields.dart';
+import 'widgets/contact/contact_header.dart';
 
 class ContactUsScreen extends ConsumerStatefulWidget {
   const ContactUsScreen({super.key});
@@ -66,11 +68,7 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
             ),
             title: Column(
               children: [
-                Icon(
-                  Icons.check_circle,
-                  color: AppColors.success,
-                  size: 60.sp,
-                ),
+                Icon(Icons.check_circle, color: AppColors.success, size: 60.sp),
                 SizedBox(height: 16.h),
                 Text(
                   'Report Submitted',
@@ -122,10 +120,7 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
               children: [
                 Icon(Icons.error_outline, color: AppColors.error, size: 24.sp),
                 SizedBox(width: 12.w),
-                Text(
-                  'Error',
-                  style: AppTexts.h3(color: AppColors.textPrimary),
-                ),
+                Text('Error', style: AppTexts.h3(color: AppColors.textPrimary)),
               ],
             ),
             content: Text(
@@ -186,284 +181,17 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header Info
-                  Container(
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: AppColors.primaryColor,
-                          size: 24.sp,
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Text(
-                            'Fill out the form below and we\'ll get back to you as soon as possible.',
-                            style: AppTexts.bodySmall(color: AppColors.grey700),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const ContactHeader(),
 
                   SizedBox(height: 24.h),
 
-                  // Name Field
-                  Text(
-                    'Full Name',
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 8.h),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter your full name',
-                      hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.error),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  // Email Field
-                  Text(
-                    'Email Address',
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 8.h),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      hintText: 'Enter your email address',
-                      hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.error),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  // Phone Number Field
-                  Text(
-                    'Phone Number',
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 8.h),
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: 'Enter your phone number',
-                      hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.error),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your phone number';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  // Subject Field
-                  Text(
-                    'Subject',
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 8.h),
-                  TextFormField(
-                    controller: _subjectController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter subject',
-                      hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.error),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a subject';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  // Address Field
-                  Text(
-                    'Address',
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 8.h),
-                  TextFormField(
-                    controller: _addressController,
-                    maxLines: 2,
-                    decoration: InputDecoration(
-                      hintText: 'Enter your address',
-                      hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.error),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your address';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  // Message Field
-                  Text(
-                    'Message',
-                    style: AppTexts.labelMedium(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 8.h),
-                  TextFormField(
-                    controller: _messageController,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      hintText: 'Enter your message',
-                      hintStyle: AppTexts.bodyMedium(color: AppColors.grey400),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.grey300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                        borderSide: BorderSide(color: AppColors.error),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your message';
-                      }
-                      if (value.trim().length < 10) {
-                        return 'Message must be at least 10 characters';
-                      }
-                      return null;
-                    },
+                  ContactFormFields(
+                    nameController: _nameController,
+                    emailController: _emailController,
+                    phoneController: _phoneController,
+                    subjectController: _subjectController,
+                    addressController: _addressController,
+                    messageController: _messageController,
                   ),
 
                   SizedBox(height: 32.h),
@@ -488,7 +216,9 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
                               width: 20.w,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : Text(

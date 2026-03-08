@@ -13,12 +13,9 @@ import '../data/models/login_response.dart';
 import '../data/models/forgot_password_request.dart';
 import '../data/models/reset_password_request.dart';
 
-// Provider for ApiClient
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
-
 // Provider for AuthRepository
 final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => AuthRepository(ref.read(apiClientProvider)),
+  (ref) => AuthRepository(ref.watch(apiClientProvider)),
 );
 
 // StateNotifier for Auth
@@ -128,7 +125,7 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
   Future<void> login(LoginRequest request) async {
     log('[AuthNotifier] Login attempt started');
     log('[AuthNotifier] Username: ${request.username}');
-    
+
     state = state.copyWith(
       isInitialLoading: true,
       message: null,
@@ -138,12 +135,14 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
     try {
       log('[AuthNotifier] Calling repository.login...');
       final response = await _repository.login(request);
-      
+
       log('[AuthNotifier] Repository returned response');
       log('[AuthNotifier] Response success: ${response.success}');
       log('[AuthNotifier] Response message: ${response.message}');
       log('[AuthNotifier] User data: ${response.user?.toJson()}');
-      log('[AuthNotifier] Access token present: ${response.accessToken != null}');
+      log(
+        '[AuthNotifier] Access token present: ${response.accessToken != null}',
+      );
 
       // Save session data to SessionService
       if (response.user != null && response.accessToken != null) {
@@ -163,12 +162,14 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
       );
 
       log('[AuthNotifier] Login successful: ${response.message}');
-      log('[AuthNotifier] State updated - isDataAvailable: ${state.isDataAvailable}');
+      log(
+        '[AuthNotifier] State updated - isDataAvailable: ${state.isDataAvailable}',
+      );
     } catch (e, stack) {
       log('[AuthNotifier] Login FAILED with exception');
       log('[AuthNotifier] Exception type: ${e.runtimeType}');
       log('[AuthNotifier] Exception message: $e');
-      
+
       state = state.copyWith(
         isInitialLoading: false,
         isDataAvailable: false,

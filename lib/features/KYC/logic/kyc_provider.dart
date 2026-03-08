@@ -4,10 +4,8 @@ import '../data/kyc_repository.dart';
 import '../../../core/constants/kyc_constants.dart';
 import '../../../core/network/api_client.dart';
 
-// Providers
-final apiClientProvider = Provider((ref) => ApiClient());
-
-final kycRepositoryProvider = Provider((ref) {
+// Provider for KycRepository
+final kycRepositoryProvider = Provider<KycRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   return KycRepository(apiClient);
 });
@@ -29,11 +27,11 @@ class KycState {
   });
 
   const KycState.initial()
-      : draftRequest = null,
-        statusResponse = null,
-        isLoading = false,
-        error = null,
-        verificationStatus = KycVerificationStatus.notStarted;
+    : draftRequest = null,
+      statusResponse = null,
+      isLoading = false,
+      error = null,
+      verificationStatus = KycVerificationStatus.notStarted;
 
   KycState copyWith({
     KycVerificationRequest? draftRequest,
@@ -112,10 +110,7 @@ class KycNotifier extends StateNotifier<KycState> {
 
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -129,7 +124,7 @@ class KycNotifier extends StateNotifier<KycState> {
         documentNumber: documentNumber,
         otp: otp,
       );
-      
+
       await _repository.verifyKycOtp(request);
 
       // Fetch updated status
@@ -137,10 +132,7 @@ class KycNotifier extends StateNotifier<KycState> {
 
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }

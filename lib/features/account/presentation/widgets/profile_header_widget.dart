@@ -3,17 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
-import '../../../../core/utils/avatar_helper.dart';
 import '../../logic/profile_provider.dart';
+import 'profile/profile_banner_stack.dart';
+import 'profile/profile_stat_item.dart';
 
 // Profile Header Widget
 class ProfileHeaderWidget extends ConsumerWidget {
   final VoidCallback? onEditPhoto;
 
-  const ProfileHeaderWidget({
-    super.key,
-    this.onEditPhoto,
-  });
+  const ProfileHeaderWidget({super.key, this.onEditPhoto});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,10 +39,6 @@ class ProfileHeaderWidget extends ConsumerWidget {
   Widget _buildHeader(BuildContext context, ProfileHeaderData profileData) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final avatarUrl = AvatarHelper.getAvatar(
-      avatarUrl: profileData.avatarUrl,
-      userId: profileData.userId,
-    );
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
@@ -62,74 +56,9 @@ class ProfileHeaderWidget extends ConsumerWidget {
       child: Column(
         children: [
           // Banner Image with Profile Picture Overlay
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Banner Image
-              Container(
-                height: 200.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16.r),
-                    topRight: Radius.circular(16.r),
-                  ),
-                  image: DecorationImage(
-                    image: profileData.bannerUrl.isNotEmpty
-                        ? NetworkImage(profileData.bannerUrl)
-                        : const AssetImage('assets/promotions/billboard1.jpg')
-                            as ImageProvider,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-
-              // Profile Picture (Overlapping)
-              Positioned(
-                bottom: -50.h,
-                left: 20.w,
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 100.w,
-                      height: 100.w,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        image: DecorationImage(
-                          image: AvatarHelper.isDefaultAvatar(avatarUrl)
-                              ? AssetImage(avatarUrl) as ImageProvider
-                              : NetworkImage(avatarUrl),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    // Camera icon for editing
-                    if (onEditPhoto != null)
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: onEditPhoto,
-                          child: Container(
-                            width: 32.w,
-                            height: 32.w,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 16.sp,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
+          ProfileBannerStack(
+            profileData: profileData,
+            onEditPhoto: onEditPhoto,
           ),
 
           SizedBox(height: 60.h),
@@ -153,7 +82,9 @@ class ProfileHeaderWidget extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 24.sp,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : AppColors.textPrimary,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
                             ),
                           ),
                           SizedBox(height: 4.h),
@@ -161,7 +92,9 @@ class ProfileHeaderWidget extends ConsumerWidget {
                             _formatRole(profileData.role),
                             style: TextStyle(
                               fontSize: 14.sp,
-                              color: isDark ? Colors.white70 : AppColors.grey600,
+                              color: isDark
+                                  ? Colors.white70
+                                  : AppColors.grey600,
                             ),
                           ),
                         ],
@@ -183,20 +116,32 @@ class ProfileHeaderWidget extends ConsumerWidget {
                               Icon(
                                 Icons.edit,
                                 size: 20.sp,
-                                color: isDark ? Colors.white70 : AppColors.grey700,
+                                color: isDark
+                                    ? Colors.white70
+                                    : AppColors.grey700,
                               ),
                               SizedBox(width: 12.w),
                               Text(
                                 'Edit Profile',
                                 style: TextStyle(
-                                  color: isDark ? Colors.white : AppColors.grey700,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.grey700,
                                 ),
                               ),
                             ],
                           ),
                           onTap: () {
                             Future.delayed(Duration.zero, () {
-                              context.push('/edit-profile');
+                              context.push(
+                                '/edit-profile',
+                                extra: {
+                                  'fullName': profileData.fullName,
+                                  'email': profileData.email,
+                                  'userId': profileData.userId,
+                                  'avatarUrl': profileData.avatarUrl,
+                                },
+                              );
                             });
                           },
                         ),
@@ -206,13 +151,17 @@ class ProfileHeaderWidget extends ConsumerWidget {
                               Icon(
                                 Icons.share,
                                 size: 20.sp,
-                                color: isDark ? Colors.white70 : AppColors.grey700,
+                                color: isDark
+                                    ? Colors.white70
+                                    : AppColors.grey700,
                               ),
                               SizedBox(width: 12.w),
                               Text(
                                 'Share Profile',
                                 style: TextStyle(
-                                  color: isDark ? Colors.white : AppColors.grey700,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.grey700,
                                 ),
                               ),
                             ],
@@ -274,14 +223,14 @@ class ProfileHeaderWidget extends ConsumerWidget {
                 // Stats Section
                 Row(
                   children: [
-                    _buildStatItem(
+                    ProfileStatItem(
                       icon: Icons.access_time,
                       iconColor: AppColors.secondaryColor,
                       label: 'Experience',
                       value: profileData.experience,
                     ),
                     SizedBox(width: 24.w),
-                    _buildStatItem(
+                    ProfileStatItem(
                       icon: Icons.emoji_events,
                       iconColor: AppColors.secondaryColor,
                       label: 'Productions',
@@ -334,57 +283,6 @@ class ProfileHeaderWidget extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String value,
-  }) {
-    return Expanded(
-      child: Builder(
-        builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          
-          return Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Icon(icon, color: iconColor, size: 24.sp),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: isDark ? Colors.white70 : AppColors.grey600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
       ),
     );
   }

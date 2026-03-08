@@ -1,13 +1,10 @@
 import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/data/data_state.dart';
-import '../../../core/network/api_client.dart';
+import '../../../core/network/api_client.dart'; // Assuming apiClientProvider is imported from here or another shared location
 import '../data/contact_repository.dart';
 import '../data/models/contact_message_request.dart';
 import '../data/models/contact_message_response.dart';
-
-// Provider for ApiClient (reuse from auth if needed)
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
 // Provider for ContactRepository
 final contactRepositoryProvider = Provider<ContactRepository>(
@@ -23,7 +20,7 @@ class ContactNotifier extends StateNotifier<DataState<ContactMessageResponse>> {
   /// Send contact message
   Future<void> sendMessage(ContactMessageRequest request) async {
     log('[ContactNotifier] Sending message...');
-    
+
     // Set loading state
     state = state.copyWith(
       isInitialLoading: true,
@@ -70,5 +67,5 @@ class ContactNotifier extends StateNotifier<DataState<ContactMessageResponse>> {
 // Provider for ContactNotifier
 final contactNotifierProvider =
     StateNotifierProvider<ContactNotifier, DataState<ContactMessageResponse>>(
-  (ref) => ContactNotifier(ref.read(contactRepositoryProvider)),
-);
+      (ref) => ContactNotifier(ref.read(contactRepositoryProvider)),
+    );

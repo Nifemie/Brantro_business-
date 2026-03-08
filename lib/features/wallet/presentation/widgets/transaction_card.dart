@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 
 enum TransactionType {
@@ -12,12 +11,7 @@ enum TransactionType {
   refund,
 }
 
-enum TransactionStatus {
-  pending,
-  completed,
-  failed,
-  cancelled,
-}
+enum TransactionStatus { pending, completed, failed, cancelled }
 
 class TransactionCard extends StatelessWidget {
   final TransactionType type;
@@ -41,7 +35,11 @@ class TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCredit = type == TransactionType.deposit ||
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final isCredit =
+        type == TransactionType.deposit ||
         type == TransactionType.transferIn ||
         type == TransactionType.refund;
 
@@ -49,63 +47,99 @@ class TransactionCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.grey200, width: 1),
+          color: isDark ? const Color(0xFF2A2F36) : Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.3)
+                  : const Color(0xFF000000).withOpacity(0.06),
+              blurRadius: 15,
+              spreadRadius: 0,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          border: isDark
+              ? Border.all(color: Colors.white.withOpacity(0.05), width: 1)
+              : Border.all(color: const Color(0xFFF0F0F0), width: 1),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Transaction type icon
+            // Transaction type icon with premium backdrop
             Container(
-              padding: EdgeInsets.all(12.w),
+              width: 48.w,
+              height: 48.w,
               decoration: BoxDecoration(
-                color: _getIconBackgroundColor().withOpacity(0.1),
-                shape: BoxShape.circle,
+                color: _getIconBackgroundColor().withOpacity(
+                  isDark ? 0.15 : 0.1,
+                ),
+                borderRadius: BorderRadius.circular(14.r),
               ),
-              child: Icon(
-                _getTransactionIcon(),
-                color: _getIconBackgroundColor(),
-                size: 24.sp,
+              child: Center(
+                child: Icon(
+                  _getTransactionIcon(),
+                  color: _getIconBackgroundColor(),
+                  size: 24.sp,
+                ),
               ),
             ),
 
-            SizedBox(width: 12.w),
+            SizedBox(width: 16.w),
 
             // Transaction details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    description,
-                    style: AppTexts.h4(),
+                    description.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      color: isDark ? Colors.white : const Color(0xFF1A1C1E),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4.h),
                   Row(
                     children: [
-                      Flexible(
-                        child: Text(
-                          date,
-                          style: AppTexts.bodySmall(color: AppColors.grey600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        date,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: isDark ? Colors.grey[400] : Colors.grey[500],
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       if (reference != null) ...[
-                        SizedBox(width: 4.w),
-                        Text(
-                          '•',
-                          style: AppTexts.bodySmall(color: AppColors.grey500),
-                        ),
-                        SizedBox(width: 4.w),
-                        Flexible(
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w),
                           child: Text(
-                            reference!,
-                            style: AppTexts.bodySmall(color: AppColors.grey500),
+                            '•',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: isDark
+                                  ? Colors.grey[600]
+                                  : Colors.grey[300],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            reference!.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: isDark
+                                  ? Colors.grey[500]
+                                  : Colors.grey[400],
+                              fontWeight: FontWeight.w500,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -114,7 +148,7 @@ class TransactionCard extends StatelessWidget {
                     ],
                   ),
                   if (status != TransactionStatus.completed) ...[
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 8.h),
                     _buildStatusBadge(),
                   ],
                 ],
@@ -123,17 +157,21 @@ class TransactionCard extends StatelessWidget {
 
             SizedBox(width: 12.w),
 
-            // Amount
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${isCredit ? '+' : '-'}$amount',
-                  style: AppTexts.h3(
-                    color: isCredit ? Colors.green : Colors.red,
-                  ),
-                ),
-              ],
+            // Amount with refined styling
+            Text(
+              '${isCredit ? '+' : '-'}$amount',
+              style: TextStyle(
+                fontSize: 16.sp,
+                letterSpacing: -0.5,
+                fontWeight: FontWeight.w900,
+                color: isCredit
+                    ? const Color(
+                        0xFF2E7D32,
+                      ) // Deeper green for premium contrast
+                    : const Color(
+                        0xFFD32F2F,
+                      ), // Deeper red for premium contrast
+              ),
             ),
           ],
         ),
@@ -159,7 +197,8 @@ class TransactionCard extends StatelessWidget {
   }
 
   Color _getIconBackgroundColor() {
-    final isCredit = type == TransactionType.deposit ||
+    final isCredit =
+        type == TransactionType.deposit ||
         type == TransactionType.transferIn ||
         type == TransactionType.refund;
     return isCredit ? Colors.green : Colors.red;
@@ -197,9 +236,7 @@ class TransactionCard extends StatelessWidget {
       ),
       child: Text(
         statusText,
-        style: AppTexts.bodySmall(color: badgeColor).copyWith(
-          fontSize: 10.sp,
-        ),
+        style: AppTexts.bodySmall(color: badgeColor).copyWith(fontSize: 10.sp),
       ),
     );
   }
