@@ -9,7 +9,7 @@ import 'package:brantro_business/features/dashboard/presentation/screens/home_sc
 import 'package:brantro_business/features/orders/presentation/screens/orders_screen.dart';
 import 'package:brantro_business/features/wallet/presentation/wallet_screen.dart';
 import 'package:brantro_business/features/account/presentation/user_account.dart';
-import 'package:brantro_business/core/widgets/bottom_nav_bar.dart';
+import 'package:brantro_business/controllers/re_useable/bottom_nav_bar.dart';
 import 'package:brantro_business/features/dashboard/logic/dashboard_navigation_provider.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
 import 'dart:ui';

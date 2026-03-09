@@ -5,10 +5,12 @@ import '../../core/utils/color_utils.dart';
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final VoidCallback? onFabTap;
 
   const BottomNavBar({
     required this.currentIndex,
     required this.onTap,
+    this.onFabTap,
     super.key,
   });
 
