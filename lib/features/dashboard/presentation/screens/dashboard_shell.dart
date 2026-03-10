@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:brantro_business/controllers/re_useable/app_color.dart';
+import 'dart:ui';
+
 import 'package:brantro_business/features/dashboard/presentation/widgets/dashboard_app_bar.dart';
 import 'package:brantro_business/features/dashboard/presentation/widgets/sidebar_menu.dart';
 import 'package:brantro_business/features/dashboard/presentation/screens/home_screen.dart';
@@ -11,8 +14,6 @@ import 'package:brantro_business/features/wallet/presentation/wallet_screen.dart
 import 'package:brantro_business/features/account/presentation/user_account.dart';
 import 'package:brantro_business/controllers/re_useable/bottom_nav_bar.dart';
 import 'package:brantro_business/features/dashboard/logic/dashboard_navigation_provider.dart';
-import 'package:brantro_business/controllers/re_useable/app_color.dart';
-import 'dart:ui';
 
 class DashboardShell extends ConsumerStatefulWidget {
   const DashboardShell({super.key});
