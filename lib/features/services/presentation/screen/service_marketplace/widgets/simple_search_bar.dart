@@ -11,7 +11,6 @@ class SimpleSearchBar extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Approximating colors from the simplistic screenshot
     final outerBgColor = isDark ? const Color(0xFF22272B) : Colors.white;
     final innerBgColor = isDark ? const Color(0xFF2D333B) : Colors.grey[50]!;
     final borderColor = isDark ? const Color(0xFF3E444C) : Colors.grey[300]!;

@@ -7,7 +7,7 @@ class ServiceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We render a list of cards. The first item matches the exact screenshot provided.
+    // We render a list of cards.
     final mockServices = [
       {
         'title': 'Brand Identity & Visual Style Guide',

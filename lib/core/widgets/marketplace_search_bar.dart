@@ -23,7 +23,6 @@ class MarketplaceSearchBar extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
 
-    // Use specific colors from the screenshot
     final bgColor = isDark ? const Color(0xFF1E2125) : Colors.white;
     final inputBgColor = isDark ? const Color(0xFF1A1C20) : AppColors.grey100;
     final borderColor = isDark ? const Color(0xFF2C3138) : AppColors.grey200;
@@ -113,7 +112,7 @@ class MarketplaceSearchBar extends ConsumerWidget {
                 child: PopupMenuButton<String>(
                   onSelected: onStatusChanged,
                   offset: Offset(0, 56.h),
-                  color: Colors.white, // Ensure it's white as in the screenshot
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                     side: BorderSide(color: Colors.grey[200]!, width: 1),
@@ -166,7 +165,7 @@ class MarketplaceSearchBar extends ConsumerWidget {
               height: 44.h,
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
-                color: const Color(0xFF00388B), // Deep blue from screenshot
+                color: const Color(0xFF00388B),
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Row(
@@ -211,7 +210,7 @@ class MarketplaceSearchBar extends ConsumerWidget {
           style: TextStyle(
             color: const Color(
               0xFF90A4AE,
-            ), // Soft light blue-grey from screenshot
+            ),
             fontSize: 14.sp,
             fontWeight: FontWeight.w400,
           ),

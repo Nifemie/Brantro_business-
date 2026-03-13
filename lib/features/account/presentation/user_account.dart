@@ -17,7 +17,8 @@ import 'widgets/social_accounts_section.dart';
 import 'widgets/my_settings.dart';
 
 class UserAccount extends ConsumerStatefulWidget {
-  const UserAccount({super.key});
+  final bool showBackButton;
+  const UserAccount({super.key, this.showBackButton = false});
 
   @override
   ConsumerState<UserAccount> createState() => _UserAccountState();
@@ -37,7 +38,7 @@ class _UserAccountState extends ConsumerState<UserAccount> {
       body: SafeArea(
         child: Column(
           children: [
-            const DashboardAppBar(title: 'PROFILE', showBackButton: false),
+            DashboardAppBar(title: 'PROFILE', showBackButton: widget.showBackButton),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(

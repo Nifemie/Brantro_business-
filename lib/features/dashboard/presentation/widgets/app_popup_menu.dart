@@ -109,7 +109,7 @@ class AppPopupMenu extends ConsumerWidget {
                 context.push('/profile');
                 break;
               case 'messages':
-                // TODO: Navigate to messages
+                context.push('/chat');
                 break;
               case 'pricing':
                 // TODO: Navigate to pricing

@@ -46,6 +46,7 @@ import 'package:brantro_business/features/orders/presentation/screens/orders_scr
 import 'package:brantro_business/features/orders/presentation/screens/order_details_screen.dart';
 import 'package:brantro_business/features/orders/data/models/order_model.dart';
 import 'package:brantro_business/core/service/session_service.dart';
+import 'package:brantro_business/features/chat/presentation/screens/chat_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -152,6 +153,13 @@ final router = GoRouter(
       name: 'dashboard',
       builder: (context, state) => const DashboardShell(),
     ),
+
+    // Chat Route
+    GoRoute(
+      path: '/chat',
+      name: 'chat',
+      builder: (context, state) => const ChatScreen(),
+    ),
     GoRoute(
       path: '/wallet/transactions',
       name: 'wallet-transactions',
@@ -180,7 +188,7 @@ final router = GoRouter(
     GoRoute(
       path: '/profile',
       name: 'profile',
-      builder: (context, state) => const UserAccount(),
+      builder: (context, state) => const UserAccount(showBackButton: true),
     ),
 
     // Edit Profile Route

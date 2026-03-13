@@ -105,7 +105,7 @@ class _BillboardControlPanelState extends ConsumerState<BillboardControlPanel> {
               ),
               SizedBox(width: 8.w),
 
-              // Filters Button — white popup matching screenshot
+              // Filters Button
               Theme(
                 data: Theme.of(context).copyWith(
                   splashColor: Colors.transparent,

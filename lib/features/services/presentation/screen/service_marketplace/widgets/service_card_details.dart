@@ -202,8 +202,9 @@ class ServiceCardDetails extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onViewDetails,
                   icon: Icon(
-                    Icons.shopping_bag_outlined, // Closer to the screenshot
-                    size: 18.sp,
+                    Icons.shopping_bag_outlined,
+                    color: Colors.white,
+                    size: 20.sp,
                   ),
                   label: Text(
                     'View Orders',
