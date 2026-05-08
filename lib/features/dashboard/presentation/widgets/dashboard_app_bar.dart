@@ -57,9 +57,15 @@ class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final topPadding = MediaQuery.of(context).padding.top;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.only(
+        left: 16.w,
+        right: 16.w,
+        top: topPadding + 8.h,
+        bottom: 12.h,
+      ),
       decoration: BoxDecoration(
         color: theme.appBarTheme.backgroundColor,
         boxShadow: [

@@ -13,7 +13,7 @@ class RecentBillboardsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final billboardsState = ref.watch(billboardProvider);
-    final recentBillboards = billboardsState.billboards.take(3).toList();
+    final recentBillboards = billboardsState.data?.take(3).toList() ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

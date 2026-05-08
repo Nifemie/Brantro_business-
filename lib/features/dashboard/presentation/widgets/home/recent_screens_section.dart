@@ -13,7 +13,7 @@ class RecentScreensSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final screensState = ref.watch(screenProvider);
-    final recentScreens = screensState.screens.take(3).toList();
+    final recentScreens = screensState.data?.take(3).toList() ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,52 +1,57 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../core/widgets/option_picker_sheet.dart';
+import '../../../../core/constants/nigerian_locations.dart';
+import '../../../category/logic/category_provider.dart';
 
-class UploadBillboardForm extends StatelessWidget {
+class UploadBillboardForm extends ConsumerWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
   final TextEditingController featuresController;
+  final TextEditingController specificationsController;
   final TextEditingController addressController;
   final TextEditingController rateAmountController;
   final TextEditingController totalSlotsController;
-  final TextEditingController latitudeController;
-  final TextEditingController longitudeController;
   
   final String? selectedType;
-  final String? selectedCategory;
+  final int? selectedCategoryId;
   final String? selectedCountry;
   final String? selectedState;
   final String? selectedCity;
   final String? selectedRateUnit;
   final String? thumbnailImage;
+  final String? videoClip;
   
   final ValueChanged<String?> onTypeChanged;
-  final ValueChanged<String?> onCategoryChanged;
+  final ValueChanged<int?> onCategoryChanged;
   final ValueChanged<String?> onCountryChanged;
   final ValueChanged<String?> onStateChanged;
   final ValueChanged<String?> onCityChanged;
   final ValueChanged<String?> onRateUnitChanged;
   final ValueChanged<String?> onThumbnailChanged;
+  final ValueChanged<String?> onVideoClipChanged;
 
   const UploadBillboardForm({
     super.key,
     required this.titleController,
     required this.descriptionController,
     required this.featuresController,
+    required this.specificationsController,
     required this.addressController,
     required this.rateAmountController,
     required this.totalSlotsController,
-    required this.latitudeController,
-    required this.longitudeController,
     required this.selectedType,
-    required this.selectedCategory,
+    required this.selectedCategoryId,
     required this.selectedCountry,
     required this.selectedState,
     required this.selectedCity,
     required this.selectedRateUnit,
     required this.thumbnailImage,
+    required this.videoClip,
     required this.onTypeChanged,
     required this.onCategoryChanged,
     required this.onCountryChanged,
@@ -54,12 +59,15 @@ class UploadBillboardForm extends StatelessWidget {
     required this.onCityChanged,
     required this.onRateUnitChanged,
     required this.onThumbnailChanged,
+    required this.onVideoClipChanged,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final categoryState = ref.watch(categoryProvider);
+    final locationCategories = categoryState.locationCategories;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +91,7 @@ class UploadBillboardForm extends StatelessWidget {
                 context: context,
                 label: 'Type',
                 value: selectedType,
-                hint: 'Billboard',
+                hint: 'Select type',
                 onTap: () => _showTypePicker(context),
                 isDark: isDark,
               ),
@@ -93,9 +101,18 @@ class UploadBillboardForm extends StatelessWidget {
               child: _buildDropdownField(
                 context: context,
                 label: 'Category',
-                value: selectedCategory,
-                hint: 'Choose a category',
-                onTap: () => _showCategoryPicker(context),
+                value: selectedCategoryId != null && locationCategories.isNotEmpty
+                    ? locationCategories
+                        .firstWhere(
+                          (cat) => cat.id == selectedCategoryId,
+                          orElse: () => locationCategories.first,
+                        )
+                        .name
+                    : null,
+                hint: categoryState.isLoading 
+                    ? 'Loading...' 
+                    : (locationCategories.isEmpty ? 'No categories' : 'Choose a category'),
+                onTap: () => _showCategoryPicker(context, ref),
                 isDark: isDark,
               ),
             ),
@@ -116,9 +133,22 @@ class UploadBillboardForm extends StatelessWidget {
         
         _buildTextField(
           controller: featuresController,
-          label: 'Features',
-          hint: 'Comma separated features',
+          label: 'Features (Optional)',
+          hint: 'Describe features',
           isDark: isDark,
+          maxLines: 3,
+          isRequired: false,
+        ),
+
+        SizedBox(height: 16.h),
+        
+        _buildTextField(
+          controller: specificationsController,
+          label: 'Specifications (Optional)',
+          hint: 'Technical specifications',
+          isDark: isDark,
+          maxLines: 3,
+          isRequired: false,
         ),
 
         SizedBox(height: 16.h),
@@ -204,11 +234,11 @@ class UploadBillboardForm extends StatelessWidget {
 
         SizedBox(height: 24.h),
         
-        _buildSectionTitle('Billboard Images', isDark),
+        _buildSectionTitle('Media Files', isDark),
         SizedBox(height: 16.h),
         
         Text(
-          'Upload Thumbnail',
+          'Thumbnail Image',
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
@@ -235,8 +265,8 @@ class UploadBillboardForm extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                     child: Stack(
                       children: [
-                        Image.asset(
-                          thumbnailImage!,
+                        Image.file(
+                          File(thumbnailImage!),
                           width: double.infinity,
                           height: double.infinity,
                           fit: BoxFit.cover,
@@ -282,7 +312,78 @@ class UploadBillboardForm extends StatelessWidget {
                       ),
                       SizedBox(height: 12.h),
                       Text(
-                        'Click to upload',
+                        'Click to upload thumbnail',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: isDark ? Colors.white60 : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+
+        SizedBox(height: 16.h),
+        
+        Text(
+          'Video Clip (Optional)',
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        
+        InkWell(
+          onTap: () => _pickVideo(context),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16.h),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[850] : Colors.grey[50],
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                width: 2,
+              ),
+            ),
+            child: videoClip != null
+                ? Row(
+                    children: [
+                      Icon(
+                        Icons.video_library,
+                        color: AppColors.primaryColor,
+                        size: 32.sp,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          videoClip!.split('/').last,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => onVideoClipChanged(null),
+                        icon: const Icon(Icons.close, color: Colors.red),
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.video_call_outlined,
+                        size: 32.sp,
+                        color: isDark ? Colors.white38 : Colors.grey[400],
+                      ),
+                      SizedBox(width: 12.w),
+                      Text(
+                        'Click to upload video',
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: isDark ? Colors.white60 : Colors.grey[600],
@@ -301,37 +402,6 @@ class UploadBillboardForm extends StatelessWidget {
           hint: '0',
           isDark: isDark,
           keyboardType: TextInputType.number,
-        ),
-
-        SizedBox(height: 24.h),
-        
-        _buildSectionTitle('Location Coordinates (Optional)', isDark),
-        SizedBox(height: 16.h),
-        
-        Row(
-          children: [
-            Expanded(
-              child: _buildTextField(
-                controller: latitudeController,
-                label: 'Latitude',
-                hint: 'Optional',
-                isDark: isDark,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                isRequired: false,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _buildTextField(
-                controller: longitudeController,
-                label: 'Longitude',
-                hint: 'Optional',
-                isDark: isDark,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                isRequired: false,
-              ),
-            ),
-          ],
         ),
 
         SizedBox(height: 32.h),
@@ -478,7 +548,7 @@ class UploadBillboardForm extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Type',
-        options: ['Billboard', 'Digital Screen', 'Advertisement Wall'],
+        options: ['BILLBOARD', 'SCREEN', 'WALL'],
       ),
     );
     
@@ -487,18 +557,40 @@ class UploadBillboardForm extends StatelessWidget {
     }
   }
 
-  Future<void> _showCategoryPicker(BuildContext context) async {
+  Future<void> _showCategoryPicker(BuildContext context, WidgetRef ref) async {
+    final categoryState = ref.read(categoryProvider);
+    
+    if (categoryState.isLoading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Loading categories...')),
+      );
+      return;
+    }
+
+    if (categoryState.locationCategories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No categories available')),
+      );
+      return;
+    }
+
+    final categoryNames = categoryState.locationCategories
+        .map((cat) => cat.name)
+        .toList();
+
     final result = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => const OptionPickerSheet(
+      builder: (context) => OptionPickerSheet(
         title: 'Select Category',
-        options: ['Outdoor', 'Indoor', 'Transit', 'Street Furniture', 'Digital'],
+        options: categoryNames,
       ),
     );
     
     if (result != null) {
-      onCategoryChanged(result);
+      final selectedCategory = categoryState.locationCategories
+          .firstWhere((cat) => cat.name == result);
+      onCategoryChanged(selectedCategory.id);
     }
   }
 
@@ -518,12 +610,13 @@ class UploadBillboardForm extends StatelessWidget {
   }
 
   Future<void> _showStatePicker(BuildContext context) async {
+    final states = NigerianLocations.getAllStates();
     final result = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => const OptionPickerSheet(
+      builder: (context) => OptionPickerSheet(
         title: 'Select State',
-        options: ['FCT', 'Lagos', 'Rivers', 'Kano', 'Oyo', 'Kaduna', 'Enugu'],
+        options: states,
       ),
     );
     
@@ -556,7 +649,7 @@ class UploadBillboardForm extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Rate Unit',
-        options: ['Day', 'Week', 'Month', 'Year'],
+        options: ['SECOND', 'MINUTE', 'HOUR', 'DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF_YEAR', 'YEAR'],
       ),
     );
     
@@ -566,20 +659,7 @@ class UploadBillboardForm extends StatelessWidget {
   }
 
   List<String> _getCitiesForState(String state) {
-    switch (state) {
-      case 'FCT':
-        return ['Abuja', 'Gwagwalada', 'Kuje', 'Bwari', 'Kwali'];
-      case 'Lagos':
-        return ['Ikeja', 'Victoria Island', 'Lekki', 'Surulere', 'Yaba'];
-      case 'Rivers':
-        return ['Port Harcourt', 'Obio-Akpor', 'Eleme', 'Ikwerre'];
-      case 'Kano':
-        return ['Kano', 'Nassarawa', 'Fagge', 'Dala'];
-      case 'Oyo':
-        return ['Ibadan', 'Ogbomoso', 'Oyo', 'Iseyin'];
-      default:
-        return [];
-    }
+    return NigerianLocations.getCitiesForState(state);
   }
 
   Future<void> _pickThumbnail(BuildContext context) async {
@@ -595,6 +675,26 @@ class UploadBillboardForm extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error picking thumbnail: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickVideo(BuildContext context) async {
+    try {
+      final picker = ImagePicker();
+      final video = await picker.pickVideo(source: ImageSource.gallery);
+      
+      if (video != null) {
+        onVideoClipChanged(video.path);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking video: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );

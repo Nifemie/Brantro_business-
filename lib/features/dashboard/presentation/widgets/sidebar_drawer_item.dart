@@ -19,11 +19,16 @@ class SidebarDrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Container(
         decoration: BoxDecoration(
-          color: isActive ? Colors.white.withOpacity(0.05) : Colors.transparent,
+          color: isActive 
+              ? (isDark ? Colors.grey[800] : Colors.white.withOpacity(0.05))
+              : Colors.transparent,
           border: isActive
               ? Border(
                   left: BorderSide(color: AppColors.secondaryColor, width: 4.w),
@@ -38,14 +43,16 @@ class SidebarDrawerItem extends StatelessWidget {
             icon,
             color: isActive
                 ? AppColors.secondaryColor
-                : const Color(0xFF8B9EB0),
+                : (isDark ? Colors.grey[400] : const Color(0xFF8B9EB0)),
             size: 24.sp,
           ),
           title: Text(
             title,
             style:
                 AppTexts.bodyLarge(
-                  color: isActive ? AppColors.secondaryColor : Colors.white70,
+                  color: isActive 
+                      ? AppColors.secondaryColor 
+                      : (isDark ? Colors.grey[300] : Colors.white70),
                 ).copyWith(
                   fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
                 ),

@@ -12,6 +12,8 @@ class SidebarNavigationList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final activeItem = ref.watch(activeNavigationProvider);
 
     final List<Map<String, dynamic>> menuData = [
@@ -32,7 +34,9 @@ class SidebarNavigationList extends ConsumerWidget {
           child: Text(
             'GENERAL',
             style: AppTexts.labelLarge(
-              color: Colors.white.withOpacity(0.5),
+              color: isDark 
+                  ? Colors.grey[500]
+                  : Colors.white.withOpacity(0.5),
             ).copyWith(letterSpacing: 1.2, fontWeight: FontWeight.bold),
           ),
         ),
@@ -51,7 +55,9 @@ class SidebarNavigationList extends ConsumerWidget {
         Padding(
           padding: EdgeInsets.symmetric(vertical: 8.h),
           child: Divider(
-            color: Colors.black.withOpacity(0.3),
+            color: isDark 
+                ? Colors.grey[800]
+                : Colors.black.withOpacity(0.3),
             thickness: 1,
             height: 1,
           ),

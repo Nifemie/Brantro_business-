@@ -38,7 +38,7 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final billboardState = ref.watch(billboardProvider);
-    final hasBillboards = billboardState.billboards.isNotEmpty;
+    final hasBillboards = billboardState.data?.isNotEmpty ?? false;
     
     return PopScope(
       canPop: false,
@@ -79,7 +79,7 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
                             sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
-                                  final billboard = billboardState.billboards[index];
+                                  final billboard = billboardState.data![index];
                                   return BillboardCard(
                                     image: billboard.images.isNotEmpty ? billboard.images.first : '',
                                     name: billboard.name,
@@ -139,7 +139,7 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
                                     },
                                   );
                                 },
-                                childCount: billboardState.billboards.length,
+                                childCount: billboardState.data?.length ?? 0,
                               ),
                             ),
                           )

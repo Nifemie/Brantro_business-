@@ -17,77 +17,183 @@ class UploadScreenScreen extends ConsumerStatefulWidget {
 class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
+
+  // Form data
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _featuresController = TextEditingController();
+  final _specificationsController = TextEditingController();
   final _addressController = TextEditingController();
   final _rateAmountController = TextEditingController();
   final _totalSlotsController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
   
-  String? _selectedType;
-  String? _selectedCategory;
+  String? _selectedType = 'SCREEN';
+  int? _selectedCategoryId;
   String? _selectedCountry;
   String? _selectedState;
   String? _selectedCity;
   String? _selectedRateUnit;
   String? _thumbnailImage;
+  String? _videoClip;
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
     _featuresController.dispose();
+    _specificationsController.dispose();
     _addressController.dispose();
     _rateAmountController.dispose();
     _totalSlotsController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
     super.dispose();
   }
 
+  bool _validateForm() {
+    if (_titleController.text.trim().isEmpty) {
+      _showError('Title is required');
+      return false;
+    }
+    if (_selectedCategoryId == null) {
+      _showError('Category is required');
+      return false;
+    }
+    if (_descriptionController.text.trim().isEmpty) {
+      _showError('Description is required');
+      return false;
+    }
+    if (_selectedCountry == null) {
+      _showError('Country is required');
+      return false;
+    }
+    if (_selectedState == null) {
+      _showError('State is required');
+      return false;
+    }
+    if (_selectedCity == null) {
+      _showError('City is required');
+      return false;
+    }
+    if (_addressController.text.trim().isEmpty) {
+      _showError('Address is required');
+      return false;
+    }
+    if (_rateAmountController.text.trim().isEmpty) {
+      _showError('Rate amount is required');
+      return false;
+    }
+    if (_selectedRateUnit == null) {
+      _showError('Rate unit is required');
+      return false;
+    }
+    if (_totalSlotsController.text.trim().isEmpty) {
+      _showError('Total slots is required');
+      return false;
+    }
+    // Note: Thumbnail is optional until file upload endpoint is available
+    
+    return true;
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_validateForm()) {
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      final screenData = {
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'features': _featuresController.text,
-        'address': _addressController.text,
+      // Upload thumbnail if selected
+      String? thumbnailUrl;
+      if (_thumbnailImage != null) {
+        try {
+          final repository = ref.read(screenProvider.notifier).repository;
+          thumbnailUrl = await repository.uploadFile(_thumbnailImage!, prefix: 'location-thumbnail');
+        } catch (e) {
+          throw Exception('Failed to upload thumbnail: ${e.toString().replaceAll('Exception: ', '')}');
+        }
+      }
+
+      // Upload video if selected
+      String? videoUrl;
+      if (_videoClip != null) {
+        try {
+          final repository = ref.read(screenProvider.notifier).repository;
+          videoUrl = await repository.uploadFile(_videoClip!, prefix: 'location-video');
+        } catch (e) {
+          throw Exception('Failed to upload video: ${e.toString().replaceAll('Exception: ', '')}');
+        }
+      }
+
+      // Prepare form data with uploaded URLs
+      final formData = {
+        'title': _titleController.text.trim(),
         'type': _selectedType,
-        'category': _selectedCategory,
-        'country': _selectedCountry,
-        'state': _selectedState,
+        'categoryId': _selectedCategoryId,
+        'description': _descriptionController.text.trim(),
+        'address': _addressController.text.trim(),
         'city': _selectedCity,
-        'rateAmount': _rateAmountController.text,
+        'state': _selectedState,
+        'country': _selectedCountry,
+        'rateAmount': double.parse(_rateAmountController.text.trim()),
         'rateUnit': _selectedRateUnit,
-        'totalSlots': _totalSlotsController.text,
-        'latitude': _latitudeController.text,
-        'longitude': _longitudeController.text,
-        'images': _thumbnailImage != null ? [_thumbnailImage!] : [],
+        'totalSlots': int.parse(_totalSlotsController.text.trim()),
       };
 
-      await ref.read(screenProvider.notifier).uploadScreen(screenData);
+      // Add optional fields
+      if (_featuresController.text.trim().isNotEmpty) {
+        formData['features'] = _featuresController.text.trim();
+      }
+      if (_specificationsController.text.trim().isNotEmpty) {
+        formData['specifications'] = _specificationsController.text.trim();
+      }
+      if (thumbnailUrl != null) {
+        formData['thumbnail'] = thumbnailUrl;
+      }
+      if (videoUrl != null) {
+        formData['videoClip'] = videoUrl;
+      }
 
+      await ref.read(screenProvider.notifier).uploadScreen(formData);
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Screen uploaded successfully!'), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Screen uploaded successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
         context.go('/screen-marketplace');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: ${e.toString()}'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -95,58 +201,87 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
         child: Column(
           children: [
             const DashboardAppBar(title: 'UPLOAD SCREEN'),
+            
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(16.w),
-                child: Form(
-                  key: _formKey,
-                  child: UploadScreenForm(
-                    titleController: _titleController,
-                    descriptionController: _descriptionController,
-                    featuresController: _featuresController,
-                    addressController: _addressController,
-                    rateAmountController: _rateAmountController,
-                    totalSlotsController: _totalSlotsController,
-                    latitudeController: _latitudeController,
-                    longitudeController: _longitudeController,
-                    selectedType: _selectedType,
-                    selectedCategory: _selectedCategory,
-                    selectedCountry: _selectedCountry,
-                    selectedState: _selectedState,
-                    selectedCity: _selectedCity,
-                    selectedRateUnit: _selectedRateUnit,
-                    thumbnailImage: _thumbnailImage,
-                    onTypeChanged: (value) => setState(() => _selectedType = value),
-                    onCategoryChanged: (value) => setState(() => _selectedCategory = value),
-                    onCountryChanged: (value) => setState(() => _selectedCountry = value),
-                    onStateChanged: (value) => setState(() => _selectedState = value),
-                    onCityChanged: (value) => setState(() => _selectedCity = value),
-                    onRateUnitChanged: (value) => setState(() => _selectedRateUnit = value),
-                    onThumbnailChanged: (value) => setState(() => _thumbnailImage = value),
-                  ),
+                child: UploadScreenForm(
+                  titleController: _titleController,
+                  descriptionController: _descriptionController,
+                  featuresController: _featuresController,
+                  specificationsController: _specificationsController,
+                  addressController: _addressController,
+                  rateAmountController: _rateAmountController,
+                  totalSlotsController: _totalSlotsController,
+                  selectedType: _selectedType,
+                  selectedCategoryId: _selectedCategoryId,
+                  selectedCountry: _selectedCountry,
+                  selectedState: _selectedState,
+                  selectedCity: _selectedCity,
+                  selectedRateUnit: _selectedRateUnit,
+                  thumbnailImage: _thumbnailImage,
+                  videoClip: _videoClip,
+                  onTypeChanged: (value) => setState(() => _selectedType = value),
+                  onCategoryChanged: (value) => setState(() => _selectedCategoryId = value),
+                  onCountryChanged: (value) => setState(() {
+                    _selectedCountry = value;
+                    _selectedState = null;
+                    _selectedCity = null;
+                  }),
+                  onStateChanged: (value) => setState(() {
+                    _selectedState = value;
+                    _selectedCity = null;
+                  }),
+                  onCityChanged: (value) => setState(() => _selectedCity = value),
+                  onRateUnitChanged: (value) => setState(() => _selectedRateUnit = value),
+                  onThumbnailChanged: (value) => setState(() => _thumbnailImage = value),
+                  onVideoClipChanged: (value) => setState(() => _videoClip = value),
                 ),
               ),
             ),
+
+            // Submit Button
             Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
                 color: theme.cardTheme.color,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
               ),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleSubmit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
+                    backgroundColor: const Color(0xFF003D82),
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 16.h),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
                     elevation: 0,
                   ),
                   child: _isLoading
-                      ? SizedBox(height: 20.h, width: 20.w, child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : Text('Upload Screen', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          'Upload Screen',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ),

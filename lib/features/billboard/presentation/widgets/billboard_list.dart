@@ -12,9 +12,9 @@ class BillboardList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final billboardState = ref.watch(billboardProvider);
-    final billboards = billboardState.billboards;
+    final billboards = billboardState.data ?? [];
 
-    if (billboardState.isLoading && billboards.isEmpty) {
+    if (billboardState.isInitialLoading && billboards.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 

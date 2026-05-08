@@ -16,13 +16,16 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       height: 85.h,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A), // Dark background matching user image
+        color: isDark ? Colors.grey[900] : const Color(0xFF1A1A1A),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withOpacity(isDark ? 0.5 : 0.3),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -34,11 +37,11 @@ class BottomNavBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_rounded, 'Home'),
-              _buildNavItem(1, Icons.receipt_long_rounded, 'Orders'),
+              _buildNavItem(0, Icons.home_rounded, 'Home', isDark),
+              _buildNavItem(1, Icons.receipt_long_rounded, 'Orders', isDark),
               SizedBox(width: 48.w), // Space for FAB
-              _buildNavItem(2, Icons.account_balance_wallet_rounded, 'Wallet'),
-              _buildNavItem(3, Icons.person_rounded, 'Profile'),
+              _buildNavItem(2, Icons.account_balance_wallet_rounded, 'Wallet', isDark),
+              _buildNavItem(3, Icons.person_rounded, 'Profile', isDark),
             ],
           ),
           Positioned(
@@ -50,7 +53,7 @@ class BottomNavBar extends StatelessWidget {
                 width: 56.w,
                 height: 56.w,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF0061FF), // Bright blue FAB
+                  color: Color(0xFF0061FF),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.add, color: Colors.white, size: 32.sp),
@@ -62,9 +65,11 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(int index, IconData icon, String label, bool isDark) {
     final isSelected = currentIndex == index;
-    final color = isSelected ? AppColors.secondaryColor : Colors.white70;
+    final color = isSelected 
+        ? AppColors.secondaryColor 
+        : (isDark ? Colors.grey[400] : Colors.white70);
 
     return Expanded(
       child: InkWell(

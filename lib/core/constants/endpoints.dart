@@ -16,6 +16,12 @@ class ApiEndpoints {
 
   // Location Endpoints
   static const String locationsList = '$apiVersion/location/list';
+  static const String createLocation = '$apiVersion/location';
+  static const String locationDetails = '$apiVersion/location/details'; // + /:id
+  static const String uploadFile = '$apiVersion/file/upload'; // File upload endpoint
+
+  // Category Endpoints
+  static const String categoryList = '$apiVersion/category/list';
 
   // Ad Slots Endpoints
   static const String adSlotsList = '$apiVersion/adslots/list';

@@ -8,9 +8,12 @@ class SidebarMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Drawer(
       width: 300.w,
-      backgroundColor: AppColors.primaryColor,
+      backgroundColor: isDark ? Colors.grey[900] : AppColors.primaryColor,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -21,13 +24,15 @@ class SidebarMenu extends StatelessWidget {
               child: Center(
                 child: Image.asset(
                   'assets/brantro/screensy-05.png',
-                  height: 32.h, // Reduced height
+                  height: 32.h,
                 ),
               ),
             ),
 
             Divider(
-              color: Colors.black.withOpacity(0.3), // Darker line
+              color: isDark 
+                  ? Colors.grey[800]
+                  : Colors.black.withOpacity(0.3),
               thickness: 1,
               height: 1,
             ),

@@ -6,6 +6,7 @@ import '../../../../controllers/re_useable/app_color.dart';
 import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../widgets/upload_billboard_form.dart';
 import '../../logic/billboard_provider.dart';
+import '../../../../core/data/repositories/file_repository.dart';
 
 class UploadBillboardScreen extends ConsumerStatefulWidget {
   const UploadBillboardScreen({super.key});
@@ -22,43 +23,42 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _featuresController = TextEditingController();
+  final _specificationsController = TextEditingController();
   final _addressController = TextEditingController();
   final _rateAmountController = TextEditingController();
   final _totalSlotsController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
   
   String? _selectedType;
-  String? _selectedCategory;
+  int? _selectedCategoryId;
   String? _selectedCountry;
   String? _selectedState;
   String? _selectedCity;
   String? _selectedRateUnit;
   String? _thumbnailImage;
+  String? _videoClip;
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
     _featuresController.dispose();
+    _specificationsController.dispose();
     _addressController.dispose();
     _rateAmountController.dispose();
     _totalSlotsController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
     super.dispose();
   }
 
   bool _validateForm() {
     if (_titleController.text.trim().isEmpty) {
-      _showError('Title is required');
+      _showError('Title is required'); 
       return false;
     }
     if (_selectedType == null) {
       _showError('Type is required');
       return false;
     }
-    if (_selectedCategory == null) {
+    if (_selectedCategoryId == null) {
       _showError('Category is required');
       return false;
     }
@@ -94,10 +94,7 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
       _showError('Total slots is required');
       return false;
     }
-    if (_thumbnailImage == null) {
-      _showError('Thumbnail image is required');
-      return false;
-    }
+    // Note: Thumbnail is optional until file upload endpoint is available
     
     return true;
   }
@@ -116,28 +113,66 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
       return;
     }
 
-    final formData = {
-      'title': _titleController.text.trim(),
-      'type': _selectedType,
-      'category': _selectedCategory,
-      'description': _descriptionController.text.trim(),
-      'features': _featuresController.text.trim(),
-      'country': _selectedCountry,
-      'state': _selectedState,
-      'city': _selectedCity,
-      'address': _addressController.text.trim(),
-      'rateAmount': _rateAmountController.text.trim(),
-      'rateUnit': _selectedRateUnit,
-      'totalSlots': _totalSlotsController.text.trim(),
-      'latitude': _latitudeController.text.trim(),
-      'longitude': _longitudeController.text.trim(),
-      'thumbnail': _thumbnailImage,
-      'images': [],
-    };
-
     setState(() => _isLoading = true);
 
     try {
+      // Upload thumbnail if selected
+      String? thumbnailUrl;
+      if (_thumbnailImage != null) {
+        try {
+          final fileRepository = ref.read(fileRepositoryProvider);
+          thumbnailUrl = await fileRepository.uploadFile(
+            _thumbnailImage!,
+            prefix: 'location-thumbnail',
+          );
+        } catch (e) {
+          throw Exception('Failed to upload thumbnail: ${e.toString().replaceAll('Exception: ', '')}');
+        }
+      }
+
+      // Upload video if selected
+      String? videoUrl;
+      if (_videoClip != null) {
+        try {
+          final fileRepository = ref.read(fileRepositoryProvider);
+          videoUrl = await fileRepository.uploadFile(
+            _videoClip!,
+            prefix: 'location-video',
+          );
+        } catch (e) {
+          throw Exception('Failed to upload video: ${e.toString().replaceAll('Exception: ', '')}');
+        }
+      }
+
+      // Prepare form data with uploaded URLs
+      final formData = {
+        'title': _titleController.text.trim(),
+        'type': _selectedType,
+        'categoryId': _selectedCategoryId,
+        'description': _descriptionController.text.trim(),
+        'address': _addressController.text.trim(),
+        'city': _selectedCity,
+        'state': _selectedState,
+        'country': _selectedCountry,
+        'rateAmount': double.parse(_rateAmountController.text.trim()),
+        'rateUnit': _selectedRateUnit,
+        'totalSlots': int.parse(_totalSlotsController.text.trim()),
+      };
+
+      // Add optional fields
+      if (_featuresController.text.trim().isNotEmpty) {
+        formData['features'] = _featuresController.text.trim();
+      }
+      if (_specificationsController.text.trim().isNotEmpty) {
+        formData['specifications'] = _specificationsController.text.trim();
+      }
+      if (thumbnailUrl != null) {
+        formData['thumbnail'] = thumbnailUrl;
+      }
+      if (videoUrl != null) {
+        formData['videoClip'] = videoUrl;
+      }
+
       await ref.read(billboardProvider.notifier).uploadBillboard(formData);
       
       if (mounted) {
@@ -154,7 +189,7 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upload failed: ${e.toString()}'),
+            content: Text('Upload failed: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -185,20 +220,20 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
                   titleController: _titleController,
                   descriptionController: _descriptionController,
                   featuresController: _featuresController,
+                  specificationsController: _specificationsController,
                   addressController: _addressController,
                   rateAmountController: _rateAmountController,
                   totalSlotsController: _totalSlotsController,
-                  latitudeController: _latitudeController,
-                  longitudeController: _longitudeController,
                   selectedType: _selectedType,
-                  selectedCategory: _selectedCategory,
+                  selectedCategoryId: _selectedCategoryId,
                   selectedCountry: _selectedCountry,
                   selectedState: _selectedState,
                   selectedCity: _selectedCity,
                   selectedRateUnit: _selectedRateUnit,
                   thumbnailImage: _thumbnailImage,
+                  videoClip: _videoClip,
                   onTypeChanged: (value) => setState(() => _selectedType = value),
-                  onCategoryChanged: (value) => setState(() => _selectedCategory = value),
+                  onCategoryChanged: (value) => setState(() => _selectedCategoryId = value),
                   onCountryChanged: (value) => setState(() {
                     _selectedCountry = value;
                     _selectedState = null;
@@ -211,6 +246,7 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
                   onCityChanged: (value) => setState(() => _selectedCity = value),
                   onRateUnitChanged: (value) => setState(() => _selectedRateUnit = value),
                   onThumbnailChanged: (value) => setState(() => _thumbnailImage = value),
+                  onVideoClipChanged: (value) => setState(() => _videoClip = value),
                 ),
               ),
             ),

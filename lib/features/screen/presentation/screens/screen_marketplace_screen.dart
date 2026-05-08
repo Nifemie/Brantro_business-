@@ -38,7 +38,7 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenState = ref.watch(screenProvider);
-    final hasScreens = screenState.screens.isNotEmpty;
+    final hasScreens = screenState.data?.isNotEmpty ?? false;
     
     return PopScope(
       canPop: false,
@@ -74,7 +74,7 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
                             sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
-                                  final screen = screenState.screens[index];
+                                  final screen = screenState.data![index];
                                   return ScreenCard(
                                     image: screen.images.isNotEmpty ? screen.images.first : '',
                                     name: screen.name,
@@ -128,7 +128,7 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
                                     },
                                   );
                                 },
-                                childCount: screenState.screens.length,
+                                childCount: screenState.data?.length ?? 0,
                               ),
                             ),
                           )
