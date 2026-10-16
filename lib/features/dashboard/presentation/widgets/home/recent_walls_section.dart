@@ -13,7 +13,10 @@ class RecentWallsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final wallsState = ref.watch(wallProvider);
-    final recentWalls = wallsState.walls.take(3).toList();
+    final sortedData = List.of(wallsState.data ?? [])..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final recentWalls = sortedData.take(3).toList();
+
+    if (recentWalls.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,22 +47,10 @@ class RecentWallsSection extends ConsumerWidget {
           ],
         ),
         SizedBox(height: 12.h),
-        recentWalls.isEmpty
-            ? EmptyState(
-                icon: Icons.wallpaper_outlined,
-                title: 'No Walls Yet',
-                message: 'Your ad walls will appear here',
-                showIconBackground: false,
-              )
-            : Column(
-                children: recentWalls.map((wall) {
+        Column(
+                children: recentWalls.map<Widget>((wall) {
                   return WallCard(
-                    image: wall.images.isNotEmpty ? wall.images.first : '',
-                    name: wall.name,
-                    location: wall.location,
-                    size: wall.size,
-                    price: '₦${wall.price.toStringAsFixed(0)}',
-                    isActive: wall.isActive,
+                    wall: wall,
                     onViewSlots: () {
                       context.push('/ad-slots', extra: {
                         'parentId': wall.id,

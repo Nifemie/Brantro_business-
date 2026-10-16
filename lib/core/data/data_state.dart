@@ -26,7 +26,7 @@ class DataState<T> {
         currentPage: 1,
         totalPages: 1,
         message: null,
-        data: const [],
+        data: <T>[],
         singleData: null
       );
 
@@ -49,6 +49,19 @@ class DataState<T> {
       message: message ?? this.message,
       data: data ?? this.data,
       singleData: singleData ?? this.singleData
+    );
+  }
+
+  DataState<T> resetMessage() {
+    return DataState<T>(
+      isInitialLoading: isInitialLoading,
+      isPaginating: isPaginating,
+      isDataAvailable: isDataAvailable,
+      currentPage: currentPage,
+      totalPages: totalPages,
+      message: null,
+      data: data,
+      singleData: singleData,
     );
   }
 }

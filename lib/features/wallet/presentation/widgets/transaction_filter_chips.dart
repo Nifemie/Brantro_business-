@@ -19,18 +19,21 @@ class TransactionFilterChips extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
-          _buildFilterChip('All'),
+          _buildFilterChip(context, 'All'),
           SizedBox(width: 8.w),
-          _buildFilterChip('Credit'),
+          _buildFilterChip(context, 'Credit'),
           SizedBox(width: 8.w),
-          _buildFilterChip('Debit'),
+          _buildFilterChip(context, 'Debit'),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(String label) {
+  Widget _buildFilterChip(BuildContext context, String label) {
     final isSelected = selectedFilter == label;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? AppColors.secondaryColor : AppColors.primaryColor;
+
     return GestureDetector(
       onTap: () {
         onFilterChanged(label);
@@ -38,17 +41,23 @@ class TransactionFilterChips extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryColor : Colors.white,
+          color: isSelected
+              ? activeColor
+              : (isDark ? Colors.grey[800] : Colors.white),
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isSelected ? AppColors.primaryColor : AppColors.grey300,
+            color: isSelected
+                ? activeColor
+                : (isDark ? Colors.grey[700]! : AppColors.grey300),
             width: 1,
           ),
         ),
         child: Text(
           label,
           style: AppTexts.bodyMedium(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? Colors.white70 : AppColors.textPrimary),
           ),
         ),
       ),

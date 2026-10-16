@@ -73,9 +73,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
           return CircleAvatar(
             radius: 18.r,
             backgroundColor: Colors.transparent,
-            backgroundImage: AvatarHelper.isDefaultAvatar(avatarUrl)
-                ? AssetImage(avatarUrl) as ImageProvider
-                : NetworkImage(avatarUrl),
+            backgroundImage: AvatarHelper.getImageProvider(avatarUrl),
           );
         },
       ),

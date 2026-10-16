@@ -4,6 +4,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/constants/endpoints.dart';
 import 'models/wallet_response.dart';
 import 'models/transactions_response.dart';
+import 'models/withdrawal_account_model.dart';
 
 class WalletRepository {
   final ApiClient apiClient;
@@ -104,4 +105,106 @@ class WalletRepository {
       throw Exception('An unexpected error occurred: $e');
     }
   }
+
+  // --- Withdrawal Accounts ---
+
+  Future<List<WithdrawalAccountModel>> getWithdrawalAccounts() async {
+    try {
+      log('[WalletRepository] Fetching withdrawal accounts');
+      final response = await apiClient.get(ApiEndpoints.withdrawalAccountList);
+      
+      if (response.data != null && response.data['success'] == true) {
+        final payload = response.data['payload'];
+        // Assume payload is a list or contains a list
+        List<dynamic> data = [];
+        if (payload is List) {
+          data = payload;
+        } else if (payload != null && payload['page'] is List) {
+          data = payload['page'];
+        }
+        return data.map((json) => WithdrawalAccountModel.fromJson(json)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      log('[WalletRepository] Failed to fetch withdrawal accounts: ${e.message}');
+      throw Exception(e.response?.data?['message'] ?? 'Failed to load withdrawal accounts.');
+    }
+  }
+
+  Future<WithdrawalAccountModel> addWithdrawalAccount(WithdrawalAccountModel account) async {
+    try {
+      log('[WalletRepository] Adding withdrawal account');
+      final response = await apiClient.post(
+        ApiEndpoints.withdrawalAccount,
+        data: account.toJson(),
+      );
+      
+      if (response.data != null && response.data['success'] == true) {
+        final payload = response.data['payload'];
+        if (payload != null) {
+          return WithdrawalAccountModel.fromJson(payload);
+        }
+      }
+      throw Exception('Failed to add account. Invalid response.');
+    } on DioException catch (e) {
+      log('[WalletRepository] Failed to add withdrawal account: ${e.message}');
+      throw Exception(e.response?.data?['message'] ?? 'Failed to add withdrawal account.');
+    }
+  }
+
+  Future<void> deleteWithdrawalAccount(int id) async {
+    try {
+      log('[WalletRepository] Deleting withdrawal account $id');
+      final response = await apiClient.delete(
+        ApiEndpoints.deleteWithdrawalAccount(id),
+      );
+      if (response.data == null || response.data['success'] != true) {
+         throw Exception('Failed to delete account.');
+      }
+    } on DioException catch (e) {
+      log('[WalletRepository] Failed to delete withdrawal account: ${e.message}');
+      throw Exception(e.response?.data?['message'] ?? 'Failed to delete withdrawal account.');
+    }
+  }
+
+  Future<void> makeDefaultWithdrawalAccount(int id) async {
+    try {
+      log('[WalletRepository] Setting default withdrawal account $id');
+      final response = await apiClient.patch(
+        ApiEndpoints.defaultWithdrawalAccount(id),
+      );
+      if (response.data == null || response.data['success'] != true) {
+         throw Exception('Failed to set default account.');
+      }
+    } on DioException catch (e) {
+      log('[WalletRepository] Failed to set default account: ${e.message}');
+      throw Exception(e.response?.data?['message'] ?? 'Failed to set default account.');
+    }
+  }
+
+  Future<void> requestWithdrawal({
+    required double amount,
+    required int accountId,
+    required String narration,
+  }) async {
+    try {
+      log('[WalletRepository] Requesting withdrawal of $amount to account $accountId');
+      final response = await apiClient.post(
+        ApiEndpoints.withdrawalRequest,
+        data: {
+          "amount": amount,
+          "withdrawalAccountId": accountId,
+          "narration": narration,
+        },
+      );
+      
+      if (response.data == null || response.data['success'] != true) {
+         throw Exception(response.data?['message'] ?? 'Failed to request withdrawal.');
+      }
+    } on DioException catch (e) {
+      log('[WalletRepository] Failed to request withdrawal: ${e.message}');
+      throw Exception(e.response?.data?['message'] ?? 'Failed to request withdrawal.');
+    }
+  }
 }
+

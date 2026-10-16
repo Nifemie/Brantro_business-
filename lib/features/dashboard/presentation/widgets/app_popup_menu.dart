@@ -6,6 +6,7 @@ import '../../../../core/service/session_service.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../core/utils/avatar_helper.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../logic/dashboard_navigation_provider.dart';
 
 class AppPopupMenu extends ConsumerWidget {
   const AppPopupMenu({super.key});
@@ -44,9 +45,7 @@ class AppPopupMenu extends ConsumerWidget {
           child: CircleAvatar(
             radius: 16.r,
             backgroundColor: Colors.transparent,
-            backgroundImage: AvatarHelper.isDefaultAvatar(avatarUrl)
-                ? AssetImage(avatarUrl) as ImageProvider
-                : NetworkImage(avatarUrl),
+            backgroundImage: AvatarHelper.getImageProvider(avatarUrl),
           ),
           itemBuilder: (context) => [
             PopupMenuItem(
@@ -121,7 +120,7 @@ class AppPopupMenu extends ConsumerWidget {
                 // TODO: Lock screen
                 break;
               case 'logout':
-                await _handleLogout(context);
+                await _handleLogout(context, ref);
                 break;
             }
           },
@@ -168,7 +167,7 @@ class AppPopupMenu extends ConsumerWidget {
     );
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -207,10 +206,7 @@ class AppPopupMenu extends ConsumerWidget {
     );
 
     if (shouldLogout == true && context.mounted) {
-      await SessionService.clearSession();
-      if (context.mounted) {
-        context.go('/signin');
-      }
+      await SessionService.performFullLogout(ref, context);
     }
   }
 }

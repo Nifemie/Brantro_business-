@@ -155,6 +155,8 @@ class NigerianLocations {
   };
 
   /// Get all Nigerian states
+  static List<String> get states => getAllStates();
+
   static List<String> getAllStates() {
     return statesAndCities.keys.toList()..sort();
   }

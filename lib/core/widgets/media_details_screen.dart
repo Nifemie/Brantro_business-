@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../network/api_client.dart';
 import '../../controllers/re_useable/app_color.dart';
 import '../../features/dashboard/presentation/widgets/dashboard_app_bar.dart';
+import '../../features/billboard/presentation/widgets/location_availability_calendar_card.dart';
 
 class MediaDetailsScreen extends ConsumerWidget {
   final String id;
@@ -19,6 +21,8 @@ class MediaDetailsScreen extends ConsumerWidget {
   final String createdDate;
   final bool isActive;
   final List<String> images;
+  final List<dynamic>? blockedDates;
+  final VoidCallback? onDatesUpdated;
   final String ownerName;
   final String ownerBadge;
   final String ownerEmail;
@@ -40,6 +44,8 @@ class MediaDetailsScreen extends ConsumerWidget {
     required this.createdDate,
     required this.isActive,
     required this.images,
+    this.blockedDates,
+    this.onDatesUpdated,
     required this.ownerName,
     required this.ownerBadge,
     required this.ownerEmail,
@@ -62,6 +68,9 @@ class MediaDetailsScreen extends ConsumerWidget {
   }
 
   String get _screenTitle {
+    if (name.isNotEmpty) {
+      return '${name.toUpperCase()} DETAILS';
+    }
     switch (type.toLowerCase()) {
       case 'billboard':
         return 'BILLBOARD DETAILS';
@@ -101,6 +110,22 @@ class MediaDetailsScreen extends ConsumerWidget {
                           _buildDetailsCard(context, isDark),
                           
                           SizedBox(height: 16.h),
+
+                          // Location Availability Calendar
+                          LocationAvailabilityCalendarCard(
+                            locationId: id,
+                            blockedDates: blockedDates,
+                            isDark: isDark,
+                            onDatesUpdated: onDatesUpdated,
+                          ),
+
+                          SizedBox(height: 16.h),
+
+                          // Gallery Section
+                          if (images.isNotEmpty) ...[
+                            _buildGallerySection(context, isDark),
+                            SizedBox(height: 16.h),
+                          ],
                           
                           // Owner/Contact Card
                           _buildOwnerCard(context, isDark),
@@ -117,6 +142,31 @@ class MediaDetailsScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildImageWidget(String path, {required double width, required double height, BoxFit fit = BoxFit.cover, bool isDark = false}) {
+    final bool isNetwork = path.isNotEmpty && (path.startsWith('http') || path.startsWith('https') || (path.contains('.') && !path.startsWith('assets/')));
+    final String imageUrl = isNetwork && !path.startsWith('http') && !path.startsWith('https')
+        ? '${ApiClient.fileBaseUrl}/$path'
+        : path;
+
+    if (isNetwork) {
+      return Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(isDark),
+      );
+    } else {
+      return Image.asset(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(isDark),
+      );
+    }
+  }
+
   Widget _buildBannerImage(bool isDark) {
     return Container(
       width: double.infinity,
@@ -125,16 +175,121 @@ class MediaDetailsScreen extends ConsumerWidget {
         color: isDark ? Colors.grey[850] : Colors.grey[200],
       ),
       child: images.isNotEmpty
-          ? Image.asset(
+          ? _buildImageWidget(
               images.first,
               width: double.infinity,
               height: 200.h,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return _buildPlaceholderImage(isDark);
-              },
+              isDark: isDark,
             )
           : _buildPlaceholderImage(isDark),
+    );
+  }
+
+  Widget _buildGallerySection(BuildContext context, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.3) : AppColors.shadow,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.collections_outlined,
+                size: 20.sp,
+                color: AppColors.secondaryColor,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'Media Gallery',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          SizedBox(
+            height: 120.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: images.length,
+              itemBuilder: (context, index) {
+                final imagePath = images[index];
+                return GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        insetPadding: EdgeInsets.zero,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            InteractiveViewer(
+                              child: _buildImageWidget(
+                                imagePath,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.contain,
+                                isDark: isDark,
+                              ),
+                            ),
+                            Positioned(
+                              top: 40.h,
+                              right: 20.w,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.black54,
+                                child: IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.white),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(right: 12.w),
+                    width: 160.w,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: _buildImageWidget(
+                        imagePath,
+                        width: 160.w,
+                        height: 120.h,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 

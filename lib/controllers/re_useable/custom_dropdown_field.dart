@@ -36,7 +36,22 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
   }
 
   @override
+  void didUpdateWidget(CustomDropdownField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialValue != oldWidget.initialValue) {
+      _selectedValue = widget.initialValue;
+    }
+    if (_selectedValue != null &&
+        !widget.options.any((option) => option['value'] == _selectedValue)) {
+      _selectedValue = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return FormField<String>(
       initialValue: _selectedValue,
       validator:
@@ -48,53 +63,65 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
             return null;
           },
       builder: (FormFieldState<String> field) {
+        final hasValidValue = field.value != null &&
+            widget.options.any((option) => option['value'] == field.value);
+        final effectiveValue = hasValidValue ? field.value : null;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: widget.label,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  if (widget.isRequired)
+            if (widget.label.isNotEmpty) ...[
+              RichText(
+                text: TextSpan(
+                  children: [
                     TextSpan(
-                      text: '*',
+                      text: widget.label,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
-                        color: Colors.red,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
-                ],
+                    if (widget.isRequired)
+                      TextSpan(
+                        text: '*',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.red,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 8.h),
+              SizedBox(height: 8.h),
+            ],
             Container(
               decoration: BoxDecoration(
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
                 border: Border.all(
-                  color: field.hasError ? Colors.red : Colors.grey.shade300,
+                  color: field.hasError ? Colors.red : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
                   width: 1,
                 ),
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(12.r),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   isExpanded: true,
-                  dropdownColor: Colors.white,
-                  hint: Text(
-                    widget.hint ?? 'Select ${widget.label}',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.grey.shade600,
+                  menuMaxHeight: 320.h,
+                  borderRadius: BorderRadius.circular(12.r),
+                  dropdownColor: isDark ? Colors.grey[850] : Colors.white,
+                  hint: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Text(
+                      widget.hint ?? 'Select ${widget.label}',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: isDark ? Colors.white38 : Colors.grey.shade600,
+                      ),
                     ),
                   ),
-                  value: field.value,
+                  value: effectiveValue,
                   items: widget.options.map((option) {
                     return DropdownMenuItem<String>(
                       value: option['value'],
@@ -102,7 +129,10 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Text(
                           option['label'] ?? '',
-                          style: TextStyle(fontSize: 14.sp),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
                         ),
                       ),
                     );
@@ -114,7 +144,6 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                   },
                   padding: EdgeInsets.symmetric(
                     vertical: 12.h,
-                    horizontal: 16.w,
                   ),
                 ),
               ),

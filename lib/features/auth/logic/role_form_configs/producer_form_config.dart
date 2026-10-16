@@ -23,9 +23,9 @@ class ProducerFormConfig extends BaseRoleFormConfig {
       {'name': 'producerName', 'label': 'Producer Name', 'type': 'text', 'hint': 'Enter your producer name', 'required': true},
       {'name': 'specialization', 'label': 'Specialization', 'type': 'dropdown', 'hint': 'Select specialization', 'options': PRODUCER_SPECIALIZATION_OPTIONS, 'required': true},
       {'name': 'serviceTypes', 'label': 'Service Types', 'type': 'multiselect', 'hint': 'Select options', 'options': PRODUCER_SERVICE_TYPE_OPTIONS, 'required': true},
-      {'name': 'yearsOfExperience', 'label': 'Years of Experience', 'type': 'dropdown', 'hint': 'Select an option', 'options': YEARS_OF_EXPERIENCE_OPTIONS},
-      {'name': 'numberOfProductions', 'label': 'Number of Productions', 'type': 'dropdown', 'hint': 'Select an option', 'options': NUMBER_OF_PRODUCTIONS_OPTIONS},
-      {'name': 'portfolioLink', 'label': 'Portfolio Link (Optional)', 'type': 'text', 'hint': 'https://yourportfolio.com'},
+      {'name': 'yearsOfExperience', 'label': 'Years of Experience', 'type': 'dropdown', 'hint': 'Select an option', 'options': YEARS_OF_EXPERIENCE_OPTIONS, 'required': false},
+      {'name': 'numberOfProductions', 'label': 'Number of Productions', 'type': 'dropdown', 'hint': 'Select an option', 'options': NUMBER_OF_PRODUCTIONS_OPTIONS, 'required': false},
+      {'name': 'portfolioLink', 'label': 'Portfolio Link (Optional)', 'type': 'text', 'hint': 'https://yourportfolio.com', 'required': false},
       {'name': 'availabilityType', 'label': 'Availability', 'type': 'dropdown', 'hint': 'Select your availability', 'options': AVAILABILITY_OPTIONS, 'required': true},
     ];
   }
@@ -34,14 +34,14 @@ class ProducerFormConfig extends BaseRoleFormConfig {
     return [
       {'name': 'businessName', 'label': 'Business Name', 'type': 'text', 'hint': 'Enter business name', 'required': true},
       {'name': 'businessAddress', 'label': 'Business Address', 'type': 'text', 'hint': 'Enter business address', 'required': true},
-      {'name': 'businessWebsite', 'label': 'Website (Optional)', 'type': 'text', 'hint': 'https://yourcompany.com'},
+      {'name': 'businessWebsite', 'label': 'Website (Optional)', 'type': 'text', 'hint': 'https://yourcompany.com', 'required': false},
       {'name': 'serviceTypes', 'label': 'Service Types', 'type': 'multiselect', 'hint': 'Select options', 'options': PRODUCER_SERVICE_TYPE_OPTIONS, 'required': true},
       {'name': 'idType', 'label': 'ID Type', 'type': 'dropdown', 'hint': 'Select ID type', 'options': ID_TYPE_OPTIONS, 'required': true},
       {'name': 'idNumber', 'label': 'ID Number', 'type': 'text', 'hint': 'Enter your ID number', 'required': true},
       {'name': 'tinNumber', 'label': 'TIN Number', 'type': 'text', 'hint': 'Enter your Tax Identification Number', 'required': true},
-      {'name': 'yearsOfExperience', 'label': 'Years of Experience', 'type': 'dropdown', 'hint': 'Select an option', 'options': YEARS_OF_EXPERIENCE_OPTIONS},
-      {'name': 'numberOfProductions', 'label': 'Number of Productions', 'type': 'dropdown', 'hint': 'Select an option', 'options': NUMBER_OF_PRODUCTIONS_OPTIONS},
-      {'name': 'portfolioLink', 'label': 'Portfolio Link (Optional)', 'type': 'text', 'hint': 'https://yourportfolio.com'},
+      {'name': 'yearsOfExperience', 'label': 'Years of Experience', 'type': 'dropdown', 'hint': 'Select an option', 'options': YEARS_OF_EXPERIENCE_OPTIONS, 'required': false},
+      {'name': 'numberOfProductions', 'label': 'Number of Productions', 'type': 'dropdown', 'hint': 'Select an option', 'options': NUMBER_OF_PRODUCTIONS_OPTIONS, 'required': false},
+      {'name': 'portfolioLink', 'label': 'Portfolio Link (Optional)', 'type': 'text', 'hint': 'https://yourportfolio.com', 'required': false},
     ];
   }
 }

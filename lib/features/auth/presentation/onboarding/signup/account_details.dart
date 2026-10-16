@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../logic/auth_notifiers.dart';
 import '../../../logic/signup_handlers/signup_handler_factory.dart';
 import '../../../../../core/constants/enum.dart';
+import '../../../../../core/constants/location_constants.dart';
 
 class AccountDetailsScreen extends ConsumerStatefulWidget {
   final String role;
@@ -50,6 +52,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   late TextEditingController _idNumberController;
   late TextEditingController _tinNumberController;
   Country? _selectedCountry;
+  bool _countryError = false;
   String? _selectedState;
   String? _selectedLGA;
   List<String> _availableLGAs = [];
@@ -66,6 +69,18 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     _idTypeController = TextEditingController();
     _idNumberController = TextEditingController();
     _tinNumberController = TextEditingController();
+
+    if (widget.roleData['businessRegistrationNumber'] != null) {
+      _idNumberController.text = widget.roleData['businessRegistrationNumber'].toString();
+      _idTypeController.text = widget.roleData['idType']?.toString() ?? 'CAC';
+    } else if (widget.roleData['idNumber'] != null) {
+      _idNumberController.text = widget.roleData['idNumber'].toString();
+      _idTypeController.text = widget.roleData['idType']?.toString() ?? 'CAC';
+    }
+    if (widget.roleData['tinNumber'] != null) {
+      _tinNumberController.text = widget.roleData['tinNumber'].toString();
+    }
+
     _selectedAccountType = _normalizeAccountType(widget.accountType);
     _scrollController.addListener(_onScroll);
   }
@@ -79,13 +94,11 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   }
 
   String _normalizeAccountType(String accountType) {
-    if (accountType.toLowerCase().contains('individual') ||
-        accountType.toLowerCase().contains('personal')) {
-      return 'INDIVIDUAL';
-    } else if (accountType.toLowerCase().contains('business')) {
+    if (accountType.toUpperCase().contains('BUSINESS') ||
+        accountType.toUpperCase().contains('COMPANY')) {
       return 'BUSINESS';
     }
-    return accountType.toUpperCase();
+    return 'PERSONAL';
   }
 
   @override
@@ -113,8 +126,55 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     setState(() => _currentStep = 1);
   }
 
+  String _getFormattedPhoneNumber() {
+    String cleanPhone = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.startsWith('234')) {
+      cleanPhone = cleanPhone.substring(3);
+    }
+    if (!cleanPhone.startsWith('0')) {
+      cleanPhone = '0$cleanPhone';
+    }
+    return cleanPhone;
+  }
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedCountry == null) {
+      setState(() => _countryError = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your country'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    if (name.isEmpty || name.split(RegExp(r'\s+')).length < 2 || RegExp(r'^\d+$').hasMatch(name)) {
+      setState(() => _currentStep = 1);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid first and last name in Step 1'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final formattedEmail = _emailController.text.trim().toLowerCase();
+    final emailRegex = RegExp(r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$');
+    if (!emailRegex.hasMatch(formattedEmail) || !formattedEmail.contains('.')) {
+      setState(() => _currentStep = 1);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address in Step 1'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final phoneDigits = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+    if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+      setState(() => _currentStep = 1);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid phone number in Step 1'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
 
     final handler = SignupHandlerFactory.getHandler(widget.role);
     
@@ -129,25 +189,33 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     }
 
     try {
+      final formattedPhone = _getFormattedPhoneNumber();
+
       final signUpRequest = await handler.createSignupRequest(
         roleData: widget.roleData,
-        name: _nameController.text,
-        email: _emailController.text,
-        phone: _phoneController.text,
+        name: _nameController.text.trim(),
+        email: formattedEmail,
+        phone: formattedPhone,
         password: _passwordController.text,
         country: _selectedCountry?.name,
         state: _selectedState,
         city: _selectedLGA,
-        address: _addressController.text.isEmpty ? null : _addressController.text,
+        address: _addressController.text.isEmpty ? null : _addressController.text.trim(),
         accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-        idType: _idTypeController.text.isNotEmpty ? _idTypeController.text : null,
-        idNumber: _idNumberController.text.isNotEmpty ? _idNumberController.text : null,
-        tinNumber: _tinNumberController.text.isNotEmpty ? _tinNumberController.text : null,
+        idType: _idTypeController.text.isNotEmpty
+            ? _idTypeController.text.trim()
+            : (widget.roleData['businessRegistrationNumber'] != null ? 'CAC' : widget.roleData['idType']),
+        idNumber: _idNumberController.text.isNotEmpty
+            ? _idNumberController.text.trim()
+            : (widget.roleData['businessRegistrationNumber'] ?? widget.roleData['idNumber']),
+        tinNumber: _tinNumberController.text.isNotEmpty
+            ? _tinNumberController.text.trim()
+            : widget.roleData['tinNumber'],
       );
 
       final authNotifier = ref.read(authNotifierProvider.notifier);
       await authNotifier.signupUser(signUpRequest);
-      await _handleSignupResponse();
+      await _handleSignupResponse(formattedEmail, formattedPhone);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -158,7 +226,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     }
   }
 
-  Future<void> _handleSignupResponse() async {
+  Future<void> _handleSignupResponse(String email, String phone) async {
     if (!mounted) return;
 
     final authState = ref.read(authNotifierProvider);
@@ -173,8 +241,8 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
       context.push(
         '/verify-identity',
         extra: {
-          'email': _emailController.text,
-          'phoneNumber': _phoneController.text,
+          'email': email,
+          'phoneNumber': phone,
         },
       );
     } else if (authState.message != null) {
@@ -189,18 +257,22 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryBg = isDark ? const Color(0xFF12151B) : Colors.white;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: primaryBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: primaryBg,
         elevation: 0,
         leading: _currentStep == 1
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
                 onPressed: () => context.pop(),
               )
             : IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
                 onPressed: _previousStep,
               ),
         centerTitle: true,
@@ -209,7 +281,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           style: TextStyle(
             fontSize: 18.rsp,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
       ),
@@ -227,7 +299,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                   style: TextStyle(
                     fontSize: 12.rsp,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.primaryColor,
+                    color: isDark ? Colors.white : AppColors.primaryColor,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -236,9 +308,9 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                   child: LinearProgressIndicator(
                     value: _currentStep == 1 ? 0.5 : 1.0,
                     minHeight: 6.h,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      const Color(0xFF2196F3),
+                    backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF2196F3),
                     ),
                   ),
                 ),
@@ -247,7 +319,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             SizedBox(height: 32.h),
             Form(
               key: _formKey,
-              child: _currentStep == 1 ? _buildStep1() : _buildStep2(),
+              child: _currentStep == 1 ? _buildStep1(isDark) : _buildStep2(isDark),
             ),
             SizedBox(height: 32.h),
             _buildActionButtons(),
@@ -257,7 +329,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     );
   }
 
-  Widget _buildStep1() {
+  Widget _buildStep1(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -266,7 +338,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           style: TextStyle(
             fontSize: 18.rsp,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
         SizedBox(height: 24.h),
@@ -276,6 +348,20 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             controller: _nameController,
             label: 'Full Name',
             hint: 'Enter your full name',
+            isDark: isDark,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Full Name is required';
+              }
+              final trimmed = value.trim();
+              if (RegExp(r'^\d+$').hasMatch(trimmed)) {
+                return 'Name cannot contain only numbers';
+              }
+              if (trimmed.split(RegExp(r'\s+')).length < 2) {
+                return 'Please enter your first and last name';
+              }
+              return null;
+            },
           ),
         ),
         Padding(
@@ -283,7 +369,54 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           child: _buildTextField(
             controller: _phoneController,
             label: 'Phone Number',
-            hint: '+234XXXXXXXXXX',
+            hint: '8012345678',
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
+            prefixIcon: Container(
+              margin: EdgeInsets.only(right: 8.w, left: 12.w),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('🇳🇬', style: TextStyle(fontSize: 16.sp)),
+                  SizedBox(width: 6.w),
+                  Text(
+                    '+234',
+                    style: TextStyle(
+                      fontSize: 14.rsp,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Container(
+                    width: 1,
+                    height: 20.h,
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                  ),
+                ],
+              ),
+            ),
+            isDark: isDark,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Phone number is required';
+              }
+              final digits = value.replaceAll(RegExp(r'\D'), '');
+              if (digits.startsWith('0')) {
+                if (digits.length != 11) {
+                  return 'Enter a valid 11-digit phone number starting with 0';
+                }
+              } else {
+                if (digits.length != 10) {
+                  return 'Enter 10 digits after +234 (e.g. 8012345678)';
+                }
+              }
+              return null;
+            },
           ),
         ),
         Padding(
@@ -291,10 +424,20 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           child: _buildTextField(
             controller: _emailController,
             label: 'Email Address',
-            hint: 'Enter your email',
+            hint: 'name@example.com',
+            keyboardType: TextInputType.emailAddress,
+            isDark: isDark,
             validator: (value) {
-              if (value?.isEmpty ?? true) return 'Email is required';
-              if (!value!.contains('@')) return 'Enter a valid email';
+              if (value == null || value.trim().isEmpty) {
+                return 'Email address is required';
+              }
+              final email = value.trim();
+              final emailRegex = RegExp(
+                r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$',
+              );
+              if (!emailRegex.hasMatch(email) || !email.contains('.')) {
+                return 'Please enter a valid email address (e.g., name@example.com)';
+              }
               return null;
             },
           ),
@@ -304,9 +447,9 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     );
   }
 
-  Widget _buildStep2() {
+  Widget _buildStep2(bool isDark) {
     final nigerianStates = NigerianStatesAndLGA.allStates;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -315,7 +458,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           style: TextStyle(
             fontSize: 18.rsp,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
         SizedBox(height: 24.h),
@@ -333,7 +476,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                       style: TextStyle(
                         fontSize: 14.rsp,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                     TextSpan(
@@ -356,7 +499,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                     onSelect: (Country country) {
                       setState(() {
                         _selectedCountry = country;
-                        // Reset state and LGA when country changes
+                        _countryError = false;
                         _selectedState = null;
                         _selectedLGA = null;
                         _availableLGAs = [];
@@ -367,7 +510,13 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: isDark ? const Color(0xFF1E232D) : Colors.grey[50],
+                    border: Border.all(
+                      color: _countryError
+                          ? Colors.red
+                          : (isDark ? Colors.white12 : Colors.grey.shade300),
+                      width: _countryError ? 1.5 : 1.0,
+                    ),
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Row(
@@ -379,14 +528,22 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                           fontSize: 14.sp,
                           color: _selectedCountry == null
                               ? Colors.grey[400]
-                              : Colors.black,
+                              : (isDark ? Colors.white : Colors.black),
                         ),
                       ),
-                      Icon(Icons.arrow_drop_down, color: Colors.grey),
+                      Icon(Icons.arrow_drop_down, color: isDark ? Colors.grey[400] : Colors.grey),
                     ],
                   ),
                 ),
               ),
+              if (_countryError)
+                Padding(
+                  padding: EdgeInsets.only(top: 6.h, left: 4.w),
+                  child: Text(
+                    'Country is required',
+                    style: TextStyle(color: Colors.red, fontSize: 12.sp),
+                  ),
+                ),
             ],
           ),
         ),
@@ -405,7 +562,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                         style: TextStyle(
                           fontSize: 14.rsp,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                       TextSpan(
@@ -422,20 +579,24 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                 SizedBox(height: 8.h),
                 DropdownButtonFormField<String>(
                   value: _selectedState,
+                  dropdownColor: isDark ? const Color(0xFF1E232D) : Colors.white,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14.rsp),
                   decoration: InputDecoration(
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF1E232D) : Colors.grey[50],
                     hintText: 'Select State',
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.rsp),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.rsp),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.rsp),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.rsp),
-                      borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5),
+                      borderSide: const BorderSide(color: AppColors.primaryColor, width: 1.5),
                     ),
                     contentPadding: PlatformResponsive.symmetric(
                       horizontal: 16,
@@ -445,7 +606,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                   items: nigerianStates.map((state) {
                     return DropdownMenuItem<String>(
                       value: state,
-                      child: Text(state, style: TextStyle(fontSize: 14.sp)),
+                      child: Text(state, style: TextStyle(fontSize: 14.sp, color: isDark ? Colors.white : Colors.black87)),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -453,7 +614,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                       _selectedState = value;
                       _selectedLGA = null;
                       if (value != null) {
-                        _availableLGAs = NigerianStatesAndLGA.getStateLGAs(value);
+                        _availableLGAs = LocationHelper.getLGAsForState(value);
                       } else {
                         _availableLGAs = [];
                       }
@@ -479,7 +640,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                         style: TextStyle(
                           fontSize: 14.rsp,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                       TextSpan(
@@ -495,23 +656,28 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                 ),
                 SizedBox(height: 8.h),
                 DropdownButtonFormField<String>(
-                  value: _selectedLGA,
+                  key: ValueKey('lga_${_selectedState}_${_availableLGAs.length}'),
+                  value: (_selectedLGA != null && _availableLGAs.contains(_selectedLGA)) ? _selectedLGA : null,
+                  dropdownColor: isDark ? const Color(0xFF1E232D) : Colors.white,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14.rsp),
                   decoration: InputDecoration(
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF1E232D) : Colors.grey[50],
                     hintText: _availableLGAs.isEmpty 
                         ? 'No LGAs available' 
                         : 'Select LGA',
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.rsp),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.rsp),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.rsp),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.rsp),
-                      borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5),
+                      borderSide: const BorderSide(color: AppColors.primaryColor, width: 1.5),
                     ),
                     contentPadding: PlatformResponsive.symmetric(
                       horizontal: 16,
@@ -532,7 +698,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                       : _availableLGAs.map((lga) {
                           return DropdownMenuItem<String>(
                             value: lga,
-                            child: Text(lga, style: TextStyle(fontSize: 14.sp)),
+                            child: Text(lga, style: TextStyle(fontSize: 14.sp, color: isDark ? Colors.white : Colors.black87)),
                           );
                         }).toList(),
                   onChanged: _availableLGAs.isEmpty
@@ -551,9 +717,10 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           padding: EdgeInsets.only(bottom: 16.h),
           child: _buildTextField(
             controller: _addressController,
-            label: 'Address',
-            hint: 'Enter your address',
+            label: 'Street Address',
+            hint: 'Enter your street address',
             maxLines: 2,
+            isDark: isDark,
           ),
         ),
         Padding(
@@ -564,48 +731,62 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             hint: 'Enter your password',
             isPassword: true,
             passwordVisible: _passwordVisible,
+            isDark: isDark,
             onPasswordToggle: () =>
                 setState(() => _passwordVisible = !_passwordVisible),
             validator: (value) {
-              if (value?.isEmpty ?? true) return 'Password is required';
-              if ((value?.length ?? 0) < 6)
-                return 'Password must be at least 6 characters';
+              if (value == null || value.trim().isEmpty) return 'Password is required';
+              final val = value.trim();
+              if (val.length < 8) {
+                return 'Password must be at least 8 characters long';
+              }
+              if (!RegExp(r'[A-Za-z]').hasMatch(val) || !RegExp(r'[0-9]').hasMatch(val)) {
+                return 'Password must include both letters and numbers';
+              }
               return null;
             },
           ),
         ),
         if (_selectedAccountType == 'BUSINESS' &&
-                (widget.role.toUpperCase() == 'ADVERTISER' ||
-                    widget.role.toUpperCase() == 'HOST') ||
-            widget.role.toUpperCase() == 'DESIGNER') ...[
+            widget.roleData['businessRegistrationNumber'] == null &&
+            widget.roleData['idNumber'] == null) ...[
           Padding(
             padding: EdgeInsets.only(bottom: 16.h),
             child: _buildTextField(
               controller: _idTypeController,
-              label: 'ID Type (Optional)',
-              hint: 'e.g., National ID, International Passport',
-              isRequired: false,
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(bottom: 16.h),
-            child: _buildTextField(
-              controller: _idNumberController,
-              label: 'ID Number',
-              hint: 'Enter your ID number',
-              validator: (value) => value?.isEmpty ?? true
-                  ? 'ID Number is required for business accounts'
+              label: 'ID Type',
+              hint: 'e.g., CAC, Business Permit, National ID',
+              isRequired: true,
+              isDark: isDark,
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'ID Type is required for business accounts'
                   : null,
             ),
           ),
           Padding(
             padding: EdgeInsets.only(bottom: 16.h),
             child: _buildTextField(
-              controller: _tinNumberController,
-              label: 'TIN Number',
-              hint: 'Enter your Tax Identification Number',
+              controller: _idNumberController,
+              label: 'ID / Registration Number',
+              hint: 'Enter your ID or registration number',
+              isRequired: true,
+              isDark: isDark,
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'ID Number is required for business accounts'
+                  : null,
             ),
           ),
+          if (widget.roleData['tinNumber'] == null)
+            Padding(
+              padding: EdgeInsets.only(bottom: 16.h),
+              child: _buildTextField(
+                controller: _tinNumberController,
+                label: 'TIN Number (Optional)',
+                hint: 'Enter your Tax Identification Number',
+                isRequired: false,
+                isDark: isDark,
+              ),
+            ),
         ],
         Padding(
           padding: EdgeInsets.only(bottom: 0),
@@ -615,13 +796,15 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
             hint: 'Confirm your password',
             isPassword: true,
             passwordVisible: _confirmPasswordVisible,
+            isDark: isDark,
             onPasswordToggle: () => setState(
               () => _confirmPasswordVisible = !_confirmPasswordVisible,
             ),
             validator: (value) {
               if (value?.isEmpty ?? true) return 'Please confirm your password';
-              if (value != _passwordController.text)
+              if (value != _passwordController.text) {
                 return 'Passwords do not match';
+              }
               return null;
             },
           ),
@@ -640,6 +823,10 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     bool isPassword = false,
     bool? passwordVisible,
     VoidCallback? onPasswordToggle,
+    bool isDark = false,
+    Widget? prefixIcon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,14 +839,14 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                 style: TextStyle(
                   fontSize: 14.rsp,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               if (isRequired)
-                TextSpan(
+                const TextSpan(
                   text: '*',
                   style: TextStyle(
-                    fontSize: 14.rsp,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.red,
                   ),
@@ -673,11 +860,16 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
           maxLines: maxLines,
           minLines: maxLines == 1 ? 1 : maxLines,
           obscureText: isPassword && !(passwordVisible ?? false),
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14.rsp),
           decoration: _inputDecoration(
             hint,
             isPassword: isPassword,
             passwordVisible: passwordVisible,
             onPasswordToggle: onPasswordToggle,
+            isDark: isDark,
+            prefixIcon: prefixIcon,
           ),
           validator:
               validator ??
@@ -695,10 +887,15 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     bool isPassword = false,
     bool? passwordVisible,
     VoidCallback? onPasswordToggle,
+    bool isDark = false,
+    Widget? prefixIcon,
   }) {
     return InputDecoration(
+      filled: true,
+      fillColor: isDark ? const Color(0xFF1E232D) : Colors.grey[50],
       hintText: hint,
       hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.rsp),
+      prefixIcon: prefixIcon,
       suffixIcon: isPassword
           ? IconButton(
               onPressed: onPasswordToggle,
@@ -706,21 +903,21 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                 passwordVisible ?? false
                     ? Icons.visibility
                     : Icons.visibility_off,
-                color: Colors.grey,
+                color: isDark ? Colors.grey[400] : Colors.grey,
               ),
             )
           : null,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.rsp),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.rsp),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.rsp),
-        borderSide: BorderSide(color: AppColors.primaryColor, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primaryColor, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.rsp),

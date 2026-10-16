@@ -8,6 +8,7 @@ class ArtistInfo {
   final String availabilityType;
   final String? portfolioLink;
   final String managementType;
+  final String? managementContact;
 
   ArtistInfo({
     required this.stageName,
@@ -19,6 +20,7 @@ class ArtistInfo {
     required this.availabilityType,
     this.portfolioLink,
     required this.managementType,
+    this.managementContact,
   });
 
   Map<String, dynamic> toJson() {
@@ -32,6 +34,7 @@ class ArtistInfo {
       'availabilityType': availabilityType,
       if (portfolioLink != null) 'portfolioLink': portfolioLink,
       'managementType': managementType,
+      if (managementContact != null) 'managementContact': managementContact,
     };
   }
 
@@ -46,6 +49,7 @@ class ArtistInfo {
       availabilityType: json['availabilityType'],
       portfolioLink: json['portfolioLink'],
       managementType: json['managementType'],
+      managementContact: json['managementContact'],
     );
   }
 }
@@ -285,9 +289,10 @@ class UGCInfo {
   final List<String> contentStyle;
   final List<String> niches;
   final List<String> contentFormats;
-  final int? yearsOfExperience; // Changed to int?
+  final int? yearsOfExperience;
+  final int? numberOfProjects;
   final String? portfolioLink;
-  final String availabilityType; // Renamed from availability
+  final String availabilityType;
 
   UGCInfo({
     this.displayName,
@@ -295,6 +300,7 @@ class UGCInfo {
     required this.niches,
     required this.contentFormats,
     this.yearsOfExperience,
+    this.numberOfProjects,
     this.portfolioLink,
     required this.availabilityType,
   });
@@ -306,6 +312,7 @@ class UGCInfo {
       'niches': niches,
       'contentFormats': contentFormats,
       if (yearsOfExperience != null) 'yearsOfExperience': yearsOfExperience,
+      if (numberOfProjects != null) 'numberOfProjects': numberOfProjects,
       if (portfolioLink != null) 'portfolioLink': portfolioLink,
       'availabilityType': availabilityType,
     };
@@ -318,6 +325,7 @@ class UGCInfo {
       niches: List<String>.from(json['niches']),
       contentFormats: List<String>.from(json['contentFormats']),
       yearsOfExperience: json['yearsOfExperience'],
+      numberOfProjects: json['numberOfProjects'],
       portfolioLink: json['portfolioLink'],
       availabilityType: json['availabilityType'],
     );
@@ -807,7 +815,7 @@ class SignUpRequest {
 
   Map<String, dynamic> toJson() {
     return {
-      'role': 'USER', // Backend requires USER for all roles
+      'role': role,
       'authProvider': authProvider,
       'name': name,
       'emailAddress': emailAddress,
@@ -817,34 +825,24 @@ class SignUpRequest {
       if (state != null) 'state': state,
       if (city != null) 'city': city,
       if (address != null) 'address': address,
-      if (referredById != null)
-        'refferedById': referredById, // Note: backend has typo "refferedById"
+      if (referredById != null) 'refferedById': referredById,
       if (idType != null) 'idType': idType,
       if (idNumber != null) 'idNumber': idNumber,
       if (tinNumber != null) 'tinNumber': tinNumber,
-      // userInfo for role-specific data
-      if (advertiserInfo != null)
-        'userInfo': {
-          'businessName': advertiserInfo!.businessName,
-          'businessAdress': advertiserInfo!
-              .businessAddress, // Note: backend typo "businessAdress"
-          'businessWebsite': advertiserInfo!.businessWebsite,
-          'industry': advertiserInfo!.industry,
-        },
-      if (artistInfo != null) 'userInfo': artistInfo!.toJson(),
-      if (screenBillboardInfo != null)
-        'userInfo': screenBillboardInfo!.toJson(),
-      if (contentProducerInfo != null)
-        'userInfo': contentProducerInfo!.toJson(),
-      if (influencerInfo != null) 'userInfo': influencerInfo!.toJson(),
-      if (ugcInfo != null) 'userInfo': ugcInfo!.toJson(),
-      if (hostInfo != null) 'userInfo': hostInfo!.toJson(),
-      if (tvStationInfo != null) 'userInfo': tvStationInfo!.toJson(),
-      if (radioStationInfo != null) 'userInfo': radioStationInfo!.toJson(),
-      if (mediaHouseInfo != null) 'userInfo': mediaHouseInfo!.toJson(),
-      if (creativeInfo != null) 'userInfo': creativeInfo!.toJson(),
-      if (designerInfo != null) 'userInfo': designerInfo!.toJson(),
-      if (talentManagerInfo != null) 'userInfo': talentManagerInfo!.toJson(),
+      // Role-specific info as top-level fields (matching backend API schema)
+      if (advertiserInfo != null) 'advertiserInfo': advertiserInfo!.toJson(),
+      if (artistInfo != null) 'artistInfo': artistInfo!.toJson(),
+      if (screenBillboardInfo != null) 'hostInfo': screenBillboardInfo!.toJson(),
+      if (contentProducerInfo != null) 'producerInfo': contentProducerInfo!.toJson(),
+      if (influencerInfo != null) 'influencerInfo': influencerInfo!.toJson(),
+      if (ugcInfo != null) 'ugcCreatorInfo': ugcInfo!.toJson(),
+      if (hostInfo != null) 'hostInfo': hostInfo!.toJson(),
+      if (tvStationInfo != null) 'tvStationInfo': tvStationInfo!.toJson(),
+      if (radioStationInfo != null) 'radioStationInfo': radioStationInfo!.toJson(),
+      if (mediaHouseInfo != null) 'mediaHouseInfo': mediaHouseInfo!.toJson(),
+      if (creativeInfo != null) 'creativeInfo': creativeInfo!.toJson(),
+      if (designerInfo != null) 'creativeInfo': designerInfo!.toJson(),
+      if (talentManagerInfo != null) 'talentManagerInfo': talentManagerInfo!.toJson(),
     };
   }
 

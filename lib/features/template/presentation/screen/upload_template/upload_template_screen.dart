@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../../controllers/re_useable/app_color.dart';
+import '../../../../../core/data/repositories/file_repository.dart';
 import '../../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
+import '../../../logic/template_provider.dart';
+import '../../../logic/upload_template_form_provider.dart';
 import 'widgets/template_information_form.dart';
 import 'widgets/pricing_details_form.dart';
 import 'widgets/additional_details_form.dart';
@@ -26,10 +31,6 @@ class _UploadTemplateScreenState extends ConsumerState<UploadTemplateScreen> {
   final _discountController = TextEditingController();
   final _featuresController = TextEditingController();
   final _specificationsController = TextEditingController();
-  
-  String? selectedType;
-  String? selectedCategory;
-  bool agreeToTerms = false;
 
   @override
   void dispose() {
@@ -43,35 +44,110 @@ class _UploadTemplateScreenState extends ConsumerState<UploadTemplateScreen> {
     super.dispose();
   }
 
-  void _handleSubmit() {
-    if (_formKey.currentState!.validate()) {
-      if (!agreeToTerms) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please agree to the Terms & Conditions'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
+  Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    final formState = ref.read(uploadTemplateFormProvider);
+    
+    if (formState.thumbnailFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload a thumbnail image'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    
+    if (formState.designFile == null && (formState.designFileUrl == null || formState.designFileUrl!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload a design file or provide a URL'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    
+    if (!formState.agreeToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please agree to the terms and conditions'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final fileRepository = ref.read(fileRepositoryProvider);
       
-      // TODO: Handle template upload
-      print('Template Name: ${_templateNameController.text}');
-      print('Type: $selectedType');
-      print('Category: $selectedCategory');
-      print('Tags: ${_tagsController.text}');
-      print('Description: ${_descriptionController.text}');
-      print('Price: ${_priceController.text}');
-      print('Discount: ${_discountController.text}');
-      print('Features: ${_featuresController.text}');
-      print('Specifications: ${_specificationsController.text}');
-      print('Agree to Terms: $agreeToTerms');
+      final thumbnailUrl = await fileRepository.uploadFile(
+        formState.thumbnailFile!.path,
+        prefix: 'template-thumbnail',
+      );
+
+      String? designFileUrl = formState.designFileUrl;
+      if (formState.designFile != null) {
+        designFileUrl = await fileRepository.uploadFile(
+          formState.designFile!.path,
+          prefix: 'template-design',
+        );
+      }
+
+      final tags = _tagsController.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      final payload = {
+        'title': _templateNameController.text,
+        'description': _descriptionController.text,
+        'categoryId': formState.selectedCategoryId,
+        'type': formState.selectedType?.toUpperCase().replaceAll(' ', '_'),
+        'tags': tags,
+        'designUrl': designFileUrl ?? '',
+        'fileUrl': '',
+        'thumbnail': thumbnailUrl,
+        'specifications': _specificationsController.text,
+        'price': double.tryParse(_priceController.text) ?? 0.0,
+        'discount': double.tryParse(_discountController.text) ?? 0.0,
+        'status': 'ACTIVE',
+      };
+
+      final success = await ref.read(templateProvider.notifier).createTemplate(payload);
+
+      if (mounted) {
+        context.pop(); // Remove loading dialog
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Template uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.go('/template-marketplace');
+        } else {
+          final error = ref.read(templateProvider).message ?? 'Failed to upload template';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final formState = ref.watch(uploadTemplateFormProvider);
+    final formNotifier = ref.read(uploadTemplateFormProvider.notifier);
     
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -91,14 +167,10 @@ class _UploadTemplateScreenState extends ConsumerState<UploadTemplateScreen> {
                       templateNameController: _templateNameController,
                       tagsController: _tagsController,
                       descriptionController: _descriptionController,
-                      selectedType: selectedType,
-                      selectedCategory: selectedCategory,
-                      onTypeChanged: (value) {
-                        setState(() => selectedType = value);
-                      },
-                      onCategoryChanged: (value) {
-                        setState(() => selectedCategory = value);
-                      },
+                      selectedType: formState.selectedType,
+                      selectedCategoryId: formState.selectedCategoryId,
+                      onTypeChanged: formNotifier.setType,
+                      onCategoryChanged: formNotifier.setCategory,
                     ),
                     
                     SizedBox(height: 16.h),
@@ -122,11 +194,14 @@ class _UploadTemplateScreenState extends ConsumerState<UploadTemplateScreen> {
                     // File Upload Section
                     FileUploadSection(
                       formKey: _fileUploadFormKey,
-                      agreeToTerms: agreeToTerms,
-                      onTermsChanged: (value) {
-                        setState(() => agreeToTerms = value);
-                      },
+                      agreeToTerms: formState.agreeToTerms,
+                      onTermsChanged: formNotifier.setAgreeToTerms,
                       onSubmit: _handleSubmit,
+                      onThumbnailSelected: formNotifier.setThumbnail,
+                      onDesignFileSelected: formNotifier.setDesignFile,
+                      onDesignUrlChanged: formNotifier.setDesignUrl,
+                      onVideoSelected: formNotifier.setVideoFile,
+                      onVideoUrlChanged: formNotifier.setVideoUrl,
                     ),
                   ],
                 ),

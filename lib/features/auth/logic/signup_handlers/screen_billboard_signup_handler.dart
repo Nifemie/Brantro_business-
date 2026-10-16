@@ -33,7 +33,7 @@ class ScreenBillboardSignupHandler extends BaseSignupHandler {
     );
 
     return SignUpRequest(
-      role: UserRole.SCREEN_BILLBOARD.value,
+      role: UserRole.HOST.value,
       authProvider: AuthProvider.INTERNAL.value,
       accountType: accountType,
       screenBillboardInfo: screenBillboardInfo,

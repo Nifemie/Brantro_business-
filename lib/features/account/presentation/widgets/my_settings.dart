@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 import '../../../../core/service/session_service.dart';
+import '../../../dashboard/logic/dashboard_navigation_provider.dart';
 
-class MySettings extends StatelessWidget {
+class MySettings extends ConsumerWidget {
   const MySettings({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return FutureBuilder<bool>(
@@ -41,35 +42,7 @@ class MySettings extends StatelessWidget {
                 },
               ),
               _buildDivider(),
-              _buildSettingItem(
-                title: 'Payment Settings',
-                onTap: () {
-                  context.push('/payment-settings');
-                },
-              ),
-              _buildDivider(),
-              _buildSettingItem(
-                title: 'Address Book',
-                onTap: () {
-                  context.push('/address-book');
-                },
-              ),
-              _buildDivider(),
-              _buildSettingItem(
-                title: 'Account Management',
-                onTap: () {
-                  context.push('/account-management');
-                },
-              ),
-              _buildDivider(),
-              _buildSettingItem(
-                title: 'Close Account',
-                onTap: () {
-                  // TODO: Navigate to Close Account
-                },
-              ),
-              _buildDivider(),
-              _buildAuthButton(context, isLoggedIn),
+              _buildAuthButton(context, ref, isLoggedIn),
             ],
           ),
         );
@@ -77,7 +50,7 @@ class MySettings extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthButton(BuildContext context, bool isLoggedIn) {
+  Widget _buildAuthButton(BuildContext context, WidgetRef ref, bool isLoggedIn) {
     return InkWell(
       onTap: () async {
         if (isLoggedIn) {
@@ -113,12 +86,7 @@ class MySettings extends StatelessWidget {
           );
 
           if (shouldLogout == true && context.mounted) {
-            // Clear session data
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.clear(); // Clear all data
-
-            // Navigate to signin
-            context.pushReplacement('/signin');
+            await SessionService.performFullLogout(ref, context);
 
             // Show success message after navigation
             Future.delayed(const Duration(milliseconds: 500), () {
@@ -138,7 +106,7 @@ class MySettings extends StatelessWidget {
           }
         } else {
           // Navigate to login screen
-          context.push('/signin');
+          context.go('/signin');
         }
       },
       child: Padding(

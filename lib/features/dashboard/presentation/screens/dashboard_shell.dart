@@ -7,11 +7,12 @@ import 'package:brantro_business/features/dashboard/presentation/widgets/dashboa
 import 'package:brantro_business/features/dashboard/presentation/widgets/sidebar_menu.dart';
 import 'package:brantro_business/features/dashboard/presentation/screens/home_screen.dart';
 import 'package:brantro_business/features/orders/presentation/screens/orders_screen.dart';
-import 'package:brantro_business/features/dashboard/presentation/screens/wallet_screen.dart';
+import 'package:brantro_business/features/wallet/presentation/wallet_screen.dart';
 import 'package:brantro_business/features/account/presentation/user_account.dart';
 import 'package:brantro_business/controllers/re_useable/bottom_nav_bar.dart';
 import 'package:brantro_business/features/dashboard/logic/dashboard_navigation_provider.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
+import 'package:brantro_business/features/account/logic/profile_provider.dart';
 import 'dart:ui';
 
 class DashboardShell extends ConsumerStatefulWidget {
@@ -23,6 +24,16 @@ class DashboardShell extends ConsumerStatefulWidget {
 
 class _DashboardShellState extends ConsumerState<DashboardShell> {
   DateTime? _lastBackPressed;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(dashboardNavigationProvider.notifier).state = 0;
+      }
+    });
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),
@@ -88,20 +99,19 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         drawer: const SidebarMenu(),
         body: Column(
           children: [
-            if (currentIndex != 3) const DashboardAppBar(showBackButton: false),
+            if (currentIndex == 0)
+              const DashboardAppBar(title: 'DASHBOARD', showBackButton: false),
             Expanded(
               child: _screens[currentIndex],
             ),
           ],
         ),
-        bottomNavigationBar: SafeArea(
-          child: BottomNavBar(
-            currentIndex: currentIndex,
-            onTap: (index) {
-              ref.read(dashboardNavigationProvider.notifier).state = index;
-            },
-            onFabTap: () => _showQuickActionMenu(context),
-          ),
+        bottomNavigationBar: BottomNavBar(
+          currentIndex: currentIndex,
+          onTap: (index) {
+            ref.read(dashboardNavigationProvider.notifier).state = index;
+          },
+          onFabTap: () => _showQuickActionMenu(context),
         ),
       ),
     );
@@ -109,10 +119,137 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
 
   void _showQuickActionMenu(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profileData = ref.read(profileHeaderProvider).value;
+    final isInfluencer = profileData?.isInfluencer ?? true;
+    final isCreator = profileData?.isCreator ?? false;
+    final isHost = profileData?.isHost ?? false;
+
+    final List<Widget> quickActions = [];
+
+    if (isHost) {
+      quickActions.addAll([
+        _buildQuickActionItem(
+          context,
+          icon: Icons.map_outlined,
+          title: 'Add Billboard',
+          subtitle: 'Register a new billboard',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/upload-billboard');
+          },
+        ),
+        _buildQuickActionItem(
+          context,
+          icon: Icons.tv_rounded,
+          title: 'Add Screen',
+          subtitle: 'Register a new digital screen',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/upload-screen');
+          },
+        ),
+        _buildQuickActionItem(
+          context,
+          icon: Icons.wallpaper_outlined,
+          title: 'Add Ad Wall',
+          subtitle: 'Register a new advertising wall',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/upload-wall');
+          },
+        ),
+        _buildQuickActionItem(
+          context,
+          icon: Icons.directions_car_filled_outlined,
+          title: 'Add Vehicle',
+          subtitle: 'Register a new vehicle',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/upload-vehicle');
+          },
+        ),
+      ]);
+    }
+
+    if (isInfluencer || (!isHost && !isCreator)) {
+      quickActions.addAll([
+        _buildQuickActionItem(
+          context,
+          icon: Icons.add_box_outlined,
+          title: 'Create Ad Slot',
+          subtitle: 'Add a new advertising slot',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/all-ad-slots');
+          },
+        ),
+        _buildQuickActionItem(
+          context,
+          icon: Icons.business_center_outlined,
+          title: 'Add Service',
+          subtitle: 'Offer a new service',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/upload-service');
+          },
+        ),
+      ]);
+    }
+
+    if (isCreator) {
+      quickActions.addAll([
+        _buildQuickActionItem(
+          context,
+          icon: Icons.style_outlined,
+          title: 'Upload Template',
+          subtitle: 'Add a new design template',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/upload-template');
+          },
+        ),
+        _buildQuickActionItem(
+          context,
+          icon: Icons.palette_outlined,
+          title: 'Upload Creative',
+          subtitle: 'Add creative content',
+          onTap: () {
+            Navigator.pop(context);
+            context.push('/upload-creative');
+          },
+        ),
+      ]);
+    }
+
+    // Common actions
+    quickActions.addAll([
+      _buildQuickActionItem(
+        context,
+        icon: Icons.quiz_outlined,
+        title: 'Add FAQ',
+        subtitle: 'Add a frequently asked question',
+        onTap: () {
+          Navigator.pop(context);
+          context.push('/faqs');
+        },
+      ),
+      _buildQuickActionItem(
+        context,
+        icon: Icons.campaign_outlined,
+        title: 'Add Announcement',
+        subtitle: 'Post a new announcement',
+        onTap: () {
+          Navigator.pop(context);
+          context.push('/announcements');
+        },
+      ),
+    ]);
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) => Container(
         margin: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
@@ -132,78 +269,41 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
             child: Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.4),
+                color: isDark ? Colors.grey[900]!.withOpacity(0.85) : Colors.white.withOpacity(0.95),
                 borderRadius: BorderRadius.circular(24.r),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
+                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
                   width: 1.5,
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40.w,
-                    height: 4.h,
-                    margin: EdgeInsets.only(bottom: 20.h),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.3)
-                          : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2.r),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40.w,
+                      height: 4.h,
+                      margin: EdgeInsets.only(bottom: 20.h),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.3)
+                            : Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Quick Actions',
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                    Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 20.h),
-                  _buildQuickActionItem(
-                    context,
-                    icon: Icons.style_outlined,
-                    title: 'Upload Template',
-                    subtitle: 'Add a new design template',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/upload-template');
-                    },
-                  ),
-                  _buildQuickActionItem(
-                    context,
-                    icon: Icons.palette_outlined,
-                    title: 'Upload Creative',
-                    subtitle: 'Add creative content',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/upload-creative');
-                    },
-                  ),
-                  _buildQuickActionItem(
-                    context,
-                    icon: Icons.map_outlined,
-                    title: 'Add Billboard',
-                    subtitle: 'Register a new billboard',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to add billboard
-                    },
-                  ),
-                  _buildQuickActionItem(
-                    context,
-                    icon: Icons.business_center_outlined,
-                    title: 'Add Service',
-                    subtitle: 'Offer a new service',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to add service
-                    },
-                  ),
-                  SizedBox(height: 10.h),
-                ],
+                    SizedBox(height: 16.h),
+                    ...quickActions,
+                    SizedBox(height: 10.h),
+                  ],
+                ),
               ),
             ),
           ),

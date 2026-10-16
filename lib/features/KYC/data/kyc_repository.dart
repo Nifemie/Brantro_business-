@@ -17,12 +17,18 @@ class KycRepository {
       final data = response.data;
       final payload = data['payload'] ?? data['data'] ?? data;
       
-      // Handle empty array response (no KYC record)
-      if (payload is List && payload.isEmpty) {
-        return KycStatusResponse(
-          status: 'NOT_STARTED',
-          message: 'KYC verification not started',
-        );
+      // Handle list response (e.g. array of KYC verification records)
+      if (payload is List) {
+        if (payload.isEmpty) {
+          return KycStatusResponse(
+            status: 'NOT_STARTED',
+            message: 'KYC verification not started',
+          );
+        }
+        final lastItem = payload.last;
+        if (lastItem is Map<String, dynamic>) {
+          return KycStatusResponse.fromJson(lastItem);
+        }
       }
       
       // Handle object response
@@ -30,7 +36,6 @@ class KycRepository {
         return KycStatusResponse.fromJson(payload);
       }
       
-      // Default to not started
       return KycStatusResponse(
         status: 'NOT_STARTED',
         message: 'KYC verification not started',
@@ -59,7 +64,7 @@ class KycRepository {
   }
 
   /// Submit KYC verification (initiate)
-  Future<Map<String, dynamic>> submitKycVerification(
+  Future<KycInitiateResponse> submitKycVerification(
     KycVerificationRequest request,
   ) async {
     try {
@@ -68,7 +73,11 @@ class KycRepository {
         data: request.toJson(),
       );
 
-      return response.data;
+      if (response.data != null) {
+        return KycInitiateResponse.fromJson(response.data);
+      }
+
+      throw Exception('Empty response received from KYC initiation');
     } on DioException catch (e) {
       final errorMessage = e.response?.data['message'] ??
           e.response?.data['error'] ??
@@ -108,11 +117,16 @@ class KycRepository {
         data: request.toJson(),
       );
 
-      return response.data;
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+      return {'success': true, 'data': data};
     } on DioException catch (e) {
-      final errorMessage = e.response?.data['message'] ??
-          e.response?.data['error'] ??
-          'Face verification failed. Please try again.';
+      print('[KycRepository] verifyFace ERROR: status=${e.response?.statusCode}, body=${e.response?.data}');
+      final errorMessage = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['error'] ?? 'Face verification failed.')
+          : (e.response?.data?.toString() ?? 'Face verification failed. Please try again.');
 
       throw Exception(errorMessage);
     }

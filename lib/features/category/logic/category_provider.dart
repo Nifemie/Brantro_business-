@@ -56,12 +56,15 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final categories = await _repository.getCategories();
-      final locationCategories = categories.where((cat) => cat.type == 'LOCATION').toList();
-      final templateCategories = categories.where((cat) => cat.type == 'TEMPLATE').toList();
+      final serviceCategories = await _repository.getCategories(type: 'SERVICE');
+      final creativeCategories = await _repository.getCategories(type: 'CREATIVE');
+      final combinedCategories = [...serviceCategories, ...creativeCategories];
+      
+      final locationCategories = await _repository.getCategories(type: 'LOCATION');
+      final templateCategories = await _repository.getCategories(type: 'TEMPLATE');
 
       state = state.copyWith(
-        categories: categories,
+        categories: combinedCategories,
         locationCategories: locationCategories,
         templateCategories: templateCategories,
         isLoading: false,

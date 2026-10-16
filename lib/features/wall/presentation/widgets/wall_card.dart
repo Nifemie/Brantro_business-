@@ -1,25 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../controllers/re_useable/app_color.dart';
+import '../../data/models/wall_model.dart';
 
 class WallCard extends StatelessWidget {
-  final String image;
-  final String name;
-  final String location;
-  final String size;
-  final String price;
-  final bool isActive;
+  final WallModel wall;
   final VoidCallback onViewSlots;
   final VoidCallback? onMenuTap;
 
   const WallCard({
     super.key,
-    required this.image,
-    required this.name,
-    required this.location,
-    required this.size,
-    required this.price,
-    this.isActive = true,
+    required this.wall,
     required this.onViewSlots,
     this.onMenuTap,
   });
@@ -29,219 +23,306 @@ class WallCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : AppColors.shadow,
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Wall Image with Active Badge
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(12.r),
-                  topRight: Radius.circular(12.r),
-                ),
-                child: Image.asset(
-                  image,
-                  width: double.infinity,
-                  height: 180.h,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: double.infinity,
-                      height: 180.h,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primaryColor.withOpacity(0.3),
-                            AppColors.secondaryColor.withOpacity(0.3),
-                          ],
+    final image = wall.thumbnail;
+    final bool isNetwork = image.isNotEmpty && (image.startsWith('http') || image.startsWith('https') || (image.contains('.') && !image.startsWith('assets/')));
+    final String imageUrl = isNetwork && !image.startsWith('http') && !image.startsWith('https')
+        ? '${ApiClient.fileBaseUrl}/$image'
+        : image;
+
+    return GestureDetector(
+      onTap: () {
+        context.push('/wall-details', extra: {'wall': wall});
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16.h),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color ?? (isDark ? Colors.grey[900]! : Colors.white),
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black.withOpacity(0.3) : AppColors.shadow,
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Wall Image with Active Badge
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(12.r),
+                    topRight: Radius.circular(12.r),
+                  ),
+                  child: isNetwork
+                      ? Image.network(
+                          imageUrl,
+                          width: double.infinity,
+                          height: 180.h,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark),
+                        )
+                      : Image.asset(
+                          imageUrl,
+                          width: double.infinity,
+                          height: 180.h,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark),
                         ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          size: 48.sp,
-                          color: isDark ? Colors.white38 : Colors.grey[400],
-                        ),
-                      ),
-                    );
-                  },
                 ),
-              ),
-              if (isActive)
                 Positioned(
                   top: 12.h,
                   right: 12.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981),
-                      borderRadius: BorderRadius.circular(6.r),
+                      color: const Color(0xFF003D82),
+                      borderRadius: BorderRadius.circular(4.r),
                     ),
                     child: Text(
-                      'ACTIVE',
+                      'WALL',
                       style: TextStyle(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
-
-          // Content Section
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : AppColors.textPrimary,
+              ],
+            ),
+  
+            // Content Section
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title and Active State Chip
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          wall.name,
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: wall.isActive ? const Color(0xFFE6F7F0) : const Color(0xFFFDE8E8),
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        child: Text(
+                          wall.isActive ? 'Active' : 'Inactive',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: wall.isActive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                SizedBox(height: 8.h),
-
-                // Location with Icon
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16.sp,
-                      color: isDark ? Colors.white60 : Colors.grey[600],
+  
+                  SizedBox(height: 8.h),
+  
+                  // Location / Address
+                  Text(
+                    wall.address,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: isDark ? Colors.white60 : Colors.grey[500],
                     ),
-                    SizedBox(width: 4.w),
-                    Expanded(
-                      child: Text(
-                        location,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+  
+                  // Estimated Reach Badge
+                  if (wall.estimatedReach != null) ...[
+                    SizedBox(height: 12.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFECE5),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.person_pin_outlined,
+                            size: 14.sp,
+                            color: const Color(0xFFFF6B35),
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            'Reach: ${NumberFormat('#,###').format(wall.estimatedReach)}',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFFF6B35),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+  
+                  // Ratings and Likes
+                  SizedBox(height: 12.h),
+                  Row(
+                    children: [
+                      ...List.generate(5, (index) => Icon(
+                        Icons.star_outline,
+                        size: 18.sp,
+                        color: isDark ? Colors.white38 : Colors.grey[400],
+                      )),
+                      SizedBox(width: 6.w),
+                      Text(
+                        '${wall.averageRating ?? 0.0}',
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: isDark ? Colors.white60 : Colors.grey[600],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 12.h),
-
-                // Info Tags Row
-                Wrap(
-                  spacing: 8.w,
-                  runSpacing: 8.h,
-                  children: [
-                    _buildTag(size, AppColors.secondaryColor.withOpacity(0.1), 
-                        AppColors.secondaryColor, isDark),
-                    _buildTag(price, isDark ? Colors.grey[800]! : Colors.grey[200]!, 
-                        isDark ? Colors.white70 : Colors.grey[700]!, isDark),
-                  ],
-                ),
-
-                SizedBox(height: 16.h),
-
-                // Action Buttons Row
-                Row(
-                  children: [
-                    // Menu Button
-                    Container(
-                      width: 48.w,
-                      height: 48.h,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[850] : const Color(0xFFFFF5F5),
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(
-                          color: isDark ? Colors.grey[700]! : const Color(0xFFFFE5E5),
+                      SizedBox(width: 12.w),
+                      Icon(
+                        Icons.favorite_border,
+                        size: 16.sp,
+                        color: const Color(0xFFEF4444),
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        '${wall.totalLikes ?? 0}',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: isDark ? Colors.white60 : Colors.grey[600],
                         ),
                       ),
-                      child: IconButton(
-                        onPressed: onMenuTap,
-                        icon: Icon(
-                          Icons.more_horiz,
-                          color: isDark ? Colors.white70 : const Color(0xFFFF6B6B),
-                          size: 24.sp,
-                        ),
-                        padding: EdgeInsets.zero,
+                    ],
+                  ),
+  
+                  // Price Section
+                  SizedBox(height: 12.h),
+                  RichText(
+                    text: TextSpan(
+                      text: '₦${NumberFormat('#,###').format(wall.price)}',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
-                    ),
-
-                    SizedBox(width: 12.w),
-
-                    // View Slots Button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: onViewSlots,
-                        icon: Icon(
-                          Icons.layers_outlined,
-                          size: 20.sp,
-                        ),
-                        label: Text(
-                          'View Slots',
+                      children: [
+                        TextSpan(
+                          text: ' / day',
                           style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.grey,
                           ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF003D82),
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
+                      ],
+                    ),
+                  ),
+  
+                  SizedBox(height: 16.h),
+  
+                  // Action Buttons Row
+                  Row(
+                    children: [
+                      // Menu Button
+                      Container(
+                        width: 48.w,
+                        height: 48.h,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[850] : const Color(0xFFFFF5F5),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color: isDark ? Colors.grey[700]! : const Color(0xFFFFE5E5),
                           ),
-                          elevation: 0,
+                        ),
+                        child: IconButton(
+                          onPressed: onMenuTap,
+                          icon: Icon(
+                            Icons.more_horiz,
+                            color: isDark ? Colors.white70 : const Color(0xFFFF6B6B),
+                            size: 24.sp,
+                          ),
+                          padding: EdgeInsets.zero,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+  
+                      SizedBox(width: 12.w),
+  
+                      // View Slots Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: onViewSlots,
+                          icon: Icon(
+                            Icons.layers_outlined,
+                            size: 20.sp,
+                          ),
+                          label: Text(
+                            'View Slots',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF003D82),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 14.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTag(String label, Color bgColor, Color textColor, bool isDark) {
+  Widget _buildPlaceholder(bool isDark) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      width: double.infinity,
+      height: 180.h,
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6.r),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryColor.withOpacity(0.3),
+            AppColors.secondaryColor.withOpacity(0.3),
+          ],
+        ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w500,
-          color: textColor,
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          size: 48.sp,
+          color: isDark ? Colors.white38 : Colors.grey[400],
         ),
       ),
     );

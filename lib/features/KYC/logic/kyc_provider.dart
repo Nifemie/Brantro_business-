@@ -3,6 +3,7 @@ import '../data/kyc_models.dart';
 import '../data/kyc_repository.dart';
 import '../../../core/constants/kyc_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/service/session_service.dart';
 
 // Provider for KycRepository
 final kycRepositoryProvider = Provider<KycRepository>((ref) {
@@ -98,17 +99,68 @@ class KycNotifier extends StateNotifier<KycState> {
     state = state.copyWith(draftRequest: null);
   }
 
-  /// Submit KYC verification
-  Future<bool> submitVerification(KycVerificationRequest request) async {
+  /// Initiate KYC verification
+  Future<KycInitiateResponse?> initiateKyc(KycVerificationRequest request) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await _repository.submitKycVerification(request);
+      final response = await _repository.submitKycVerification(request);
 
-      // Fetch updated status
+      final statusEnum = _mapStringToStatus(response.status);
+      state = state.copyWith(
+        isLoading: false,
+        verificationStatus: statusEnum != KycVerificationStatus.notStarted
+            ? statusEnum
+            : KycVerificationStatus.pending,
+        statusResponse: KycStatusResponse(
+          status: response.status,
+          message: response.message ?? 'Verification in review',
+          submittedAt: DateTime.now(),
+          submittedData: request,
+        ),
+      );
+
+      if (response.isVerified ||
+          response.status == 'COMPLETED' ||
+          response.status == 'APPROVED') {
+        await _updateSessionVerified(true);
+      }
+
+      return response;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return null;
+    }
+  }
+
+  /// Submit KYC verification (backward-compatibility alias)
+  Future<bool> submitVerification(KycVerificationRequest request) async {
+    final result = await initiateKyc(request);
+    return result != null;
+  }
+
+  /// Verify face selfie with Base64 data
+  Future<bool> verifyFace(String documentNumber, String imageBase64) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final request = FaceVerificationRequest(
+        documentNumber: documentNumber,
+        imageBase64: imageBase64,
+      );
+
+      final response = await _repository.verifyFace(request);
+      final payload = response['payload'] ?? response['data'] ?? response;
+      final status = (payload is Map ? payload['status'] : null)?.toString().toUpperCase();
+      final isSuccess = response['success'] == true || status == 'COMPLETED' || status == 'APPROVED';
+
       await fetchKycStatus();
+      if (isSuccess) {
+        await _updateSessionVerified(true);
+      }
 
-      return true;
+      state = state.copyWith(isLoading: false);
+      return isSuccess;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
@@ -125,16 +177,35 @@ class KycNotifier extends StateNotifier<KycState> {
         otp: otp,
       );
 
-      await _repository.verifyKycOtp(request);
+      final response = await _repository.verifyKycOtp(request);
+      final payload = response['payload'] ?? response['data'] ?? response;
+      final status = (payload is Map ? payload['status'] : null)?.toString().toUpperCase();
+      final isSuccess = response['success'] == true || status == 'COMPLETED' || status == 'APPROVED';
 
       // Fetch updated status
       await fetchKycStatus();
+      if (isSuccess) {
+        await _updateSessionVerified(true);
+      }
 
-      return true;
+      state = state.copyWith(isLoading: false);
+      return isSuccess;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
+  }
+
+  Future<void> _updateSessionVerified(bool isVerified) async {
+    try {
+      final user = await SessionService.getUser();
+      if (user is Map<String, dynamic>) {
+        final updated = Map<String, dynamic>.from(user);
+        updated['isVerified'] = isVerified;
+        updated['kycStatus'] = 'APPROVED';
+        await SessionService.saveUser(updated);
+      }
+    } catch (_) {}
   }
 
   /// Update verification status (when received from backend)
@@ -145,13 +216,20 @@ class KycNotifier extends StateNotifier<KycState> {
   /// Map string status to enum
   KycVerificationStatus _mapStringToStatus(String? status) {
     switch (status?.toUpperCase()) {
+      case 'COMPLETED':
       case 'APPROVED':
+      case 'VERIFIED':
         return KycVerificationStatus.approved;
+      case 'FACE_REQUIRED':
+        return KycVerificationStatus.inReview;
       case 'PENDING':
+      case 'IN_PROGRESS':
+      case 'OTP_REQUIRED':
         return KycVerificationStatus.pending;
       case 'IN_REVIEW':
         return KycVerificationStatus.inReview;
       case 'REJECTED':
+      case 'FAILED':
         return KycVerificationStatus.rejected;
       default:
         return KycVerificationStatus.notStarted;

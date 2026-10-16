@@ -12,6 +12,11 @@ class FileUploadSection extends StatefulWidget {
   final bool agreeToTerms;
   final Function(bool) onTermsChanged;
   final VoidCallback onSubmit;
+  final Function(File?) onThumbnailSelected;
+  final Function(File?) onDesignFileSelected;
+  final Function(String?) onDesignUrlChanged;
+  final Function(File?) onVideoSelected;
+  final Function(String?) onVideoUrlChanged;
 
   const FileUploadSection({
     super.key,
@@ -19,6 +24,11 @@ class FileUploadSection extends StatefulWidget {
     required this.agreeToTerms,
     required this.onTermsChanged,
     required this.onSubmit,
+    required this.onThumbnailSelected,
+    required this.onDesignFileSelected,
+    required this.onDesignUrlChanged,
+    required this.onVideoSelected,
+    required this.onVideoUrlChanged,
   });
 
   @override
@@ -49,6 +59,7 @@ class _FileUploadSectionState extends State<FileUploadSection> {
               setState(() {
                 _thumbnailFile = file;
               });
+              widget.onThumbnailSelected(file);
             },
           ),
 
@@ -60,14 +71,14 @@ class _FileUploadSectionState extends State<FileUploadSection> {
             onFileSelected: (file) {
               setState(() {
                 _designFile = file;
-                if (file != null) _designFileUrl = null;
               });
+              widget.onDesignFileSelected(file);
             },
             onUrlChanged: (url) {
               setState(() {
                 _designFileUrl = url;
-                if (url != null) _designFile = null;
               });
+              widget.onDesignUrlChanged(url);
             },
           ),
 
@@ -79,14 +90,14 @@ class _FileUploadSectionState extends State<FileUploadSection> {
             onFileSelected: (file) {
               setState(() {
                 _videoFile = file;
-                if (file != null) _videoUrl = null;
               });
+              widget.onVideoSelected(file);
             },
             onUrlChanged: (url) {
               setState(() {
                 _videoUrl = url;
-                if (url != null) _videoFile = null;
               });
+              widget.onVideoUrlChanged(url);
             },
           ),
 
@@ -132,37 +143,6 @@ class _FileUploadSectionState extends State<FileUploadSection> {
   }
 
   void _handleSubmit() {
-    if (_thumbnailFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please upload a thumbnail image'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_designFile == null && (_designFileUrl == null || _designFileUrl!.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please upload a design file or provide a URL'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (!widget.agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please agree to the terms and conditions'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // All validations passed, proceed with submission
     widget.onSubmit();
   }
 }

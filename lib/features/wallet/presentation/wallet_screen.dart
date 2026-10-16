@@ -110,11 +110,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Balance Card
-                      BalanceCard(
-                        balance: wallet?.balance ?? '0.00',
-                        pendingBalance: wallet?.pendingBalance ?? '0.00',
-                        currency: wallet?.currency ?? '₦',
-                        status: wallet?.status ?? 'INACTIVE',
+                      Builder(
+                        builder: (context) {
+                          final transactionsState = ref.watch(transactionsProvider);
+                          final transactions = transactionsState.data ?? [];
+                          double totalCredits = 0.0;
+                          double totalDebits = 0.0;
+                          for (final tx in transactions) {
+                            if (tx.isCredit) {
+                              totalCredits += tx.amount;
+                            } else if (tx.isDebit) {
+                              totalDebits += tx.amount;
+                            }
+                          }
+                          return BalanceCard(
+                            balance: wallet?.balance ?? '0.00',
+                            pendingBalance: wallet?.pendingBalance ?? '0.00',
+                            currency: wallet?.currency ?? '₦',
+                            status: wallet?.status ?? 'INACTIVE',
+                            totalCredits: totalCredits,
+                            totalDebits: totalDebits,
+                            totalTransactions: transactions.length,
+                          );
+                        },
                       ),
 
                       SizedBox(height: 24.h),

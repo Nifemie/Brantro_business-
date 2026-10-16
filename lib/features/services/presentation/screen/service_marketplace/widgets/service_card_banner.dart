@@ -22,23 +22,41 @@ class ServiceCardBanner extends StatelessWidget {
             topLeft: Radius.circular(12.r),
             topRight: Radius.circular(12.r),
           ),
-          child: Image.asset(
-            imageUrl,
-            width: double.infinity,
-            height: 180.h,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              height: 180.h,
-              color: isDark ? Colors.grey[800] : Colors.grey[200],
-              child: Center(
-                child: Icon(
-                  Icons.image_outlined,
-                  color: isDark ? Colors.grey[600] : Colors.grey[400],
-                  size: 40.sp,
+          child: imageUrl.startsWith('http')
+              ? Image.network(
+                  imageUrl,
+                  width: double.infinity,
+                  height: 180.h,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 180.h,
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
+                    child: Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        size: 40.sp,
+                      ),
+                    ),
+                  ),
+                )
+              : Image.asset(
+                  imageUrl,
+                  width: double.infinity,
+                  height: 180.h,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 180.h,
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
+                    child: Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        size: 40.sp,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
         ),
         // Category Badge overlay
         Positioned(

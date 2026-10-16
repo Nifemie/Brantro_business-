@@ -20,7 +20,12 @@ class CategoryRepository {
       final queryParams = {
         'page': page.toString(),
         'size': size.toString(),
+        'limit': size.toString(),
       };
+
+      if (type != null) {
+        queryParams['type'] = type;
+      }
 
       final response = await apiClient.get(
         ApiEndpoints.categoryList,
@@ -34,11 +39,6 @@ class CategoryRepository {
         final categories = pageData
             .map((json) => CategoryModel.fromJson(json as Map<String, dynamic>))
             .toList();
-
-        // Filter by type if specified
-        if (type != null) {
-          return categories.where((cat) => cat.type == type).toList();
-        }
 
         return categories;
       }

@@ -1,63 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../../../logic/service_provider.dart';
+import '../../../../data/models/service_model.dart';
+import '../../../../../../core/network/api_client.dart';
 import 'service_card.dart';
 
-class ServiceList extends StatelessWidget {
+class ServiceList extends ConsumerWidget {
   const ServiceList({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // We render a list of cards.
-    final mockServices = [
-      {
-        'title': 'Brand Identity & Visual Style Guide',
-        'category': 'Brand Guidelines',
-        'price': '₦70,000',
-        'priceUnit': '/ Per Project',
-        'isActive': true,
-        'imageUrl': 'assets/promotions/brand_identity.png',
-        'tags': ['#branding', '#brand identity', '#style guide'],
-      },
-      {
-        'title': 'Social Media Post & Banner Design',
-        'category': 'Banner Design',
-        'price': '₦15,000',
-        'priceUnit': '/ Per Design',
-        'isActive': true,
-        'imageUrl': 'assets/promotions/social_media_banner.png',
-        'tags': ['#social media design', '#banner', '#instagram pos...'],
-      },
-      {
-        'title': 'Professional Logo Design',
-        'category': 'Logo Design',
-        'price': '₦25,000',
-        'priceUnit': '/ Per Design',
-        'isActive': true,
-        'imageUrl': 'assets/promotions/logo_design.png',
-        'tags': ['#logo', '#branding', '#graphic design'],
-      },
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final serviceState = ref.watch(serviceProvider);
+    final services = serviceState.data ?? [];
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      itemCount: mockServices.length,
+      itemCount: services.length,
       itemBuilder: (context, index) {
-        final service = mockServices[index];
+        final service = services[index];
+        final priceFormatted = NumberFormat.currency(
+          symbol: '₦',
+          decimalDigits: 0,
+        ).format(service.price);
+
+        final String priceUnit = service.pricingUnit.isNotEmpty
+            ? (service.pricingUnit.startsWith('/')
+                ? service.pricingUnit
+                : '/ ${service.pricingUnit}')
+            : '/ Per Project';
+
+        final imageUrl = service.thumbnail.isNotEmpty
+            ? (service.thumbnail.startsWith('http')
+                ? service.thumbnail
+                : '${ApiClient.fileBaseUrl}/${service.thumbnail}')
+            : '';
+
+        final displayTags = service.tags.map((t) => t.startsWith('#') ? t : '#$t').toList();
+
         return ServiceCard(
-          title: service['title'] as String,
-          category: service['category'] as String,
-          deliveryTime: '', // Not shown on this specific card
-          price: service['price'] as String,
-          priceUnit: service['priceUnit'] as String,
-          isActive: service['isActive'] as bool,
-          imageUrl: service['imageUrl'] as String,
-          tags: service['tags'] as List<String>,
+          title: service.title,
+          category: service.type.isNotEmpty ? service.type.replaceAll('_', ' ') : 'UGC Video',
+          deliveryTime: '${service.deliveryTime} ${service.deliveryTimeUnit}',
+          price: service.price,
+          discount: service.discount,
+          estimatedReach: service.estimatedReach,
+          priceUnit: priceUnit,
+          isActive: service.status == 'ACTIVE',
+          imageUrl: imageUrl,
+          tags: displayTags,
           onViewDetails: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Viewing Orders for ${service['title']}')),
-            );
+            context.push('/service-details', extra: {'service': service});
+          },
+          onViewOrders: () {
+            context.push('/orders', extra: {'serviceId': service.id});
           },
         );
       },

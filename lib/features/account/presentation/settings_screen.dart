@@ -5,7 +5,6 @@ import '../../../controllers/re_useable/app_color.dart';
 import '../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../dashboard/presentation/widgets/sidebar_menu.dart';
 import 'widgets/settings_security_section.dart';
-import 'widgets/settings_notification_section.dart';
 import 'widgets/settings_general_section.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -16,9 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF1E2329)
-          : AppColors.backgroundSecondary,
+      backgroundColor: isDark ? const Color(0xFF12151B) : AppColors.backgroundSecondary,
       drawer: const SidebarMenu(),
       body: SafeArea(
         child: Column(
@@ -27,20 +24,16 @@ class SettingsScreen extends ConsumerWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(vertical: 12.h),
+                physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Security: password, 2FA, biometric, sessions
+                    // Security: Change Password
                     const SecuritySettingsSection(),
                     SizedBox(height: 20.h),
 
-                    // Notifications: push, orders, campaigns, payments
-                    const NotificationSettingsSection(),
-                    SizedBox(height: 20.h),
-
-                    // Privacy, Appearance, About & Legal
+                    // Appearance & About / Legal (Terms, Privacy, Help & Support, Version)
                     const PrivacyAppearanceAboutSection(),
-
                     SizedBox(height: 32.h),
                   ],
                 ),

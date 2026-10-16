@@ -30,6 +30,7 @@ class CustomMultiselectDropdownField extends StatefulWidget {
 class _CustomMultiselectDropdownFieldState
     extends State<CustomMultiselectDropdownField> {
   late List<String> _selectedValues;
+  final _customController = TextEditingController();
 
   @override
   void initState() {
@@ -38,7 +39,16 @@ class _CustomMultiselectDropdownFieldState
   }
 
   @override
+  void dispose() {
+    _customController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return FormField<List<String>>(
       initialValue: _selectedValues,
       validator:
@@ -61,12 +71,12 @@ class _CustomMultiselectDropdownFieldState
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
                   if (widget.isRequired)
                     TextSpan(
-                      text: '*',
+                      text: ' *',
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
@@ -79,8 +89,11 @@ class _CustomMultiselectDropdownFieldState
             SizedBox(height: 8.h),
             Container(
               decoration: BoxDecoration(
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
                 border: Border.all(
-                  color: field.hasError ? Colors.red : Colors.grey.shade300,
+                  color: field.hasError 
+                      ? Colors.red 
+                      : (isDark ? Colors.grey[700]! : Colors.grey.shade300),
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(8.r),
@@ -97,7 +110,7 @@ class _CustomMultiselectDropdownFieldState
                           widget.hint ?? 'Select ${widget.label}',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Colors.grey.shade600,
+                            color: isDark ? Colors.white38 : Colors.grey.shade600,
                           ),
                         ),
                       )
@@ -115,7 +128,10 @@ class _CustomMultiselectDropdownFieldState
                             return Chip(
                               label: Text(
                                 option['label'] ?? value,
-                                style: TextStyle(fontSize: 13.sp),
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: isDark ? Colors.white : Colors.blue.shade900,
+                                ),
                               ),
                               onDeleted: () {
                                 setState(() {
@@ -124,48 +140,113 @@ class _CustomMultiselectDropdownFieldState
                                   widget.onChanged(_selectedValues);
                                 });
                               },
-                              backgroundColor: Colors.blue.shade50,
-                              deleteIcon: Icon(Icons.close, size: 18.sp),
+                              backgroundColor: isDark ? Colors.blue.shade900.withOpacity(0.4) : Colors.blue.shade50,
+                              deleteIcon: Icon(
+                                Icons.close, 
+                                size: 18.sp,
+                                color: isDark ? Colors.white70 : Colors.blue.shade900,
+                              ),
                             );
                           }).toList(),
                         ),
                       ),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      underline: SizedBox(),
-                      dropdownColor: Colors.white,
-                      hint: Text(
-                        'Add more...',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      value: null,
-                      items: widget.options
-                          .where(
-                            (opt) => !_selectedValues.contains(opt['value']),
-                          )
-                          .map((option) {
-                            return DropdownMenuItem<String>(
-                              value: option['value'],
-                              child: Text(
-                                option['label'] ?? '',
-                                style: TextStyle(fontSize: 14.sp),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            dropdownColor: isDark ? Colors.grey[850] : Colors.white,
+                            iconEnabledColor: isDark ? Colors.white70 : Colors.black54,
+                            hint: Text(
+                              'Add more...',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: isDark ? Colors.white38 : Colors.grey.shade600,
                               ),
-                            );
-                          })
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedValues.add(value);
-                            field.didChange(_selectedValues);
-                            widget.onChanged(_selectedValues);
-                          });
-                        }
-                      },
-                      isDense: true,
+                            ),
+                            value: null,
+                            items: widget.options
+                                .where(
+                                  (opt) => !_selectedValues.contains(opt['value']),
+                                )
+                                .map((option) {
+                                  return DropdownMenuItem<String>(
+                                    value: option['value'],
+                                    child: Text(
+                                      option['label'] ?? '',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                    ),
+                                  );
+                                })
+                                .toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedValues.add(value);
+                                  field.didChange(_selectedValues);
+                                  widget.onChanged(_selectedValues);
+                                });
+                              }
+                            },
+                            isDense: true,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 20.h,
+                          color: isDark ? Colors.grey[800] : Colors.grey[300],
+                          margin: EdgeInsets.symmetric(horizontal: 12.w),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _customController,
+                            decoration: InputDecoration(
+                              hintText: 'Or type custom...',
+                              border: InputBorder.none,
+                              isDense: true,
+                              hintStyle: TextStyle(
+                                fontSize: 14.sp,
+                                color: isDark ? Colors.white38 : Colors.grey.shade600,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.add, size: 20),
+                                onPressed: () {
+                                  final text = _customController.text.trim();
+                                  if (text.isNotEmpty && !_selectedValues.contains(text)) {
+                                    setState(() {
+                                      _selectedValues.add(text);
+                                      field.didChange(_selectedValues);
+                                      widget.onChanged(_selectedValues);
+                                      _customController.clear();
+                                    });
+                                  }
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ),
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                            onSubmitted: (value) {
+                              final text = value.trim();
+                              if (text.isNotEmpty && !_selectedValues.contains(text)) {
+                                setState(() {
+                                  _selectedValues.add(text);
+                                  field.didChange(_selectedValues);
+                                  widget.onChanged(_selectedValues);
+                                  _customController.clear();
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

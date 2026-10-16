@@ -13,7 +13,10 @@ class RecentScreensSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final screensState = ref.watch(screenProvider);
-    final recentScreens = screensState.data?.take(3).toList() ?? [];
+    final sortedData = List.of(screensState.data ?? [])..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final recentScreens = sortedData.take(3).toList();
+
+    if (recentScreens.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,22 +47,10 @@ class RecentScreensSection extends ConsumerWidget {
           ],
         ),
         SizedBox(height: 12.h),
-        recentScreens.isEmpty
-            ? EmptyState(
-                icon: Icons.tv_rounded,
-                title: 'No Screens Yet',
-                message: 'Your digital screens will appear here',
-                showIconBackground: false,
-              )
-            : Column(
-                children: recentScreens.map((screen) {
+        Column(
+                children: recentScreens.map<Widget>((screen) {
                   return ScreenCard(
-                    image: screen.images.isNotEmpty ? screen.images.first : '',
-                    name: screen.name,
-                    location: screen.location,
-                    size: screen.size,
-                    price: '₦${screen.price.toStringAsFixed(0)}',
-                    isActive: screen.isActive,
+                    screen: screen,
                     onViewSlots: () {
                       context.push('/ad-slots', extra: {
                         'parentId': screen.id,

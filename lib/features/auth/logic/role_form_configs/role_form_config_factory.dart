@@ -35,6 +35,7 @@ class RoleFormConfigFactory {
       case 'Media House':
         return MediaHouseFormConfig();
       case 'Creatives':
+      case 'Designer':
         return CreativesFormConfig();
       case 'Talent Manager':
         return TalentManagerFormConfig();

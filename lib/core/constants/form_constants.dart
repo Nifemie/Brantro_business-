@@ -46,6 +46,68 @@ const List<Map<String, String>> SPECIALIZATION_OPTIONS = [
   {"label": "Dance Performance", "value": "Dance Performance"},
 ];
 
+const Map<String, List<Map<String, String>>> PROFESSION_SPECIALIZATION_MAP = {
+  "Musician": [
+    {"label": "Music Performance", "value": "Music Performance"},
+    {"label": "Music Recording", "value": "Music Recording"},
+    {"label": "Songwriting", "value": "Songwriting"},
+    {"label": "Instrumentalist", "value": "Instrumentalist"},
+  ],
+  "Actor": [
+    {"label": "Film Acting", "value": "Film Acting"},
+    {"label": "Stage Acting", "value": "Stage Acting"},
+    {"label": "Voice Acting", "value": "Voice Acting"},
+    {"label": "Commercial Acting", "value": "Commercial Acting"},
+  ],
+  "Comedian": [
+    {"label": "Stand-up Comedy", "value": "Stand-up Comedy"},
+    {"label": "Skits", "value": "Skits"},
+    {"label": "Improv", "value": "Improv"},
+    {"label": "Hosting", "value": "Hosting"},
+  ],
+  "DJ": [
+    {"label": "Club DJ", "value": "Club DJ"},
+    {"label": "Radio DJ", "value": "Radio DJ"},
+    {"label": "Event DJ", "value": "Event DJ"},
+    {"label": "Music Production", "value": "Music Production"},
+  ],
+  "MC": [
+    {"label": "Event Hosting", "value": "Event Hosting"},
+    {"label": "Corporate MC", "value": "Corporate MC"},
+    {"label": "Wedding MC", "value": "Wedding MC"},
+    {"label": "Hype Man", "value": "Hype Man"},
+  ],
+  "Dancer": [
+    {"label": "Dance Performance", "value": "Dance Performance"},
+    {"label": "Choreography", "value": "Choreography"},
+    {"label": "Music Video Dance", "value": "Music Video Dance"},
+    {"label": "Traditional Dance", "value": "Traditional Dance"},
+  ],
+  "Filmmaker": [
+    {"label": "Directing", "value": "Directing"},
+    {"label": "Cinematography", "value": "Cinematography"},
+    {"label": "Video Editing", "value": "Video Editing"},
+    {"label": "Screenwriting", "value": "Screenwriting"},
+    {"label": "Documentary", "value": "Documentary"},
+  ],
+  "Content Creator": [
+    {"label": "Skits", "value": "Skits"},
+    {"label": "Vlogging", "value": "Vlogging"},
+    {"label": "Short-form Video", "value": "Short-form Video"},
+    {"label": "Reviews & Unboxing", "value": "Reviews & Unboxing"},
+  ],
+  "Visual Artist": [
+    {"label": "Painting", "value": "Painting"},
+    {"label": "Digital Illustration", "value": "Digital Illustration"},
+    {"label": "Sculpture", "value": "Sculpture"},
+    {"label": "Graphic Design", "value": "Graphic Design"},
+  ],
+};
+
+List<Map<String, String>> getSpecializationsForProfession(String profession) {
+  return PROFESSION_SPECIALIZATION_MAP[profession] ?? SPECIALIZATION_OPTIONS;
+}
+
 const List<Map<String, String>> GENRE_OPTIONS = [
   {"label": "Afrobeats", "value": "Afrobeats"},
   {"label": "Hip Hop", "value": "Hip Hop"},

@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../../core/constants/template_constants.dart';
 import '../../../../../../core/widgets/option_picker_sheet.dart';
+import '../../../../../category/logic/category_provider.dart';
 
-class TemplateInformationForm extends StatelessWidget {
+class TemplateInformationForm extends ConsumerWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController templateNameController;
   final TextEditingController tagsController;
   final TextEditingController descriptionController;
   final String? selectedType;
-  final String? selectedCategory;
+  final int? selectedCategoryId;
   final Function(String?) onTypeChanged;
-  final Function(String?) onCategoryChanged;
+  final Function(int?) onCategoryChanged;
 
   const TemplateInformationForm({
     super.key,
@@ -21,15 +23,23 @@ class TemplateInformationForm extends StatelessWidget {
     required this.tagsController,
     required this.descriptionController,
     required this.selectedType,
-    required this.selectedCategory,
+    required this.selectedCategoryId,
     required this.onTypeChanged,
     required this.onCategoryChanged,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    
+    final categoryState = ref.watch(categoryProvider);
+    final categories = categoryState.templateCategories;
+    
+    final selectedCategoryName = categories
+        .where((c) => c.id == selectedCategoryId)
+        .firstOrNull
+        ?.name;
     
     return Container(
       decoration: BoxDecoration(
@@ -136,7 +146,7 @@ class TemplateInformationForm extends StatelessWidget {
                   SizedBox(height: 8.h),
                   TextFormField(
                     readOnly: true,
-                    controller: TextEditingController(text: selectedCategory ?? ''),
+                    controller: TextEditingController(text: selectedCategoryName ?? ''),
                     style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimary),
                     decoration: _inputDecoration('Choose a category', isDark).copyWith(
                       suffixIcon: Icon(
@@ -145,23 +155,31 @@ class TemplateInformationForm extends StatelessWidget {
                       ),
                     ),
                     onTap: () async {
-                      final result = await showModalBottomSheet<String>(
+                      if (categories.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No categories available')),
+                        );
+                        return;
+                      }
+                      
+                      final resultName = await showModalBottomSheet<String>(
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
                         builder: (context) => OptionPickerSheet(
                           title: 'Choose a category',
-                          options: TemplateConstants.templateCategories,
-                          selectedOption: selectedCategory,
+                          options: categories.map((c) => c.name).toList(),
+                          selectedOption: selectedCategoryName,
                         ),
                       );
                       
-                      if (result != null) {
-                        onCategoryChanged(result);
+                      if (resultName != null) {
+                        final selectedCat = categories.firstWhere((c) => c.name == resultName);
+                        onCategoryChanged(selectedCat.id);
                       }
                     },
                     validator: (value) {
-                      if (selectedCategory == null || selectedCategory!.isEmpty) {
+                      if (selectedCategoryId == null) {
                         return 'Category is required';
                       }
                       return null;

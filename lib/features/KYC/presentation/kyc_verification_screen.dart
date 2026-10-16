@@ -110,8 +110,8 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('OTP resent successfully!'),
+          const SnackBar(
+            content: Text('OTP resent successfully!'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -120,8 +120,8 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to resend OTP. Please try again.'),
+          const SnackBar(
+            content: Text('Failed to resend OTP. Please try again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -132,19 +132,22 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Verify KYC',
           style: TextStyle(
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -181,18 +184,20 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                 style: TextStyle(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               SizedBox(height: 12.h),
 
               // Description
               Text(
-                'We\'ve sent a 6-digit verification code to verify your document number ending in ${widget.documentNumber.substring(widget.documentNumber.length - 4)}',
+                widget.documentNumber.length > 4
+                    ? 'We\'ve sent a 6-digit verification code to verify your document number ending in ${widget.documentNumber.substring(widget.documentNumber.length - 4)}'
+                    : 'We\'ve sent a 6-digit verification code to verify your document number.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                   height: 1.5,
                 ),
               ),
@@ -214,22 +219,23 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                       style: TextStyle(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                       decoration: InputDecoration(
                         counterText: '',
                         filled: true,
-                        fillColor: Colors.grey[50],
+                        fillColor: isDark ? Colors.grey[850] : Colors.grey[50],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide(
+                          borderSide: const BorderSide(
                             color: AppColors.primaryColor,
                             width: 2,
                           ),
@@ -269,15 +275,15 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                 Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: Colors.red[50],
+                    color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: Colors.red[200]!),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.error_outline,
-                        color: Colors.red[700],
+                        color: Colors.red,
                         size: 20.sp,
                       ),
                       SizedBox(width: 12.w),
@@ -286,7 +292,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                           _errorMessage!,
                           style: TextStyle(
                             fontSize: 13.sp,
-                            color: Colors.red[900],
+                            color: Colors.red,
                           ),
                         ),
                       ),
@@ -302,11 +308,13 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                   onPressed: _isVerifying ? null : _verifyOtp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 16.h),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    disabledBackgroundColor: Colors.grey[300],
+                    elevation: 0,
+                    disabledBackgroundColor: Colors.grey[350],
                   ),
                   child: _isVerifying
                       ? SizedBox(
@@ -323,7 +331,6 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
                           ),
                         ),
                 ),
@@ -338,7 +345,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                     'Didn\'t receive the code? ',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: Colors.grey[600],
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
                   TextButton(
@@ -365,16 +372,16 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
               Container(
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: isDark ? Colors.blue.withOpacity(0.1) : Colors.blue[50],
                   borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(color: isDark ? Colors.blue.withOpacity(0.3) : Colors.blue[200]!),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.info_outline,
-                      color: Colors.blue[700],
+                      color: isDark ? Colors.blue[300] : Colors.blue[700],
                       size: 20.sp,
                     ),
                     SizedBox(width: 12.w),
@@ -383,7 +390,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                         'The OTP is valid for 10 minutes. Please enter it before it expires.',
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: Colors.blue[900],
+                          color: isDark ? Colors.blue[200] : Colors.blue[900],
                           height: 1.4,
                         ),
                       ),

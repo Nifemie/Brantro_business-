@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/search_filter_card.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/filter_sheet.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
+import '../../../../core/widgets/delete_location_dialog.dart';
+import '../../../../core/utils/html_helper.dart';
 import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../dashboard/presentation/widgets/sidebar_menu.dart';
 import '../widgets/billboard_card.dart';
@@ -57,101 +60,135 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
               
               // Content with collapsible search card
               Expanded(
-                child: CustomScrollView(
-                  slivers: [
-                    // Search Filter Card as Sliver
-                    SliverToBoxAdapter(
-                      child: SearchFilterCard(
-                        title: 'All Billboards',
-                        searchController: _searchController,
-                        searchHint: 'Search billboards...',
-                        onFilterTap: _showFilters,
-                        onActionButtonTap: _uploadBillboard,
-                        actionButtonLabel: 'Upload Billboard',
-                        actionButtonIcon: Icons.upload,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await ref.read(billboardProvider.notifier).refreshBillboards();
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      // Search Filter Card as Sliver
+                      SliverToBoxAdapter(
+                        child: SearchFilterCard(
+                          title: 'All Billboards',
+                          searchController: _searchController,
+                          searchHint: 'Search billboards...',
+                          onFilterTap: _showFilters,
+                          onActionButtonTap: _uploadBillboard,
+                          actionButtonLabel: 'Upload Billboard',
+                          actionButtonIcon: Icons.upload,
+                          selectedFilters: ref.read(billboardProvider.notifier).selectedFilters,
+                          onRemoveFilter: (key) => ref.read(billboardProvider.notifier).removeFilter(key),
+                          onClearFilters: () => ref.read(billboardProvider.notifier).clearFilters(),
+                          onChanged: (query) => ref.read(billboardProvider.notifier).updateSearch(query),
+                        ),
                       ),
-                    ),
-                    
-                    // Content - Empty State or Billboard List
-                    hasBillboards
-                        ? SliverPadding(
-                            padding: EdgeInsets.all(16.w),
-                            sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final billboard = billboardState.data![index];
-                                  return BillboardCard(
-                                    image: billboard.images.isNotEmpty ? billboard.images.first : '',
-                                    name: billboard.name,
-                                    location: billboard.address,
-                                    size: billboard.size,
-                                    price: '₦${billboard.price.toStringAsFixed(0)}/month',
-                                    isActive: billboard.isActive,
-                                    onViewSlots: () {
-                                      context.push('/ad-slots', extra: {
-                                        'parentId': billboard.id,
-                                        'parentType': 'billboard',
-                                        'parentName': billboard.name,
-                                      });
-                                    },
-                                    onMenuTap: () {
-                                      showModalBottomSheet(
-                                        context: context,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) => BillboardMenuSheet(
-                                          billboardName: billboard.name,
-                                          onEdit: () {
-                                            Navigator.pop(context);
-                                            print('Edit ${billboard.name}');
-                                          },
-                                          onDelete: () async {
-                                            Navigator.pop(context);
-                                            final confirm = await _showDeleteConfirmation(context, billboard.name);
-                                            if (confirm == true) {
-                                              try {
-                                                await ref.read(billboardProvider.notifier).deleteBillboard(billboard.id);
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text('Billboard deleted successfully'),
-                                                      backgroundColor: Colors.green,
-                                                    ),
-                                                  );
-                                                }
-                                              } catch (e) {
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Delete failed: ${e.toString()}'),
-                                                      backgroundColor: Colors.red,
-                                                    ),
-                                                  );
-                                                }
-                                              }
-                                            }
-                                          },
-                                          onViewDetails: () {
-                                            Navigator.pop(context);
-                                            context.push('/billboard-details', extra: {'billboard': billboard});
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                childCount: billboardState.data?.length ?? 0,
+                      
+                      // Content - Loading state, Error state, Empty State or Billboard List
+                      billboardState.isInitialLoading
+                          ? SliverPadding(
+                              padding: EdgeInsets.all(16.w),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) => const SkeletonCampaignCard(),
+                                  childCount: 3,
+                                ),
                               ),
-                            ),
-                          )
-                        : SliverFillRemaining(
-                            child: const EmptyState(
-                              icon: Icons.campaign_outlined,
-                              title: 'No Billboards Yet',
-                              message: 'Start by uploading your first billboard',
-                              showIconBackground: false,
-                            ),
-                          ),
-                  ],
+                            )
+                          : billboardState.message != null
+                              ? SliverFillRemaining(
+                                  child: EmptyState(
+                                    icon: Icons.wifi_off_outlined,
+                                    title: 'Connection Error',
+                                    message: billboardState.message!.contains('SocketException') || billboardState.message!.contains('Failed host lookup')
+                                        ? 'Failed to load billboards. Please check your internet connection and try again.'
+                                        : billboardState.message!,
+                                    showIconBackground: true,
+                                  ),
+                                )
+                              : (billboardState.data ?? []).isEmpty
+                                  ? const SliverFillRemaining(
+                                      child: EmptyState(
+                                        icon: Icons.campaign_outlined,
+                                        title: 'No Billboards Yet',
+                                        message: 'Start by uploading your first billboard',
+                                        showIconBackground: false,
+                                      ),
+                                    )
+                                  : SliverPadding(
+                                      padding: EdgeInsets.all(16.w),
+                                      sliver: SliverList(
+                                        delegate: SliverChildBuilderDelegate(
+                                          (context, index) {
+                                            final sortedData = List.of(billboardState.data ?? [])..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                                            final billboard = sortedData[index];
+                                            return BillboardCard(
+                                              billboard: billboard,
+                                              onViewSlots: () {
+                                                context.push('/ad-slots', extra: {
+                                                  'parentId': billboard.id,
+                                                  'parentType': 'billboard',
+                                                  'parentName': billboard.name,
+                                                });
+                                              },
+                                              onMenuTap: () {
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  backgroundColor: Colors.transparent,
+                                                  builder: (context) => BillboardMenuSheet(
+                                                    billboardName: billboard.name,
+                                                    onEdit: () {
+                                                      Navigator.pop(context);
+                                                      context.push('/upload-billboard', extra: {
+                                                        'isUpdate': true,
+                                                        'billboard': billboard,
+                                                      });
+                                                    },
+                                                    onDelete: () async {
+                                                      Navigator.pop(context);
+                                                      final confirm = await _showDeleteConfirmation(context, billboard.name);
+                                                      if (confirm == true) {
+                                                        try {
+                                                          await ref.read(billboardProvider.notifier).deleteBillboard(billboard.id);
+                                                          if (context.mounted) {
+                                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                              const SnackBar(
+                                                                content: Text('Billboard deleted successfully'),
+                                                                backgroundColor: Colors.green,
+                                                                duration: Duration(seconds: 3),
+                                                              ),
+                                                            );
+                                                          }
+                                                        } catch (e) {
+                                                          if (context.mounted) {
+                                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                              SnackBar(
+                                                                content: Text('Delete failed: ${e.toString().replaceAll('Exception: ', '')}'),
+                                                                backgroundColor: Colors.red,
+                                                                duration: const Duration(seconds: 3),
+                                                              ),
+                                                            );
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    onViewDetails: () {
+                                                      Navigator.pop(context);
+                                                      context.push('/billboard-details', extra: {'billboard': billboard});
+                                                    },
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                          childCount: billboardState.data?.length ?? 0,
+                                        ),
+                                      ),
+                                    ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -162,7 +199,9 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
   }
 
   Future<void> _showFilters() async {
-    final filters = await showModalBottomSheet<Map<String, String?>>(
+    final currentFilters = ref.read(billboardProvider.notifier).selectedFilters;
+
+    await showModalBottomSheet<Map<String, String?>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -183,6 +222,7 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
                 'Kano',
                 'Ibadan',
               ],
+              selectedValue: currentFilters['Location'],
             ),
             FilterSection(
               title: 'Size',
@@ -193,10 +233,12 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
                 '36ft x 12ft',
                 '30ft x 10ft',
               ],
+              selectedValue: currentFilters['Size'],
             ),
             FilterSection(
               title: 'Status',
               options: ['All', 'Active', 'Inactive', 'Maintenance'],
+              selectedValue: currentFilters['Status'],
             ),
             FilterSection(
               title: 'Price Range',
@@ -207,11 +249,11 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
                 '₦500k - ₦1M',
                 'Above ₦1M',
               ],
+              selectedValue: currentFilters['Price Range'],
             ),
           ],
           onApply: (selectedFilters) {
-            // TODO: Apply filters
-            print('Selected filters: $selectedFilters');
+            ref.read(billboardProvider.notifier).updateFilters(selectedFilters);
           },
         ),
       ),
@@ -223,23 +265,6 @@ class _BillboardMarketplaceScreenState extends ConsumerState<BillboardMarketplac
   }
 
   Future<bool?> _showDeleteConfirmation(BuildContext context, String billboardName) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Billboard'),
-        content: Text('Are you sure you want to delete "$billboardName"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+    return DeleteLocationDialog.show(context);
   }
 }

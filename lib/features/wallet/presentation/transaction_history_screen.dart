@@ -1,36 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'widgets/transaction_card.dart';
 import 'widgets/transaction_search_bar.dart';
 import 'widgets/transaction_filter_chips.dart';
-import 'utils/mock_transaction_data.dart';
+import '../logic/transactions_notifier.dart';
+import '../data/models/transaction_model.dart';
 
-class TransactionHistoryScreen extends StatefulWidget {
+class TransactionHistoryScreen extends ConsumerStatefulWidget {
   const TransactionHistoryScreen({super.key});
 
   @override
-  State<TransactionHistoryScreen> createState() =>
+  ConsumerState<TransactionHistoryScreen> createState() =>
       _TransactionHistoryScreenState();
 }
 
-class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
+class _TransactionHistoryScreenState extends ConsumerState<TransactionHistoryScreen> {
   String _selectedFilter = 'All';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
-  List<MockTransaction> get _filteredTransactions {
-    return allMockTransactions.where((tx) {
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(transactionsProvider.notifier).loadMore();
+    }
+  }
+
+  String _getGroup(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final txDate = DateTime(date.year, date.month, date.day);
+
+    if (txDate == today) return 'Today';
+    if (txDate == yesterday) return 'Yesterday';
+    return DateFormat('MMMM yyyy').format(date);
+  }
+
+  List<TransactionModel> get _filteredTransactions {
+    final transactionsState = ref.watch(transactionsProvider);
+    final data = transactionsState.data ?? [];
+    
+    return data.where((tx) {
       // Filter by chip
       bool matchFilter = true;
       if (_selectedFilter == 'Credit') {
-        matchFilter =
-            tx.type == TransactionType.deposit ||
-            tx.type == TransactionType.transferIn ||
-            tx.type == TransactionType.refund;
+        matchFilter = tx.isCredit;
       } else if (_selectedFilter == 'Debit') {
-        matchFilter =
-            tx.type == TransactionType.withdrawal ||
-            tx.type == TransactionType.transferOut;
+        matchFilter = tx.isDebit;
       }
 
       // Filter by search text
@@ -46,10 +72,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     }).toList();
   }
 
-  Map<String, List<MockTransaction>> get _groupedTransactions {
-    final grouped = <String, List<MockTransaction>>{};
+  Map<String, List<TransactionModel>> get _groupedTransactions {
+    final grouped = <String, List<TransactionModel>>{};
     for (var tx in _filteredTransactions) {
-      grouped.putIfAbsent(tx.group, () => []).add(tx);
+      grouped.putIfAbsent(_getGroup(tx.createdAt), () => []).add(tx);
     }
     return grouped;
   }
@@ -57,6 +83,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -65,6 +92,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final groupedData = _groupedTransactions;
     final groups = groupedData.keys.toList();
+    final transactionsState = ref.watch(transactionsProvider);
 
     return Scaffold(
       backgroundColor: isDark
@@ -83,15 +111,15 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
                 border: Border.all(
                   color: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.black.withOpacity(0.05),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.05),
                   width: 1,
                 ),
               ),
@@ -103,8 +131,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                       padding: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.white.withOpacity(0.08)
-                            : Colors.black.withOpacity(0.05),
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10.r),
                       ),
                       child: Icon(
@@ -149,50 +177,76 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               ],
             ),
           ),
-          Expanded(
-            child: groups.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: groups.length,
-                    itemBuilder: (context, gIndex) {
-                      final groupName = groups[gIndex];
-                      final items = groupedData[groupName]!;
+          if (transactionsState.isInitialLoading)
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (groups.isEmpty)
+            Expanded(child: _buildEmptyState())
+          else
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
+                physics: const BouncingScrollPhysics(),
+                itemCount: groups.length + (transactionsState.isPaginating ? 1 : 0),
+                itemBuilder: (context, gIndex) {
+                  if (gIndex == groups.length) {
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.h),
+                        child: const CircularProgressIndicator(),
+                      ),
+                    );
+                  }
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                            child: Text(
-                              groupName.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w800,
-                                color: isDark
-                                    ? Colors.grey[500]
-                                    : Colors.grey[600],
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                  final groupName = groups[gIndex];
+                  final items = groupedData[groupName]!;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        child: Text(
+                          groupName.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w800,
+                            color: isDark
+                                ? Colors.grey[500]
+                                : Colors.grey[600],
+                            letterSpacing: 1.2,
                           ),
-                          ...items.map(
-                            (tx) => TransactionCard(
-                              type: tx.type,
-                              description: tx.description,
-                              amount: tx.amount,
-                              date: tx.date,
-                              reference: tx.reference,
-                              status: tx.status,
-                              onTap: () {},
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-          ),
+                        ),
+                      ),
+                      ...items.map(
+                        (tx) {
+                          TransactionType mappedType = TransactionType.deposit;
+                          if (tx.isDebit) mappedType = TransactionType.withdrawal;
+                          
+                          final formattedDate = DateFormat('MMM dd, yyyy • hh:mm a').format(tx.createdAt);
+
+                          return TransactionCard(
+                            type: mappedType,
+                            description: tx.description,
+                            amount: '₦${NumberFormat('#,##0.00').format(tx.amount)}',
+                            date: formattedDate,
+                            reference: tx.reference,
+                            status: TransactionStatus.completed,
+                            onTap: () {
+                              context.push('/wallet/transaction-receipt', extra: {'transaction': tx});
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );

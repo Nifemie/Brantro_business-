@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../../core/services/file_picker_service.dart';
+import '../../../../logic/upload_creative_form_provider.dart';
 import 'upload_card_widget.dart';
 
-class CreativeFileUploadSection extends StatefulWidget {
+class CreativeFileUploadSection extends ConsumerStatefulWidget {
   final VoidCallback onSubmit;
 
   const CreativeFileUploadSection({
@@ -14,14 +16,12 @@ class CreativeFileUploadSection extends StatefulWidget {
   });
 
   @override
-  State<CreativeFileUploadSection> createState() => _CreativeFileUploadSectionState();
+  ConsumerState<CreativeFileUploadSection> createState() => _CreativeFileUploadSectionState();
 }
 
-class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
-  File? _thumbnailFile;
-  File? _creativeFile;
-  String? _creativeFileUrl;
+class _CreativeFileUploadSectionState extends ConsumerState<CreativeFileUploadSection> {
   String _selectedTab = 'upload'; // 'upload' or 'url'
+  String? _creativeFileUrl;
   bool _agreeToTerms = false;
   final FilePickerService _filePickerService = FilePickerService();
   final TextEditingController _urlController = TextEditingController();
@@ -36,7 +36,7 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
     try {
       final file = await _filePickerService.pickImage();
       if (file != null) {
-        setState(() => _thumbnailFile = file);
+        ref.read(uploadCreativeFormProvider.notifier).setThumbnailPath(file.path);
       }
     } on FilePickerException catch (e) {
       _showError(e.message);
@@ -47,7 +47,7 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
     try {
       final file = await _filePickerService.pickFile();
       if (file != null) {
-        setState(() => _creativeFile = file);
+        ref.read(uploadCreativeFormProvider.notifier).setCreativeFilePath(file.path);
       }
     } on FilePickerException catch (e) {
       _showError(e.message);
@@ -63,15 +63,20 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
   }
 
   void _handleSubmit() {
-    if (_thumbnailFile == null) {
+    final formState = ref.read(uploadCreativeFormProvider);
+    
+    if (formState.thumbnailPath == null) {
       _showError('Please upload a thumbnail image');
       return;
     }
 
-    if (_creativeFile == null && (_creativeFileUrl == null || _creativeFileUrl!.isEmpty)) {
+    if (formState.creativeFilePath == null && _urlController.text.trim().isEmpty) {
       _showError('Please upload a creative file or enter a URL');
       return;
     }
+
+    // Force sync the URL text to the provider before submitting
+    ref.read(uploadCreativeFormProvider.notifier).setCreativeFileUrl(_urlController.text.trim());
 
     if (!_agreeToTerms) {
       _showError('Please agree to the terms and conditions');
@@ -85,6 +90,7 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final formState = ref.watch(uploadCreativeFormProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,14 +99,14 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
           title: 'Upload Thumbnail',
           isRequired: true,
           isDark: isDark,
-          file: _thumbnailFile,
+          file: formState.thumbnailPath != null ? File(formState.thumbnailPath!) : null,
           onTap: _pickThumbnail,
-          onRemove: () => setState(() => _thumbnailFile = null),
+          onRemove: () => ref.read(uploadCreativeFormProvider.notifier).setThumbnailPath(null),
           icon: Icons.image_outlined,
           subtitle: 'JPG, PNG (Max 5MB)',
         ),
         SizedBox(height: 16.h),
-        _buildCreativeFileSection(theme, isDark),
+        _buildCreativeFileSection(theme, isDark, formState),
         SizedBox(height: 24.h),
         _buildTermsCheckbox(theme, isDark),
         SizedBox(height: 24.h),
@@ -171,7 +177,7 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
     );
   }
 
-  Widget _buildCreativeFileSection(ThemeData theme, bool isDark) {
+  Widget _buildCreativeFileSection(ThemeData theme, bool isDark, dynamic formState) {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
@@ -191,9 +197,9 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
           _buildLabel('Upload Creative File', isRequired: true, isDark: isDark),
           SizedBox(height: 12.h),
           _selectedTab == 'upload'
-              ? (_creativeFile == null
+              ? (formState.creativeFilePath == null
                   ? _buildUploadArea(isDark)
-                  : _buildFilePreview(isDark))
+                  : _buildFilePreview(isDark, formState.creativeFilePath!))
               : _buildUrlInput(isDark),
           SizedBox(height: 16.h),
           _buildTabButtons(isDark),
@@ -272,7 +278,7 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
   Widget _buildUrlInput(bool isDark) {
     return TextFormField(
       controller: _urlController,
-      onChanged: (value) => setState(() => _creativeFileUrl = value.isEmpty ? null : value),
+      onChanged: (value) => ref.read(uploadCreativeFormProvider.notifier).setCreativeFileUrl(value.isEmpty ? null : value),
       style: TextStyle(
         color: isDark ? Colors.white : AppColors.textPrimary,
       ),
@@ -306,8 +312,8 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
     );
   }
 
-  Widget _buildFilePreview(bool isDark) {
-    final fileName = _creativeFile!.path.split('/').last;
+  Widget _buildFilePreview(bool isDark, String creativeFilePath) {
+    final fileName = creativeFilePath.split('/').last;
     final fileExtension = fileName.split('.').last.toUpperCase();
     
     return Container(
@@ -361,7 +367,7 @@ class _CreativeFileUploadSectionState extends State<CreativeFileUploadSection> {
             ),
           ),
           IconButton(
-            onPressed: () => setState(() => _creativeFile = null),
+            onPressed: () => ref.read(uploadCreativeFormProvider.notifier).setCreativeFilePath(null),
             icon: Icon(Icons.close, color: Colors.red),
             style: IconButton.styleFrom(
               backgroundColor: isDark ? Colors.grey[800] : Colors.white,

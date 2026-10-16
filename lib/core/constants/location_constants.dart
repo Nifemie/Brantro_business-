@@ -9,8 +9,44 @@
 /// 2. Use NigerianStatesAndLGA for Nigerian states and LGAs
 /// 3. Use LocationHelper methods for programmatic access
 
+import 'package:nigerian_states_and_lga/nigerian_states_and_lga.dart';
+
 class LocationHelper {
   LocationHelper._();
+
+  /// Safe method to get LGAs for any Nigerian state, including FCT/Abuja
+  static List<String> getLGAsForState(String state) {
+    final cleanState = state.trim();
+    if (cleanState.isEmpty) return [];
+
+    final lower = cleanState.toLowerCase();
+    if (lower == 'fct' ||
+        lower.contains('abuja') ||
+        lower.contains('capital') ||
+        lower == 'fct(abuja)') {
+      return const [
+        "Abaji",
+        "Abuja Municipal",
+        "Bwari",
+        "Gwagwalada",
+        "Kuje",
+        "Kwali",
+      ];
+    }
+
+    try {
+      return NigerianStatesAndLGA.getStateLGAs(cleanState);
+    } catch (_) {
+      for (final s in NigerianStatesAndLGA.allStates) {
+        if (s.toLowerCase() == lower) {
+          try {
+            return NigerianStatesAndLGA.getStateLGAs(s);
+          } catch (_) {}
+        }
+      }
+      return [];
+    }
+  }
 
   /// Get country code from country name
   static String? getCountryCode(String countryName) {

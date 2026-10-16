@@ -9,6 +9,7 @@ import 'package:brantro_business/core/utils/device_utils.dart';
 import 'package:brantro_business/core/utils/color_utils.dart';
 import 'package:brantro_business/controllers/re_useable/app_button.dart';
 import 'package:brantro_business/core/service/session_service.dart';
+import 'package:brantro_business/features/dashboard/logic/dashboard_navigation_provider.dart';
 import '../../../../../core/utils/platform_responsive.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -48,7 +49,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         // Check user role BEFORE navigation
         final userRole = authState.singleData?.role?.toUpperCase()?.trim();
         
-        // Only allow SELLER roles and ADMIN (this is a seller/business app)
         final sellerRoles = [
           'ADMIN',
           'SUPER_ADMIN',
@@ -60,10 +60,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           'MEDIA_HOUSE',
           'DESIGNER',
           'CREATIVE',
+          'CREATOR',
           'PRODUCER',
           'UGC_CREATOR',
           'TALENT_MANAGER',
-          'SCREEN_BILLBOARD',
         ];
         
         // Check if role is in allowed list (case-insensitive)
@@ -72,6 +72,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         );
         
         if (isAllowedRole) {
+          // Reset navigation tab to Home
+          ref.read(dashboardNavigationProvider.notifier).state = 0;
+
           // Role is valid - navigate to dashboard
           if (!mounted) return;
           setState(() => _isLoading = false);
@@ -182,7 +185,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             right: 0,
             bottom: 0,
             child: Image.asset(
-              'assets/promotions/billboard2.jpg',
+              'assets/promotions/fron1.jpg',
               fit: BoxFit.fitHeight,
               alignment: Alignment.topCenter,
             ),
@@ -359,45 +362,45 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                       SizedBox(height: 24.h),
 
-                      // 🔹 Conditional Login Options
-                      Opacity(
-                        opacity: _hasStoredUsername ? 1.0 : 0.5,
-                        child: Column(
-                          children: [
-                            _buildLoginOption(
-                              icon: Icons.fingerprint,
-                              label: 'Login with Thumbprint',
-                              onTap: _hasStoredUsername
-                                  ? () => context.push('/biometric-login')
-                                  : () {
-                                      AppMessenger.show(
-                                        context,
-                                        message:
-                                            'Please login once before enabling biometric login.',
-                                        type: MessageType.warning,
-                                      );
-                                    },
-                            ),
-                            SizedBox(height: 12.h),
-                            _buildLoginOption(
-                              icon: Icons.lock_outline,
-                              label: 'Login with Passcode',
-                              onTap: _hasStoredUsername
-                                  ? () => context.push('/passcode-login')
-                                  : () {
-                                      AppMessenger.show(
-                                        context,
-                                        message:
-                                            'Please login once before enabling passcode login.',
-                                        type: MessageType.warning,
-                                      );
-                                    },
-                            ),
-                          ],
-                        ),
-                      ),
+                      // 🔹 Conditional Login Options (temporarily hidden)
+                      // Opacity(
+                      //   opacity: _hasStoredUsername ? 1.0 : 0.5,
+                      //   child: Column(
+                      //     children: [
+                      //       _buildLoginOption(
+                      //         icon: Icons.fingerprint,
+                      //         label: 'Login with Thumbprint',
+                      //         onTap: _hasStoredUsername
+                      //             ? () => context.push('/biometric-login')
+                      //             : () {
+                      //                 AppMessenger.show(
+                      //                   context,
+                      //                   message:
+                      //                       'Please login once before enabling biometric login.',
+                      //                   type: MessageType.warning,
+                      //                 );
+                      //               },
+                      //       ),
+                      //       SizedBox(height: 12.h),
+                      //       _buildLoginOption(
+                      //         icon: Icons.lock_outline,
+                      //         label: 'Login with Passcode',
+                      //         onTap: _hasStoredUsername
+                      //             ? () => context.push('/passcode-login')
+                      //             : () {
+                      //                 AppMessenger.show(
+                      //                   context,
+                      //                   message:
+                      //                       'Please login once before enabling passcode login.',
+                      //                   type: MessageType.warning,
+                      //                 );
+                      //               },
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
 
-                      SizedBox(height: 32.h),
+
 
                       // Don't have account
                       Row(

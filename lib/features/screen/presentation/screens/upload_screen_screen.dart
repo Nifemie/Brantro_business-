@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,9 +7,17 @@ import '../../../../controllers/re_useable/app_color.dart';
 import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../widgets/upload_screen_form.dart';
 import '../../logic/screen_provider.dart';
+import '../../data/models/screen_model.dart';
 
 class UploadScreenScreen extends ConsumerStatefulWidget {
-  const UploadScreenScreen({super.key});
+  final bool isUpdate;
+  final ScreenModel? screen;
+
+  const UploadScreenScreen({
+    super.key,
+    this.isUpdate = false,
+    this.screen,
+  });
 
   @override
   ConsumerState<UploadScreenScreen> createState() => _UploadScreenScreenState();
@@ -26,15 +35,56 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
   final _addressController = TextEditingController();
   final _rateAmountController = TextEditingController();
   final _totalSlotsController = TextEditingController();
+  final _estimatedReachController = TextEditingController();
+  final _latitudeController = TextEditingController();
+  final _longitudeController = TextEditingController();
   
   String? _selectedType = 'SCREEN';
-  int? _selectedCategoryId;
+  int? _selectedCategoryId = 23;
+  String? _selectedClass;
   String? _selectedCountry;
   String? _selectedState;
   String? _selectedCity;
   String? _selectedRateUnit;
   String? _thumbnailImage;
   String? _videoClip;
+  final List<String> _galleryImages = [];
+
+  bool _isLocalFile(String path) {
+    if (path.isEmpty) return false;
+    if (path.startsWith('http://') || path.startsWith('https://')) return false;
+    try {
+      return File(path).existsSync();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isUpdate && widget.screen != null) {
+      final s = widget.screen!;
+      _titleController.text = s.name;
+      _descriptionController.text = s.description;
+      _featuresController.text = s.featuresText;
+      _specificationsController.text = s.specifications;
+      _addressController.text = s.address;
+      _rateAmountController.text = s.price > 0 ? s.price.toString() : '';
+      _totalSlotsController.text = (s.totalAdSlots ?? 1).toString();
+      _estimatedReachController.text = (s.estimatedReach ?? 0).toString();
+      if (s.latitude != null) _latitudeController.text = s.latitude.toString();
+      if (s.longitude != null) _longitudeController.text = s.longitude.toString();
+
+      _selectedType = s.type.isNotEmpty ? s.type : 'SCREEN';
+      _selectedState = s.location.isNotEmpty ? s.location : null;
+      _selectedCountry = 'Nigeria';
+      _thumbnailImage = s.thumbnail.isNotEmpty ? s.thumbnail : null;
+      if (s.images.isNotEmpty) {
+        _galleryImages.addAll(s.images);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -45,6 +95,9 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
     _addressController.dispose();
     _rateAmountController.dispose();
     _totalSlotsController.dispose();
+    _estimatedReachController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
     super.dispose();
   }
 
@@ -55,6 +108,10 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
     }
     if (_selectedCategoryId == null) {
       _showError('Category is required');
+      return false;
+    }
+    if (_selectedClass == null) {
+      _showError('Class is required');
       return false;
     }
     if (_descriptionController.text.trim().isEmpty) {
@@ -89,7 +146,10 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
       _showError('Total slots is required');
       return false;
     }
-    // Note: Thumbnail is optional until file upload endpoint is available
+    if (_thumbnailImage == null) {
+      _showError('Thumbnail Image is required');
+      return false;
+    }
     
     return true;
   }
@@ -111,25 +171,54 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Upload thumbnail if selected
+      // Upload thumbnail if local file
       String? thumbnailUrl;
-      if (_thumbnailImage != null) {
-        try {
-          final repository = ref.read(screenProvider.notifier).repository;
-          thumbnailUrl = await repository.uploadFile(_thumbnailImage!, prefix: 'location-thumbnail');
-        } catch (e) {
-          throw Exception('Failed to upload thumbnail: ${e.toString().replaceAll('Exception: ', '')}');
+      if (_thumbnailImage != null && _thumbnailImage!.isNotEmpty) {
+        if (_isLocalFile(_thumbnailImage!)) {
+          try {
+            final repository = ref.read(screenProvider.notifier).repository;
+            thumbnailUrl = await repository.uploadFile(_thumbnailImage!, prefix: 'location-thumbnail');
+          } catch (e) {
+            throw Exception('Failed to upload thumbnail: ${e.toString().replaceAll('Exception: ', '')}');
+          }
+        } else {
+          thumbnailUrl = _thumbnailImage;
         }
       }
 
-      // Upload video if selected
+      // Upload video if local file
       String? videoUrl;
-      if (_videoClip != null) {
+      if (_videoClip != null && _videoClip!.isNotEmpty) {
+        if (_isLocalFile(_videoClip!)) {
+          try {
+            final repository = ref.read(screenProvider.notifier).repository;
+            videoUrl = await repository.uploadFile(_videoClip!, prefix: 'location-video');
+          } catch (e) {
+            throw Exception('Failed to upload video: ${e.toString().replaceAll('Exception: ', '')}');
+          }
+        } else {
+          videoUrl = _videoClip;
+        }
+      }
+
+      // Upload gallery images if local file
+      final List<String> uploadedGalleryUrls = [];
+      if (_galleryImages.isNotEmpty) {
         try {
           final repository = ref.read(screenProvider.notifier).repository;
-          videoUrl = await repository.uploadFile(_videoClip!, prefix: 'location-video');
+          for (final imagePath in _galleryImages) {
+            if (_isLocalFile(imagePath)) {
+              final url = await repository.uploadFile(
+                imagePath,
+                prefix: 'location-gallery',
+              );
+              uploadedGalleryUrls.add(url);
+            } else {
+              uploadedGalleryUrls.add(imagePath);
+            }
+          }
         } catch (e) {
-          throw Exception('Failed to upload video: ${e.toString().replaceAll('Exception: ', '')}');
+          throw Exception('Failed to upload gallery image: ${e.toString().replaceAll('Exception: ', '')}');
         }
       }
 
@@ -137,15 +226,21 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
       final formData = {
         'title': _titleController.text.trim(),
         'type': _selectedType,
+        'class': _selectedClass,
+        'coverageAreas': [],
+        'estimatedReach': [int.tryParse(_estimatedReachController.text.trim()) ?? 0],
         'categoryId': _selectedCategoryId,
         'description': _descriptionController.text.trim(),
         'address': _addressController.text.trim(),
         'city': _selectedCity,
         'state': _selectedState,
         'country': _selectedCountry,
-        'rateAmount': double.parse(_rateAmountController.text.trim()),
+        'latitude': double.tryParse(_latitudeController.text.trim()) ?? 0.0,
+        'longitude': double.tryParse(_longitudeController.text.trim()) ?? 0.0,
+        'rate': double.parse(_rateAmountController.text.trim()),
         'rateUnit': _selectedRateUnit,
-        'totalSlots': int.parse(_totalSlotsController.text.trim()),
+        'status': 'ACTIVE',
+        'totalAdSlots': int.parse(_totalSlotsController.text.trim()),
       };
 
       // Add optional fields
@@ -161,15 +256,22 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
       if (videoUrl != null) {
         formData['videoClip'] = videoUrl;
       }
+      if (uploadedGalleryUrls.isNotEmpty) {
+        formData['gallery'] = uploadedGalleryUrls;
+      }
 
-      await ref.read(screenProvider.notifier).uploadScreen(formData);
+      if (widget.isUpdate && widget.screen != null) {
+        await ref.read(screenProvider.notifier).updateScreen(widget.screen!.id, formData);
+      } else {
+        await ref.read(screenProvider.notifier).uploadScreen(formData);
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Screen uploaded successfully!'),
+          SnackBar(
+            content: Text(widget.isUpdate ? 'Screen updated successfully!' : 'Screen uploaded successfully!'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
         context.go('/screen-marketplace');
@@ -178,7 +280,7 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upload failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            content: Text('${widget.isUpdate ? "Update" : "Upload"} failed: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -200,7 +302,7 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const DashboardAppBar(title: 'UPLOAD SCREEN'),
+            DashboardAppBar(title: widget.isUpdate ? 'EDIT SCREEN' : 'UPLOAD SCREEN'),
             
             Expanded(
               child: SingleChildScrollView(
@@ -213,7 +315,11 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
                   addressController: _addressController,
                   rateAmountController: _rateAmountController,
                   totalSlotsController: _totalSlotsController,
+                  estimatedReachController: _estimatedReachController,
+                  latitudeController: _latitudeController,
+                  longitudeController: _longitudeController,
                   selectedType: _selectedType,
+                  selectedClass: _selectedClass,
                   selectedCategoryId: _selectedCategoryId,
                   selectedCountry: _selectedCountry,
                   selectedState: _selectedState,
@@ -221,7 +327,9 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
                   selectedRateUnit: _selectedRateUnit,
                   thumbnailImage: _thumbnailImage,
                   videoClip: _videoClip,
+                  galleryImages: _galleryImages,
                   onTypeChanged: (value) => setState(() => _selectedType = value),
+                  onClassChanged: (value) => setState(() => _selectedClass = value),
                   onCategoryChanged: (value) => setState(() => _selectedCategoryId = value),
                   onCountryChanged: (value) => setState(() {
                     _selectedCountry = value;
@@ -236,6 +344,10 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
                   onRateUnitChanged: (value) => setState(() => _selectedRateUnit = value),
                   onThumbnailChanged: (value) => setState(() => _thumbnailImage = value),
                   onVideoClipChanged: (value) => setState(() => _videoClip = value),
+                  onGalleryImagesChanged: (value) => setState(() {
+                    _galleryImages.clear();
+                    _galleryImages.addAll(value);
+                  }),
                 ),
               ),
             ),
@@ -276,7 +388,7 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
                           ),
                         )
                       : Text(
-                          'Upload Screen',
+                          widget.isUpdate ? 'Update Screen' : 'Upload Screen',
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w600,

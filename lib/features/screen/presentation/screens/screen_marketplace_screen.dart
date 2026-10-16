@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/search_filter_card.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/filter_sheet.dart';
+import '../../../../core/widgets/delete_location_dialog.dart';
 import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../dashboard/presentation/widgets/sidebar_menu.dart';
 import '../widgets/screen_card.dart';
@@ -66,6 +67,10 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
                         onActionButtonTap: _uploadScreen,
                         actionButtonLabel: 'Upload Screen',
                         actionButtonIcon: Icons.upload,
+                        selectedFilters: ref.read(screenProvider.notifier).selectedFilters,
+                        onRemoveFilter: (key) => ref.read(screenProvider.notifier).removeFilter(key),
+                        onClearFilters: () => ref.read(screenProvider.notifier).clearFilters(),
+                        onChanged: (query) => ref.read(screenProvider.notifier).updateSearch(query),
                       ),
                     ),
                     hasScreens
@@ -74,14 +79,10 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
                             sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
-                                  final screen = screenState.data![index];
+                                  final sortedData = List.of(screenState.data ?? [])..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                                  final screen = sortedData[index];
                                   return ScreenCard(
-                                    image: screen.images.isNotEmpty ? screen.images.first : '',
-                                    name: screen.name,
-                                    location: screen.address,
-                                    size: screen.size,
-                                    price: '₦${screen.price.toStringAsFixed(0)}/month',
-                                    isActive: screen.isActive,
+                                    screen: screen,
                                     onViewSlots: () {
                                       context.push('/ad-slots', extra: {
                                         'parentId': screen.id,
@@ -97,7 +98,10 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
                                           screenName: screen.name,
                                           onEdit: () {
                                             Navigator.pop(context);
-                                            print('Edit ${screen.name}');
+                                            context.push('/upload-screen', extra: {
+                                              'isUpdate': true,
+                                              'screen': screen,
+                                            });
                                           },
                                           onDelete: () async {
                                             Navigator.pop(context);
@@ -106,14 +110,16 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
                                               try {
                                                 await ref.read(screenProvider.notifier).deleteScreen(screen.id);
                                                 if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                   ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Screen deleted successfully'), backgroundColor: Colors.green),
+                                                    const SnackBar(content: Text('Screen deleted successfully'), backgroundColor: Colors.green, duration: Duration(seconds: 3)),
                                                   );
                                                 }
                                               } catch (e) {
                                                 if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                                   ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(content: Text('Delete failed: ${e.toString()}'), backgroundColor: Colors.red),
+                                                     SnackBar(content: Text('Delete failed: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red, duration: const Duration(seconds: 3)),
                                                   );
                                                 }
                                               }
@@ -151,6 +157,8 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
   }
 
   Future<void> _showFilters() async {
+    final currentFilters = ref.read(screenProvider.notifier).selectedFilters;
+
     await showModalBottomSheet<Map<String, String?>>(
       context: context,
       isScrollControlled: true,
@@ -162,12 +170,30 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
         builder: (context, scrollController) => FilterSheet(
           title: 'Screen Filters',
           sections: [
-            FilterSection(title: 'Location', options: ['All', 'Abuja', 'Lagos', 'Port Harcourt', 'Kano', 'Ibadan']),
-            FilterSection(title: 'Size', options: ['All', '75 inch', '65 inch', '55 inch', '50 inch']),
-            FilterSection(title: 'Status', options: ['All', 'Active', 'Inactive', 'Maintenance']),
-            FilterSection(title: 'Price Range', options: ['All', 'Under ₦300k', '₦300k - ₦500k', '₦500k - ₦700k', 'Above ₦700k']),
+            FilterSection(
+              title: 'Location',
+              options: ['All', 'Abuja', 'Lagos', 'Port Harcourt', 'Kano', 'Ibadan'],
+              selectedValue: currentFilters['Location'],
+            ),
+            FilterSection(
+              title: 'Size',
+              options: ['All', '75 inch', '65 inch', '55 inch', '50 inch'],
+              selectedValue: currentFilters['Size'],
+            ),
+            FilterSection(
+              title: 'Status',
+              options: ['All', 'Active', 'Inactive', 'Maintenance'],
+              selectedValue: currentFilters['Status'],
+            ),
+            FilterSection(
+              title: 'Price Range',
+              options: ['All', 'Under ₦300k', '₦300k - ₦500k', '₦500k - ₦700k', 'Above ₦700k'],
+              selectedValue: currentFilters['Price Range'],
+            ),
           ],
-          onApply: (selectedFilters) => print('Selected filters: $selectedFilters'),
+          onApply: (selectedFilters) {
+            ref.read(screenProvider.notifier).updateFilters(selectedFilters);
+          },
         ),
       ),
     );
@@ -176,16 +202,6 @@ class _ScreenMarketplaceScreenState extends ConsumerState<ScreenMarketplaceScree
   void _uploadScreen() => context.push('/upload-screen');
 
   Future<bool?> _showDeleteConfirmation(BuildContext context, String screenName) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Screen'),
-        content: Text('Are you sure you want to delete "$screenName"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), style: TextButton.styleFrom(foregroundColor: Colors.red), child: const Text('Delete')),
-        ],
-      ),
-    );
+    return DeleteLocationDialog.show(context);
   }
 }

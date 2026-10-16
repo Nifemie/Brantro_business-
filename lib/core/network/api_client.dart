@@ -107,7 +107,7 @@ class ApiClient {
       print('[ApiClient] POST Success: ${response.realUri}');
       return response;
     } on DioException catch (e) {
-      print('[ApiClient] POST Failed: ${e.response?.realUri ?? path}');
+      print('[ApiClient] POST Failed: ${e.response?.realUri ?? path} - Status: ${e.response?.statusCode} - Response: ${e.response?.data}');
       rethrow;
     }
   }
@@ -156,6 +156,21 @@ class ApiClient {
       return response;
     } on DioException catch (e) {
       print('[ApiClient] PUT Failed: ${e.response?.realUri ?? path}');
+      rethrow;
+    }
+  }
+
+  Future<Response> patch(String path, {Map<String, dynamic>? data}) async {
+    final options = Options();
+    final requireAuth = _requiresAuth(path);
+    await _withAuth(options, requireAuth: requireAuth);
+
+    try {
+      final response = await dio.patch(path, data: data, options: options);
+      print('[ApiClient] PATCH Success: ${response.realUri}');
+      return response;
+    } on DioException catch (e) {
+      print('[ApiClient] PATCH Failed: ${e.response?.realUri ?? path}');
       rethrow;
     }
   }

@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../controllers/re_useable/app_color.dart';
+import '../../../../core/utils/html_helper.dart';
 import '../../data/models/ad_slot_model.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'ad_slot_status_badge.dart';
+import 'ad_slot_detail_box.dart';
+import 'ad_slot_options_menu.dart';
+import 'ad_slot_price_container.dart';
 
 class AdSlotItemCard extends StatelessWidget {
   final AdSlotModel slot;
@@ -22,6 +27,8 @@ class AdSlotItemCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final hasSocialData = slot.platforms != null && slot.platforms!.isNotEmpty;
+
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(20.w),
@@ -39,117 +46,153 @@ class AdSlotItemCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Link Icon + Status Badge
+          // Top Row: Platform Icon + Platform Name & Status Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: EdgeInsets.all(10.w),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Icon(
-                  Icons.link,
-                  size: 20.sp,
-                  color: isDark ? Colors.white70 : Colors.grey[600],
+              Expanded(
+                child: Row(
+                  children: [
+                    if (hasSocialData) ...[
+                      // Render Instagram SVG
+                      if (slot.platforms!.contains('instagram')) ...[
+                        SvgPicture.string(
+                          '<svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>',
+                          width: 24.w,
+                          height: 24.h,
+                        ),
+                        SizedBox(width: 8.w),
+                      ] else if (slot.platforms!.contains('tiktok')) ...[
+                        SvgPicture.string(
+                          '<svg viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>',
+                          width: 24.w,
+                          height: 24.h,
+                        ),
+                        SizedBox(width: 8.w),
+                      ],
+                      Expanded(
+                        child: Text(
+                          slot.platforms!.map((p) => p[0].toUpperCase() + p.substring(1)).join(', '),
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ] else ...[
+                      Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Icon(
+                          Icons.link,
+                          size: 20.sp,
+                          color: isDark ? Colors.white70 : Colors.grey[600],
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          slot.parentType.isNotEmpty 
+                              ? slot.parentType[0].toUpperCase() + slot.parentType.substring(1)
+                              : 'General',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              _buildStatusBadge(isDark),
+              AdSlotStatusBadge(status: slot.status),
+            ],
+          ),
+
+          SizedBox(height: 12.h),
+
+          // Title: "Instagram Story Promotion (50K+ Audience)"
+          Text(
+            slot.title ?? slot.slotNumber,
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          SizedBox(height: 8.h),
+
+          // Deliverables (ContentTypes) / Description & Badge Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  slot.contentTypes != null && slot.contentTypes!.isNotEmpty
+                      ? slot.contentTypes!.map((c) => c.toString()).join(', ')
+                      : HtmlHelper.stripHtml(slot.description ?? (slot.bookedBy != null ? 'Booked by: ${slot.bookedBy}' : 'Not booked')),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (slot.badge != null || slot.partnerType != null) ...[
+                SizedBox(width: 8.w),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child: Text(
+                    (slot.badge ?? slot.partnerType!).replaceAll('_', ' ').split(' ').map((s) => s.isNotEmpty ? s[0].toUpperCase() + s.substring(1).toLowerCase() : '').join(' '),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
 
           SizedBox(height: 16.h),
 
-          // Slot Name (Title)
-          Text(
-            slot.slotNumber,
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF1A2B4B),
-            ),
+          // Large Price & Duration Container
+          AdSlotPriceContainer(
+            price: slot.price,
+            duration: slot.duration,
           ),
 
-          SizedBox(height: 12.h),
+          SizedBox(height: 16.h),
 
-          // Booked By Info Row
-          Text(
-            slot.bookedBy != null ? 'Booked by: ${slot.bookedBy}' : 'Not booked',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-          ),
-
-          SizedBox(height: 20.h),
-
-          // Price and Duration Row
+          // Three Detail Boxes: Revisions, Audience, Orders
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '₦${_formatPrice(slot.price)}',
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFFFF6B35),
-                ),
+              Expanded(
+                child: AdSlotDetailBox(label: 'Revisions', value: '${slot.maxRevisions ?? 'N/A'}'),
               ),
-              Text(
-                '${slot.duration}days',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFFFF6B35),
-                ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: AdSlotDetailBox(label: 'Audience', value: slot.audience ?? 'N/A'),
               ),
-            ],
-          ),
-
-          SizedBox(height: 20.h),
-
-          // Max Revisions and Audience Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Max Revisions: ',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                  Text(
-                    '${slot.maxRevisions ?? 'N/A'}',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF1A2B4B),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    'Audience: ',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                  Text(
-                    slot.audience ?? 'N/A',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF1A2B4B),
-                    ),
-                  ),
-                ],
+              SizedBox(width: 12.w),
+              Expanded(
+                child: AdSlotDetailBox(label: 'Orders', value: '${slot.ordersCount ?? 0}'),
               ),
             ],
           ),
@@ -193,25 +236,71 @@ class AdSlotItemCard extends StatelessWidget {
           // Action Buttons Row
           Row(
             children: [
-              // Menu Button (three dots)
+              // Menu Button (three dots) with custom orange styling
               Container(
                 width: 56.w,
                 height: 56.h,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[850] : const Color(0xFFFFE5DC),
+                  color: const Color(0xFFFFEBE3),
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
-                    color: isDark ? Colors.grey[700]! : const Color(0xFFFFD4C4),
+                    color: const Color(0xFFFFC5B0),
+                    width: 1.5,
                   ),
                 ),
-                child: IconButton(
-                  onPressed: () => _showOptionsMenu(context),
+                child: PopupMenuButton<String>(
                   icon: Icon(
                     Icons.more_horiz,
-                    color: isDark ? Colors.white70 : const Color(0xFFFF6B35),
+                    color: const Color(0xFFFF6B35),
                     size: 24.sp,
                   ),
+                  color: theme.cardTheme.color ?? (isDark ? Colors.grey[850] : Colors.white),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  offset: Offset(0, 50.h),
                   padding: EdgeInsets.zero,
+                  onSelected: (value) {
+                    if (value == 'update') {
+                      onEdit();
+                    } else if (value == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'update',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_square, size: 18.sp, color: isDark ? Colors.white70 : Colors.grey[800]),
+                          SizedBox(width: 12.w),
+                          Text(
+                            'Update',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: isDark ? Colors.white : Colors.grey[900],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, size: 18.sp, color: Colors.red),
+                          SizedBox(width: 12.w),
+                          Text(
+                            'Delete',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -219,203 +308,68 @@ class AdSlotItemCard extends StatelessWidget {
 
               // View Orders Button
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    context.push('/ad-campaigns', extra: {
-                      'parentId': slot.parentId,
-                      'parentType': slot.parentType,
-                      'parentName': slot.slotNumber,
-                    });
-                  },
-                  icon: Icon(Icons.shopping_bag_outlined, size: 18.sp),
-                  label: Text(
-                    'View Orders',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? Colors.white : const Color(0xFF1A2B4B),
-                    side: BorderSide(
-                      color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                      width: 1.5,
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(width: 12.w),
-
-              // Update Button
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: onEdit,
-                  icon: Icon(Icons.edit_outlined, size: 18.sp),
-                  label: Text(
-                    'Update',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003D82),
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(bool isDark) {
-    Color badgeColor;
-    String statusText;
-
-    switch (slot.status.toLowerCase()) {
-      case 'available':
-        badgeColor = const Color(0xFF00C853);
-        statusText = 'Available';
-        break;
-      case 'booked':
-        badgeColor = const Color(0xFFFF9800);
-        statusText = 'Booked';
-        break;
-      case 'occupied':
-        badgeColor = Colors.red;
-        statusText = 'Occupied';
-        break;
-      default:
-        badgeColor = Colors.grey;
-        statusText = slot.status;
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(6.r),
-      ),
-      child: Text(
-        statusText,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  void _showOptionsMenu(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20.r),
-            topRight: Radius.circular(20.r),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: EdgeInsets.only(top: 12.h),
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[700] : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(20.w),
-                child: Column(
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    ListTile(
-                      leading: Icon(
-                        Icons.info_outline,
-                        color: isDark ? Colors.white70 : Colors.grey[700],
-                      ),
-                      title: Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: isDark ? Colors.white : Colors.grey[900],
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56.h,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          context.push('/ad-campaigns', extra: {
+                            'parentId': slot.id.toString(), // This is the adSlotId
+                            'parentType': slot.parentType,
+                            'parentName': slot.slotNumber,
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003D82),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        child: Text(
+                          'View Orders',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        // TODO: Navigate to slot details
-                      },
                     ),
-                    ListTile(
-                      leading: Icon(
-                        Icons.share_outlined,
-                        color: isDark ? Colors.white70 : Colors.grey[700],
-                      ),
-                      title: Text(
-                        'Share',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: isDark ? Colors.white : Colors.grey[900],
+                    Positioned(
+                      top: -6.h,
+                      right: -6.w,
+                      child: Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF6B35),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 20.w,
+                          minHeight: 20.h,
+                        ),
+                        child: Text(
+                          '${slot.ordersCount ?? 0}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        // TODO: Share slot
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.red,
-                      ),
-                      title: Text(
-                        'Delete',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Colors.red,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        onDelete();
-                      },
                     ),
                   ],
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ),
-    );
-  }
-
-  String _formatPrice(double price) {
-    return price.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
     );
   }
 }

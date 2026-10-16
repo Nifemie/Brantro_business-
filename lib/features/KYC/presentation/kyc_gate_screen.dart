@@ -19,22 +19,24 @@ class KycGateScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final kycState = ref.watch(kycProvider);
     final status = kycState.verificationStatus;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'KYC Required',
           style: TextStyle(
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -50,7 +52,7 @@ class KycGateScreen extends ConsumerWidget {
                 width: 100.w,
                 height: 100.w,
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withOpacity(isDark ? 0.2 : 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -68,7 +70,7 @@ class KycGateScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               SizedBox(height: 12.h),
@@ -79,7 +81,7 @@ class KycGateScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                   height: 1.5,
                 ),
               ),
@@ -96,9 +98,9 @@ class KycGateScreen extends ConsumerWidget {
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: isDark ? Colors.blue.withOpacity(0.1) : Colors.blue[50],
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(color: isDark ? Colors.blue.withOpacity(0.3) : Colors.blue[200]!),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +109,7 @@ class KycGateScreen extends ConsumerWidget {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Colors.blue[700],
+                          color: isDark ? Colors.blue[300] : Colors.blue[700],
                           size: 20.sp,
                         ),
                         SizedBox(width: 8.w),
@@ -116,16 +118,16 @@ class KycGateScreen extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,
-                            color: Colors.blue[900],
+                            color: isDark ? Colors.blue[200] : Colors.blue[900],
                           ),
                         ),
                       ],
                     ),
                     SizedBox(height: 12.h),
-                    _buildReason('Protect buyers and sellers'),
-                    _buildReason('Prevent fraud and scams'),
-                    _buildReason('Comply with regulations'),
-                    _buildReason('Build trust in the marketplace'),
+                    _buildReason(context, 'Protect buyers and sellers'),
+                    _buildReason(context, 'Prevent fraud and scams'),
+                    _buildReason(context, 'Comply with regulations'),
+                    _buildReason(context, 'Build trust in the marketplace'),
                   ],
                 ),
               ),
@@ -142,17 +144,18 @@ class KycGateScreen extends ConsumerWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
+                      elevation: 0,
                     ),
                     child: Text(
                       'Start KYC Verification',
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -167,17 +170,18 @@ class KycGateScreen extends ConsumerWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
+                      elevation: 0,
                     ),
                     child: Text(
                       'Check Verification Status',
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -191,17 +195,18 @@ class KycGateScreen extends ConsumerWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
+                      elevation: 0,
                     ),
                     child: Text(
                       'Resubmit Verification',
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -216,7 +221,7 @@ class KycGateScreen extends ConsumerWidget {
                   'Not Now',
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: Colors.grey[600],
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
               ),
@@ -228,7 +233,8 @@ class KycGateScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildReason(String text) {
+  Widget _buildReason(BuildContext context, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.only(bottom: 6.h),
       child: Row(
@@ -236,7 +242,7 @@ class KycGateScreen extends ConsumerWidget {
           Icon(
             Icons.check_circle,
             size: 16.sp,
-            color: Colors.blue[700],
+            color: isDark ? Colors.blue[300] : Colors.blue[700],
           ),
           SizedBox(width: 8.w),
           Expanded(
@@ -244,7 +250,7 @@ class KycGateScreen extends ConsumerWidget {
               text,
               style: TextStyle(
                 fontSize: 13.sp,
-                color: Colors.blue[900],
+                color: isDark ? Colors.blue[200] : Colors.blue[900],
               ),
             ),
           ),

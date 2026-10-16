@@ -13,7 +13,10 @@ class RecentBillboardsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final billboardsState = ref.watch(billboardProvider);
-    final recentBillboards = billboardsState.data?.take(3).toList() ?? [];
+    final sortedData = List.of(billboardsState.data ?? [])..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final recentBillboards = sortedData.take(3).toList();
+
+    if (recentBillboards.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,22 +47,10 @@ class RecentBillboardsSection extends ConsumerWidget {
           ],
         ),
         SizedBox(height: 12.h),
-        recentBillboards.isEmpty
-            ? EmptyState(
-                icon: Icons.map_outlined,
-                title: 'No Billboards Yet',
-                message: 'Your billboards will appear here',
-                showIconBackground: false,
-              )
-            : Column(
-                children: recentBillboards.map((billboard) {
+        Column(
+                children: recentBillboards.map<Widget>((billboard) {
                   return BillboardCard(
-                    image: billboard.images.isNotEmpty ? billboard.images.first : '',
-                    name: billboard.name,
-                    location: billboard.location,
-                    size: billboard.size,
-                    price: '₦${billboard.price.toStringAsFixed(0)}',
-                    isActive: billboard.isActive,
+                    billboard: billboard,
                     onViewSlots: () {
                       context.push('/ad-slots', extra: {
                         'parentId': billboard.id,

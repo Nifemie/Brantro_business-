@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/utils/app_messanger.dart';
-import '../../../../../core/utils/color_utils.dart';
+import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../controllers/re_useable/app_button.dart';
 import '../../../logic/auth_notifiers.dart';
 import '../../../data/models/reset_password_request.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String identity;
-  const ResetPasswordScreen({required this.identity, super.key});
+  final String? otp;
+  const ResetPasswordScreen({
+    required this.identity,
+    this.otp,
+    super.key,
+  });
 
   @override
   ConsumerState<ResetPasswordScreen> createState() =>
@@ -36,6 +42,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       final request = ResetPasswordRequest(
         identity: widget.identity,
         newPassword: password,
+        otp: widget.otp,
       );
 
       await ref.read(authNotifierProvider.notifier).resetPassword(request);
@@ -67,56 +74,70 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         message: 'An unexpected error occurred: ${e.toString()}',
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryBg = isDark ? const Color(0xFF12151B) : Colors.white;
+
     return Scaffold(
+      backgroundColor: primaryBg,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
+        backgroundColor: primaryBg,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          onPressed: () => GoRouter.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => context.pop(),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20.sp,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+          physics: const BouncingScrollPhysics(),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Reset Password',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
                   'Create a new password between 8 and 32 characters to keep your account secure.',
                   style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
+                    fontSize: 14.sp,
+                    color: isDark ? Colors.white60 : AppColors.grey600,
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: 36.h),
 
                 // Password Field
                 _buildPasswordField(
                   controller: _passwordController,
-                  label: 'Password',
+                  label: 'New Password',
                   hint: '••••••••',
                   obscureText: _obscurePassword,
                   onToggleVisibility: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
+                  isDark: isDark,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
@@ -124,7 +145,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     if (value.length < 8 || value.length > 32) {
                       return 'Password must be between 8 and 32 characters';
                     }
-                    final pattern = RegExp(r'^[ -~]+$'); // printable ASCII
+                    final pattern = RegExp(r'^[ -~]+$');
                     if (!pattern.hasMatch(value)) {
                       return 'Password contains invalid characters';
                     }
@@ -132,17 +153,18 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   },
                 ),
 
-                const SizedBox(height: 24),
+                SizedBox(height: 20.h),
 
                 // Confirm Password Field
                 _buildPasswordField(
                   controller: _confirmPasswordController,
-                  label: 'Confirm Password',
+                  label: 'Confirm New Password',
                   hint: '••••••••',
                   obscureText: _obscureConfirmPassword,
                   onToggleVisibility: () => setState(
                     () => _obscureConfirmPassword = !_obscureConfirmPassword,
                   ),
+                  isDark: isDark,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please confirm your password';
@@ -154,13 +176,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   },
                 ),
 
-                const SizedBox(height: 40),
+                SizedBox(height: 40.h),
 
                 FullWidthButton(
-                  text: 'Continue',
+                  text: 'Update Password',
                   isLoading: _isLoading,
                   onPressed: _resetPassword,
                 ),
+
+                SizedBox(height: 30.h),
               ],
             ),
           ),
@@ -176,51 +200,69 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     required bool obscureText,
     required VoidCallback onToggleVisibility,
     required String? Function(String?) validator,
+    required bool isDark,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         TextFormField(
           controller: controller,
           obscureText: obscureText,
           validator: validator,
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+            hintStyle: TextStyle(
+              color: isDark ? Colors.white38 : Colors.grey.shade400,
+              fontSize: 14.sp,
+            ),
+            filled: true,
+            fillColor: isDark ? const Color(0xFF1E232D) : const Color(0xFFF8FAFC),
             suffixIcon: IconButton(
               onPressed: onToggleVisibility,
               icon: Icon(
-                obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey,
+                obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                color: isDark ? Colors.white54 : Colors.grey,
+                size: 20.sp,
               ),
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.primaryColor),
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: const BorderSide(color: AppColors.error),
             ),
-            filled: true,
-            fillColor: Colors.grey.shade50,
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: const BorderSide(color: AppColors.error, width: 2),
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
           ),
         ),
       ],

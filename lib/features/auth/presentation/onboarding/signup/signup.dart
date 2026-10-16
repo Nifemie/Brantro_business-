@@ -19,27 +19,18 @@ class _SignupScreenState extends State<SignupScreen> {
 
   final List<String> roles = [
     'Advertiser',
-    'Artist',
-    'Content Producer',
-    'Influencer',
-    'UGC Creator',
-    'Host',
-    'TV Station',
-    'Radio Station',
-    'Media House',
-    'Creatives',
-    'Designer',
-    'Talent Manager',
   ];
 
   void _showDialog<T>({
     required String title,
     required List<DialogOption<T>> options,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E232D) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -51,14 +42,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   IconButton(
                     padding: EdgeInsets.zero,
                     onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(Icons.arrow_back),
+                    icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ],
@@ -72,7 +64,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         .map(
                           (option) => Padding(
                             padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildDialogOption(option, ctx),
+                            child: _buildDialogOption(option, ctx, isDark),
                           ),
                         )
                         .toList(),
@@ -86,7 +78,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildDialogOption<T>(DialogOption<T> option, BuildContext ctx) {
+  Widget _buildDialogOption<T>(DialogOption<T> option, BuildContext ctx, bool isDark) {
     final isSelected = option.isSelected;
     return GestureDetector(
       onTap: () async {
@@ -102,12 +94,14 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: option.disabled == true ? Colors.grey.shade100 : Colors.white,
+          color: option.disabled == true
+              ? (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100)
+              : (isDark ? const Color(0xFF12151B) : Colors.white),
           border: Border.all(
             width: 1,
             color: isSelected
                 ? (option.activeColor ?? AppColors.primaryColor)
-                : Colors.grey.shade300,
+                : (isDark ? Colors.white12 : Colors.grey.shade300),
           ),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -120,7 +114,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? option.activeColor!.withOpacity(0.2)
-                      : Colors.grey.shade100,
+                      : (isDark ? Colors.white10 : Colors.grey.shade100),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 alignment: Alignment.center,
@@ -133,9 +127,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 children: [
                   Text(
                     option.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   if (option.subtitle != null) const SizedBox(height: 6),
@@ -144,7 +139,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       option.subtitle!,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
                     ),
                 ],
@@ -191,9 +186,12 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _showRoleDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: isDark ? const Color(0xFF1E232D) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
         ),
@@ -207,7 +205,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
               SizedBox(height: 20.h),
@@ -244,33 +242,43 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryBg = isDark ? const Color(0xFF12151B) : Colors.white;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
-        backgroundColor: Colors.white,
+        backgroundColor: primaryBg,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
           onPressed: () => context.pop(),
         ),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: primaryBg,
       body: SingleChildScrollView(
         padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 60.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLogoHeader(),
+            _buildLogoHeader(isDark),
             SizedBox(height: 40.h),
             Text(
               'Create account',
-              style: TextStyle(fontSize: 28.rsp, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 28.rsp,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
             ),
             SizedBox(height: 8.h),
             Text(
               'Select your role to get started',
-              style: TextStyle(fontSize: 16.rsp, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 16.rsp,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
             ),
             SizedBox(height: 32.h),
 
@@ -280,48 +288,152 @@ class _SignupScreenState extends State<SignupScreen> {
               style: TextStyle(
                 fontSize: 14.rsp,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey,
+                color: isDark ? Colors.grey[400] : Colors.grey,
               ),
             ),
             SizedBox(height: 16.h),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12.h,
-              crossAxisSpacing: 12.w,
-              childAspectRatio: 0.85,
-              children: roles.map((role) {
-                final roleInfo = ROLE_INFORMATION[role]!;
-                final isSelected = selectedRole == role;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => selectedRole = role);
-                    // Navigate immediately to role details
-                    context.push(
-                      '/role-details',
-                      extra: {'role': role, 'accountType': selectedAccountType},
-                    );
-                  },
-                  child: RoleCard(
-                    title: roleInfo.name,
-                    description: roleInfo.description,
-                    icon: roleInfo.icon,
-                    onSelect: () {
-                      setState(() => selectedRole = role);
-                      // Navigate immediately to role details
-                      context.push(
-                        '/role-details',
-                        extra: {
-                          'role': role,
-                          'accountType': selectedAccountType,
-                        },
-                      );
-                    },
-                    isSelected: isSelected,
-                  ),
+            // Advertiser Role Card
+            GestureDetector(
+              onTap: () {
+                setState(() => selectedRole = 'Advertiser');
+                context.push(
+                  '/role-details',
+                  extra: {'role': 'Advertiser', 'accountType': selectedAccountType},
                 );
-              }).toList(),
+              },
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(20.w),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E222B) : Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: AppColors.primaryColor,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryColor.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52.w,
+                      height: 52.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Icon(
+                        Icons.campaign_rounded,
+                        color: AppColors.primaryColor,
+                        size: 28.sp,
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Advertiser',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryColor,
+                                  borderRadius: BorderRadius.circular(4.r),
+                                ),
+                                child: Text(
+                                  'Buyer',
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 6.h),
+                          Text(
+                            'Book advertising spaces, explore talent, collaborate with creators, and launch campaigns.',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16.sp,
+                      color: AppColors.primaryColor,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 24.h),
+
+            // Provider Notice Callout
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF161920) : const Color(0xFFF4F6F9),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.storefront_outlined,
+                        color: isDark ? Colors.orange[300] : Colors.orange[800],
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'Looking to Sell or Provide Services?',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    'If you are an Artist, Content Producer, Influencer, Screen or Billboard owner, please download and register on the Brantro Business app to manage your listings and bookings.',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
             SizedBox(height: 24.h),
           ],
@@ -330,7 +442,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildLogoHeader() {
+  Widget _buildLogoHeader(bool isDark) {
     return Row(
       children: [
         Container(
@@ -345,7 +457,11 @@ class _SignupScreenState extends State<SignupScreen> {
         SizedBox(width: 12.w),
         Text(
           'Brantro',
-          style: TextStyle(fontSize: 28.rsp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 28.rsp,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
         ),
       ],
     );

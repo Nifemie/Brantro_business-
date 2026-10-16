@@ -101,6 +101,11 @@ class AuthNotifier extends StateNotifier<DataState<UserModel>> {
     try {
       final response = await _repository.verifyAccount(request);
 
+      if (response.accessToken != null) {
+        log('[AuthNotifier] Saving session from verifyAccount...');
+        await SessionService.saveSession(response);
+      }
+
       state = state.copyWith(
         isInitialLoading: false,
         isDataAvailable: true,

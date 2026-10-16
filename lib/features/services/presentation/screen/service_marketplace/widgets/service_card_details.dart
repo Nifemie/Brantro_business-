@@ -2,20 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
 
+import 'package:intl/intl.dart';
+
 class ServiceCardDetails extends StatelessWidget {
   final String title;
-  final String price;
+  final double price;
+  final double? discount;
+  final int? estimatedReach;
   final String priceUnit;
   final List<String> tags;
   final VoidCallback onViewDetails;
+  final VoidCallback onViewOrders;
 
   const ServiceCardDetails({
     super.key,
     required this.title,
     required this.price,
+    this.discount,
+    this.estimatedReach,
     required this.priceUnit,
     required this.tags,
     required this.onViewDetails,
+    required this.onViewOrders,
   });
 
   @override
@@ -31,16 +39,19 @@ class ServiceCardDetails extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Title
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: textColor,
-              letterSpacing: 0.2,
+          GestureDetector(
+            onTap: onViewDetails,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+                letterSpacing: 0.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
 
           SizedBox(height: 12.h),
@@ -87,6 +98,36 @@ class ServiceCardDetails extends StatelessWidget {
             ],
           ),
 
+          if (estimatedReach != null && estimatedReach! > 0) ...[
+            SizedBox(height: 12.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFECE5),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.person_pin_outlined,
+                    size: 14.sp,
+                    color: const Color(0xFFFF6B35),
+                  ),
+                  SizedBox(width: 4.w),
+                  Text(
+                    'Reach: ${NumberFormat('#,###').format(estimatedReach)}',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFFF6B35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           SizedBox(height: 16.h),
 
           // Price Row
@@ -94,14 +135,35 @@ class ServiceCardDetails extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                price,
-                style: TextStyle(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
+              if (discount != null && discount! > 0) ...[
+                Text(
+                  NumberFormat.currency(symbol: '₦', decimalDigits: 0).format(price - discount!),
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
                 ),
-              ),
+                SizedBox(width: 8.w),
+                Text(
+                  NumberFormat.currency(symbol: '₦', decimalDigits: 0).format(price),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFFFF6B6B), // Soft Red
+                    decoration: TextDecoration.lineThrough,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  NumberFormat.currency(symbol: '₦', decimalDigits: 0).format(price),
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ],
               SizedBox(width: 4.w),
               Text(
                 priceUnit,
@@ -191,6 +253,9 @@ class ServiceCardDetails extends StatelessWidget {
                   onSelected: (value) {
                     // Handle option selection
                     debugPrint('Selected: $value');
+                    if (value == 'View') {
+                      onViewDetails();
+                    }
                   },
                 ),
               ),
@@ -200,7 +265,7 @@ class ServiceCardDetails extends StatelessWidget {
               // View Orders Button
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: onViewDetails,
+                  onPressed: onViewOrders,
                   icon: Icon(
                     Icons.shopping_bag_outlined,
                     color: Colors.white,

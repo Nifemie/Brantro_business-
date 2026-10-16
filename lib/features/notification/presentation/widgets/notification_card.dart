@@ -143,6 +143,11 @@ class NotificationCard extends StatelessWidget {
         iconColor = Colors.orange;
         backgroundColor = Colors.orange.withOpacity(0.1);
         break;
+      case NotificationType.revision:
+        iconData = Icons.refresh_rounded;
+        iconColor = const Color(0xFFF59E0B);
+        backgroundColor = const Color(0xFFF59E0B).withOpacity(0.1);
+        break;
     }
 
     return Container(

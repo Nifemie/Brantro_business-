@@ -1,24 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
 import 'package:brantro_business/controllers/re_useable/app_texts.dart';
+import 'package:brantro_business/features/account/logic/analytics_provider.dart';
 
-class PerformanceChart extends StatefulWidget {
+class PerformanceChart extends ConsumerStatefulWidget {
   const PerformanceChart({super.key});
 
   @override
-  State<PerformanceChart> createState() => _PerformanceChartState();
+  ConsumerState<PerformanceChart> createState() => _PerformanceChartState();
 }
 
-class _PerformanceChartState extends State<PerformanceChart> {
+class _PerformanceChartState extends ConsumerState<PerformanceChart> {
   String selectedFilter = '1M';
   final List<String> filters = ['ALL', '1M', '6M', '1Y'];
+
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    }
+    return number.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final analytics = ref.watch(userAnalyticsProvider).value;
+
+    final impressions = analytics?.impressions ?? 0;
+    final reach = analytics?.reach ?? 0;
+    final profileViews = analytics?.profileViews ?? 0;
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -42,67 +58,94 @@ class _PerformanceChartState extends State<PerformanceChart> {
             children: [
               Text(
                 'Performance',
-                style: AppTexts.h3(color: AppColors.primaryColor),
+                style: AppTexts.h3(
+                  color: isDark ? Colors.white : AppColors.primaryColor,
+                ),
               ),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: filters.map((filter) {
-                    final isSelected = filter == selectedFilter;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedFilter = filter;
-                        });
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(left: 6.w),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: filters.map((filter) {
+                  final isSelected = filter == selectedFilter;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedFilter = filter;
+                      });
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(left: 6.w),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (isDark
+                                  ? Colors.grey[800]
+                                  : const Color(0xFFEFF1F5))
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
                           color: isSelected
-                              ? (isDark
-                                    ? Colors.grey[800]
-                                    : const Color(0xFFEFF1F5))
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
-                            color: isSelected
-                                ? Colors.transparent
-                                : Colors.grey.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Text(
-                          filter,
-                          style: isSelected
-                              ? AppTexts.labelSmall(
-                                  color: AppColors.primaryColor,
-                                ).copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 11.sp,
-                                )
-                              : AppTexts.labelSmall(
-                                  color: AppColors.grey600,
-                                ).copyWith(fontSize: 11.sp),
+                              ? Colors.transparent
+                              : Colors.grey.withOpacity(0.2),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
+                      child: Text(
+                        filter,
+                        style: isSelected
+                            ? AppTexts.labelSmall(
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.primaryColor,
+                              ).copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11.sp,
+                              )
+                            : AppTexts.labelSmall(
+                                color: AppColors.grey600,
+                              ).copyWith(fontSize: 11.sp),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ],
           ),
-          SizedBox(height: 30.h),
-          SizedBox(height: 250.h, child: _buildChart()),
-          SizedBox(height: 20.h),
+
+          SizedBox(height: 16.h),
+
+          // Live Quick Metrics Row directly above the chart
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black.withOpacity(0.25) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildMetricSnippet('Impressions', _formatNumber(impressions), const Color(0xFFFF7A00), isDark),
+                Container(height: 24.h, width: 1, color: isDark ? Colors.white12 : Colors.black12),
+                _buildMetricSnippet('Reach', _formatNumber(reach), const Color(0xFF2ECA7F), isDark),
+                Container(height: 24.h, width: 1, color: isDark ? Colors.white12 : Colors.black12),
+                _buildMetricSnippet('Views', _formatNumber(profileViews), const Color(0xFF3B82F6), isDark),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 24.h),
+          SizedBox(height: 220.h, child: _buildChart()),
+          SizedBox(height: 16.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLegendItem(Colors.orange, 'Page Views'),
+              _buildLegendItem(const Color(0xFFFF7A00), 'Impressions', isDark),
               SizedBox(width: 24.w),
-              _buildLegendItem(Colors.green, 'Clicks'),
+              _buildLegendItem(const Color(0xFF2ECA7F), 'Reach', isDark),
             ],
           ),
         ],
@@ -110,7 +153,36 @@ class _PerformanceChartState extends State<PerformanceChart> {
     );
   }
 
-  Widget _buildLegendItem(Color color, String text) {
+  Widget _buildMetricSnippet(String label, String value, Color color, bool isDark) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 2.h),
+        Row(
+          children: [
+            Container(width: 6.w, height: 6.w, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            SizedBox(width: 4.w),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: isDark ? Colors.white60 : AppColors.grey600,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String text, bool isDark) {
     return Row(
       children: [
         Container(
@@ -121,7 +193,10 @@ class _PerformanceChartState extends State<PerformanceChart> {
         SizedBox(width: 6.w),
         Text(
           text,
-          style: TextStyle(fontSize: 14.sp, color: Colors.blueGrey),
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: isDark ? Colors.white60 : Colors.blueGrey,
+          ),
         ),
       ],
     );
@@ -130,7 +205,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
   Widget _buildChart() {
     return Stack(
       children: [
-        // Bar Chart (Page Views)
+        // Bar Chart (Impressions)
         BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceBetween,
@@ -138,27 +213,15 @@ class _PerformanceChartState extends State<PerformanceChart> {
             minY: 0,
             titlesData: FlTitlesData(
               show: true,
-              rightTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) {
                     const titles = [
-                      'Jan',
-                      'Feb',
-                      'Mar',
-                      'Apr',
-                      'May',
-                      'Jun',
-                      'Jul',
-                      'Aug',
-                      'Sep',
-                      'Oct',
-                      'Nov',
-                      'Dec',
+                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
                     ];
                     if (value >= 0 && value < titles.length) {
                       return Padding(
@@ -220,13 +283,13 @@ class _PerformanceChartState extends State<PerformanceChart> {
           ),
         ),
 
-        // Line Chart Overlay (Clicks)
+        // Line Chart Overlay (Reach)
         LineChart(
           LineChartData(
             maxY: 80,
             minY: 0,
-            titlesData: FlTitlesData(show: false),
-            gridData: FlGridData(show: false),
+            titlesData: const FlTitlesData(show: false),
+            gridData: const FlGridData(show: false),
             borderData: FlBorderData(show: false),
             lineBarsData: [
               LineChartBarData(
@@ -245,10 +308,10 @@ class _PerformanceChartState extends State<PerformanceChart> {
                   FlSpot(11, 35),
                 ],
                 isCurved: true,
-                color: const Color(0xFF2ECA7F), // Green
+                color: const Color(0xFF2ECA7F),
                 barWidth: 2,
                 isStrokeCapRound: true,
-                dotData: FlDotData(show: false),
+                dotData: const FlDotData(show: false),
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(
@@ -274,7 +337,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
       barRods: [
         BarChartRodData(
           toY: y,
-          color: AppColors.secondaryColor,
+          color: const Color(0xFFFF7A00),
           width: 8.w,
           borderRadius: BorderRadius.circular(4.r),
         ),

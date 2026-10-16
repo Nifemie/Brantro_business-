@@ -14,10 +14,13 @@ class AccountTypeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade300),
       ),
       child: Row(
         children: [
@@ -33,7 +36,7 @@ class AccountTypeTab extends StatelessWidget {
                     bottomLeft: Radius.circular(12.r),
                   ),
                   color: selectedType.toLowerCase().contains('personal')
-                      ? Colors.blue.shade50
+                      ? (isDark ? const Color(0xFF003380).withOpacity(0.3) : Colors.blue.shade50)
                       : Colors.transparent,
                 ),
                 child: Column(
@@ -44,8 +47,8 @@ class AccountTypeTab extends StatelessWidget {
                       Icons.person_outline,
                       size: 24.sp,
                       color: selectedType.toLowerCase().contains('personal')
-                          ? Colors.blue.shade600
-                          : Colors.grey.shade600,
+                          ? (isDark ? const Color(0xFF60A5FA) : Colors.blue.shade600)
+                          : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                     ),
                     SizedBox(height: 8.h),
                     Text(
@@ -54,8 +57,8 @@ class AccountTypeTab extends StatelessWidget {
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                         color: selectedType.toLowerCase().contains('personal')
-                            ? Colors.blue.shade600
-                            : Colors.grey.shade600,
+                            ? (isDark ? Colors.white : Colors.blue.shade600)
+                            : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                       ),
                     ),
                     SizedBox(height: 4.h),
@@ -64,7 +67,7 @@ class AccountTypeTab extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 11.sp,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         height: 1.3,
                       ),
                     ),
@@ -74,7 +77,7 @@ class AccountTypeTab extends StatelessWidget {
             ),
           ),
           // Divider
-          Container(width: 1, height: 80.h, color: Colors.grey.shade300),
+          Container(width: 1, height: 80.h, color: isDark ? Colors.white12 : Colors.grey.shade300),
           // Company Tab
           Expanded(
             child: GestureDetector(
@@ -87,7 +90,7 @@ class AccountTypeTab extends StatelessWidget {
                     bottomRight: Radius.circular(12.r),
                   ),
                   color: selectedType.toLowerCase().contains('business')
-                      ? Colors.blue.shade50
+                      ? (isDark ? const Color(0xFF003380).withOpacity(0.3) : Colors.blue.shade50)
                       : Colors.transparent,
                 ),
                 child: Column(
@@ -98,8 +101,8 @@ class AccountTypeTab extends StatelessWidget {
                       Icons.business_outlined,
                       size: 24.sp,
                       color: selectedType.toLowerCase().contains('business')
-                          ? Colors.blue.shade600
-                          : Colors.grey.shade600,
+                          ? (isDark ? const Color(0xFF60A5FA) : Colors.blue.shade600)
+                          : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                     ),
                     SizedBox(height: 8.h),
                     Text(
@@ -108,8 +111,8 @@ class AccountTypeTab extends StatelessWidget {
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                         color: selectedType.toLowerCase().contains('business')
-                            ? Colors.blue.shade600
-                            : Colors.grey.shade600,
+                            ? (isDark ? Colors.white : Colors.blue.shade600)
+                            : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                       ),
                     ),
                     SizedBox(height: 4.h),
@@ -118,7 +121,7 @@ class AccountTypeTab extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 11.sp,
-                        color: Colors.grey.shade600,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         height: 1.3,
                       ),
                     ),

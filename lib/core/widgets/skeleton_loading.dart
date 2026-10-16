@@ -18,9 +18,10 @@ class ShimmerWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
-      baseColor: baseColor ?? Colors.grey[300]!,
-      highlightColor: highlightColor ?? Colors.grey[100]!,
+      baseColor: baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+      highlightColor: highlightColor ?? (isDark ? Colors.grey[700]! : Colors.grey[100]!),
       child: child,
     );
   }
@@ -41,11 +42,12 @@ class SkeletonBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[800]! : Colors.white,
         borderRadius: borderRadius ?? BorderRadius.circular(4.r),
       ),
     );
@@ -63,11 +65,12 @@ class SkeletonCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[800]! : Colors.white,
         shape: BoxShape.circle,
       ),
     );
@@ -108,13 +111,15 @@ class SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return ShimmerWrapper(
       child: Container(
         width: width,
         height: height,
         margin: EdgeInsets.only(right: 12.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color ?? (isDark ? Colors.grey[850]! : Colors.white),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Column(
@@ -165,6 +170,8 @@ class SkeletonProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return ShimmerWrapper(
       child: Container(
         width: width,
@@ -172,7 +179,7 @@ class SkeletonProfileCard extends StatelessWidget {
         margin: EdgeInsets.only(right: 12.w),
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color ?? (isDark ? Colors.grey[850]! : Colors.white),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Column(
@@ -213,13 +220,15 @@ class SkeletonListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return ShimmerWrapper(
       child: Container(
         height: height ?? 80.h,
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color ?? (isDark ? Colors.grey[850]! : Colors.white),
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Row(
@@ -361,15 +370,17 @@ class SkeletonCampaignCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return ShimmerWrapper(
       child: Container(
         width: width,
         height: height,
-        margin: EdgeInsets.only(right: 16.w),
+        margin: EdgeInsets.only(bottom: 16.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color ?? (isDark ? Colors.grey[850]! : Colors.white),
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: Colors.grey[200]!, width: 1),
+          border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!, width: 1),
         ),
         child: SingleChildScrollView(
           child: Padding(
@@ -466,3 +477,91 @@ class SkeletonCampaignCard extends StatelessWidget {
     );
   }
 }
+
+/// Skeleton for Ad Slot Cards
+class SkeletonAdSlotCard extends StatelessWidget {
+  const SkeletonAdSlotCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return ShimmerWrapper(
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16.h),
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color ?? (isDark ? Colors.grey[850]! : Colors.white),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[200]!, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const SkeletonCircle(size: 24),
+                    SizedBox(width: 8.w),
+                    SkeletonLine(width: 100.w, height: 16.h),
+                  ],
+                ),
+                SkeletonBox(width: 60.w, height: 24.h, borderRadius: BorderRadius.circular(6.r)),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            
+            // Title
+            SkeletonLine(width: double.infinity, height: 18.h),
+            SizedBox(height: 4.h),
+            SkeletonLine(width: 200.w, height: 18.h),
+            SizedBox(height: 8.h),
+            
+            // Deliverables / Subtitle
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SkeletonLine(width: 150.w, height: 14.h),
+                SkeletonBox(width: 70.w, height: 20.h, borderRadius: BorderRadius.circular(6.r)),
+              ],
+            ),
+            SizedBox(height: 16.h),
+            
+            // Price & Duration
+            SkeletonBox(width: double.infinity, height: 56.h, borderRadius: BorderRadius.circular(12.r)),
+            SizedBox(height: 16.h),
+            
+            // Three boxes
+            Row(
+              children: [
+                Expanded(child: SkeletonBox(height: 50.h, borderRadius: BorderRadius.circular(8.r))),
+                SizedBox(width: 12.w),
+                Expanded(child: SkeletonBox(height: 50.h, borderRadius: BorderRadius.circular(8.r))),
+                SizedBox(width: 12.w),
+                Expanded(child: SkeletonBox(height: 50.h, borderRadius: BorderRadius.circular(8.r))),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            
+            // Divider
+            Divider(height: 1, thickness: 1, color: isDark ? Colors.grey[800] : Colors.grey[200]),
+            SizedBox(height: 16.h),
+            
+            // Buttons
+            Row(
+              children: [
+                SkeletonBox(width: 56.w, height: 56.h, borderRadius: BorderRadius.circular(12.r)),
+                SizedBox(width: 12.w),
+                Expanded(child: SkeletonBox(height: 56.h, borderRadius: BorderRadius.circular(12.r))),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

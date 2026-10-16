@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../data/models/order_model.dart';
+import '../../../../core/network/api_client.dart';
 
 class OrderCustomerCard extends StatelessWidget {
   final OrderModel order;
@@ -16,16 +18,30 @@ class OrderCustomerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userMap = order.metadata?['user'] ?? order.metadata?['creator'] ?? {};
+    final alias = userMap['alias']?.toString();
+    final avatarUrl = userMap['avatarUrl']?.toString();
+    final country = userMap['country']?.toString();
+    final state = userMap['state']?.toString();
+    final city = userMap['city']?.toString();
+    final address = userMap['address']?.toString();
+    final createdAtStr = userMap['createdAt']?.toString();
+    
+    DateTime? joinedDate;
+    if (createdAtStr != null) {
+      joinedDate = DateTime.tryParse(createdAtStr);
+    }
+
     return Container(
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : AppColors.shadow,
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: isDark ? Colors.black.withOpacity(0.4) : AppColors.shadow.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -33,23 +49,17 @@ class OrderCustomerCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(),
+          SizedBox(height: 24.h),
+          _buildProfileHeader(avatarUrl, alias, joinedDate),
+          SizedBox(height: 24.h),
+          Divider(color: isDark ? Colors.white10 : Colors.grey[200]),
           SizedBox(height: 16.h),
-          _buildCustomerInfo(),
-          SizedBox(height: 20.h),
-          _buildContactRow(
-            Icons.email_outlined,
-            'Email',
-            order.customerEmail,
-            onTap: () => _launchEmail(order.customerEmail),
-          ),
-          SizedBox(height: 12.h),
-          _buildContactRow(
-            Icons.phone_outlined,
-            'Phone',
-            order.customerPhone,
-            onTap: () => _launchPhone(order.customerPhone),
-          ),
-          SizedBox(height: 20.h),
+          _buildContactGrid(),
+          if (address != null || city != null || country != null) ...[
+            SizedBox(height: 16.h),
+            _buildLocationBox(city, state, country, address),
+          ],
+          SizedBox(height: 24.h),
           _buildContactButtons(),
         ],
       ),
@@ -59,17 +69,24 @@ class OrderCustomerCard extends StatelessWidget {
   Widget _buildSectionHeader() {
     return Row(
       children: [
-        Icon(
-          Icons.info_outline,
-          size: 16.sp,
-          color: AppColors.secondaryColor,
+        Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Icon(
+            Icons.person_pin_rounded,
+            size: 20.sp,
+            color: AppColors.primaryColor,
+          ),
         ),
-        SizedBox(width: 6.w),
+        SizedBox(width: 12.w),
         Text(
-          'Customer Information',
+          'Customer Details',
           style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
             color: isDark ? Colors.white : AppColors.textPrimary,
           ),
         ),
@@ -77,22 +94,40 @@ class OrderCustomerCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCustomerInfo() {
+  Widget _buildProfileHeader(String? avatarUrl, String? alias, DateTime? joinedDate) {
+    final fullAvatarUrl = (avatarUrl != null && avatarUrl.isNotEmpty) 
+        ? '${ApiClient.fileBaseUrl}/$avatarUrl'
+        : null;
+
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(10.w),
+          width: 60.w,
+          height: 60.w,
           decoration: BoxDecoration(
-            color: AppColors.primaryColor.withOpacity(0.1),
             shape: BoxShape.circle,
+            color: AppColors.primaryColor.withOpacity(0.1),
+            border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 2),
           ),
-          child: Icon(
-            Icons.person_outline,
-            size: 24.sp,
-            color: AppColors.primaryColor,
+          child: ClipOval(
+            child: fullAvatarUrl != null
+                ? Image.network(
+                    fullAvatarUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Icon(Icons.person, color: AppColors.primaryColor, size: 30.sp),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryColor));
+                    },
+                  )
+                : Icon(
+                    Icons.person,
+                    size: 30.sp,
+                    color: AppColors.primaryColor,
+                  ),
           ),
         ),
-        SizedBox(width: 12.w),
+        SizedBox(width: 16.w),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,17 +135,85 @@ class OrderCustomerCard extends StatelessWidget {
               Text(
                 order.customerName,
                 style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+              if (alias != null && alias.isNotEmpty) ...[
+                SizedBox(height: 4.h),
+                Text(
+                  '@$alias',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              if (joinedDate != null) ...[
+                SizedBox(height: 4.h),
+                Text(
+                  'Joined ${DateFormat('MMMM yyyy').format(joinedDate)}',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactGrid() {
+    return Column(
+      children: [
+        _buildInfoRow(Icons.email_rounded, 'Email Address', order.customerEmail),
+        SizedBox(height: 12.h),
+        _buildInfoRow(Icons.phone_rounded, 'Phone Number', order.customerPhone),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    if (value.isEmpty) return const SizedBox.shrink();
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(10.w),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[850] : Colors.grey[50],
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Icon(
+            icon,
+            size: 18.sp,
+            color: isDark ? Colors.white70 : Colors.grey[600],
+          ),
+        ),
+        SizedBox(width: 16.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: isDark ? Colors.grey[400] : Colors.grey[500],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               SizedBox(height: 4.h),
               Text(
-                'Customer',
+                value,
                 style: TextStyle(
-                  fontSize: 12.sp,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
                 ),
               ),
             ],
@@ -120,60 +223,57 @@ class OrderCustomerCard extends StatelessWidget {
     );
   }
 
-  Widget _buildContactRow(
-    IconData icon,
-    String label,
-    String value, {
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8.r),
-      child: Container(
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey[850] : Colors.grey[50],
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20.sp,
-              color: isDark ? Colors.white60 : Colors.grey[600],
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: isDark ? Colors.grey[400] : Colors.grey[500],
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                ],
+  Widget _buildLocationBox(String? city, String? state, String? country, String? address) {
+    final locationParts = [city, state, country].where((p) => p != null && p.isNotEmpty).toList();
+    final locationString = locationParts.join(', ');
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.location_on_rounded, size: 16.sp, color: AppColors.primaryColor),
+              SizedBox(width: 8.w),
+              Text(
+                'Location',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.grey[300] : Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          if (locationString.isNotEmpty)
+            Text(
+              locationString,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.textPrimary,
               ),
             ),
-            if (onTap != null)
-              Icon(
-                Icons.chevron_right,
-                size: 20.sp,
-                color: isDark ? Colors.grey[600] : Colors.grey[400],
+          if (address != null && address.isNotEmpty) ...[
+            SizedBox(height: 8.h),
+            Text(
+              address,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                height: 1.4,
               ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -181,39 +281,39 @@ class OrderCustomerCard extends StatelessWidget {
   Widget _buildContactButtons() {
     return Row(
       children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _launchEmail(order.customerEmail),
-            icon: Icon(Icons.email_outlined, size: 18.sp),
-            label: Text('Email', style: TextStyle(fontSize: 14.sp)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
+        if (order.customerEmail.isNotEmpty)
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _launchEmail(order.customerEmail),
+              icon: Icon(Icons.email_rounded, size: 18.sp, color: Colors.white),
+              label: Text('Email', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
               ),
             ),
           ),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _launchPhone(order.customerPhone),
-            icon: Icon(Icons.phone_outlined, size: 18.sp),
-            label: Text('Call', style: TextStyle(fontSize: 14.sp)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: isDark ? Colors.white70 : Colors.grey[700],
-              side: BorderSide(
-                color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-              ),
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
+        if (order.customerEmail.isNotEmpty && order.customerPhone.isNotEmpty)
+          SizedBox(width: 12.w),
+        if (order.customerPhone.isNotEmpty)
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => _launchPhone(order.customerPhone),
+              icon: Icon(Icons.phone_rounded, size: 18.sp, color: AppColors.primaryColor),
+              label: Text('Call', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.primaryColor)),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.primaryColor),
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

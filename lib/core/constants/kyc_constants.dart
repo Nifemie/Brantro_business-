@@ -1,14 +1,12 @@
 /// Document types for individual accounts
 const List<Map<String, String>> INDIVIDUAL_DOCUMENT_TYPES = [
   {'label': 'National Identity Number (NIN)', 'value': 'NIN'},
-  {'label': 'Driver\'s License', 'value': 'DRIVERS_LICENSE'},
-  {'label': 'International Passport', 'value': 'PASSPORT'},
-  {'label': 'Voter\'s Card', 'value': 'VOTERS_CARD'},
 ];
 
 /// Document types for business accounts
 const List<Map<String, String>> BUSINESS_DOCUMENT_TYPES = [
-  {'label': 'CAC Registration', 'value': 'CAC'},
+  {'label': 'Corporate Affairs Commission (CAC)', 'value': 'CAC'},
+  {'label': 'National Identity Number (NIN)', 'value': 'NIN'},
 ];
 
 enum KycVerificationStatus {
@@ -51,73 +49,64 @@ extension KycVerificationStatusExtension on KycVerificationStatus {
   }
 }
 
-
-
 class KycValidationRules {
-  /// NIN validation - 11 digits
+  /// NIN validation - exactly 11 digits
   static bool isValidNIN(String nin) {
-    return RegExp(r'^\d{11}$').hasMatch(nin);
+    final clean = nin.replaceAll(RegExp(r'\D'), '');
+    if (clean.length != 11) return false;
+    // Reject repeated placeholder digits like 00000000000
+    if (RegExp(r'^(\d)\1{10}$').hasMatch(clean)) return false;
+    return true;
   }
 
-  /// CAC validation - Starts with RC followed by digits
+  /// CAC validation - Accepts RC/BN/IT followed by digits or 6-8 digit registration number
   static bool isValidCAC(String cac) {
-    return RegExp(r'^RC\d{6,}$', caseSensitive: false).hasMatch(cac);
+    final clean = cac.trim();
+    if (clean.length < 6 || clean.length > 14) return false;
+    return RegExp(r'^(RC|BN|IT)?\s*\d{6,8}$', caseSensitive: false).hasMatch(clean) ||
+        RegExp(r'^\d{6,8}$').hasMatch(clean);
   }
 
-  /// Driver's License validation - Alphanumeric
-  static bool isValidDriversLicense(String license) {
-    return RegExp(r'^[A-Z0-9]{6,}$', caseSensitive: false).hasMatch(license);
-  }
-
-  /// Passport validation - Alphanumeric
-  static bool isValidPassport(String passport) {
-    return RegExp(r'^[A-Z0-9]{6,}$', caseSensitive: false).hasMatch(passport);
-  }
-
-  /// Voter's Card validation - Alphanumeric
-  static bool isValidVotersCard(String votersCard) {
-    return RegExp(r'^[A-Z0-9]{6,}$', caseSensitive: false).hasMatch(votersCard);
-  }
-
-  /// Phone number validation - Nigerian format
+  /// Phone number validation - Nigerian format (10 or 11 digits)
   static bool isValidPhoneNumber(String phone) {
-    // Remove spaces and special characters
     final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
-    // Should be 11 digits starting with 0, or 10 digits without 0
-    return RegExp(r'^0\d{10}$').hasMatch(cleanPhone) ||
-        RegExp(r'^\d{10}$').hasMatch(cleanPhone);
+    if (cleanPhone.length == 11) {
+      return cleanPhone.startsWith('0');
+    }
+    if (cleanPhone.length == 10) {
+      return !cleanPhone.startsWith('0');
+    }
+    if (cleanPhone.length == 13 && cleanPhone.startsWith('234')) {
+      return true;
+    }
+    return false;
   }
 
   /// Get validation error message for document number
   static String? getDocumentNumberError(String documentType, String value) {
-    if (value.isEmpty) {
-      return 'Document number is required';
+    final clean = value.trim();
+    if (clean.isEmpty) {
+      return '$documentType number is required';
     }
 
-    switch (documentType) {
+    switch (documentType.toUpperCase()) {
       case 'NIN':
-        if (!isValidNIN(value)) {
-          return 'NIN must be exactly 11 digits';
+        final digits = clean.replaceAll(RegExp(r'\D'), '');
+        if (digits.length != 11) {
+          return 'NIN must be exactly 11 digits (entered ${digits.length})';
+        }
+        if (!isValidNIN(clean)) {
+          return 'Please enter a valid 11-digit NIN';
         }
         break;
       case 'CAC':
-        if (!isValidCAC(value)) {
-          return 'CAC number must start with RC followed by at least 6 digits';
+        if (!isValidCAC(clean)) {
+          return 'Enter a valid CAC number (e.g. RC1234567 or 1234567)';
         }
         break;
-      case 'DRIVERS_LICENSE':
-        if (!isValidDriversLicense(value)) {
-          return 'Invalid driver\'s license format';
-        }
-        break;
-      case 'PASSPORT':
-        if (!isValidPassport(value)) {
-          return 'Invalid passport number format';
-        }
-        break;
-      case 'VOTERS_CARD':
-        if (!isValidVotersCard(value)) {
-          return 'Invalid voter\'s card number format';
+      default:
+        if (clean.length < 6) {
+          return 'Enter a valid $documentType number';
         }
         break;
     }

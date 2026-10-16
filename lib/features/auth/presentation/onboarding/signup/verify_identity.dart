@@ -126,7 +126,10 @@ class _VerifyIdentityScreenState extends ConsumerState<VerifyIdentityScreen>
     super.initState();
     _startResendTimer();
     listenForCode(); // listens for autofill/paste
-    _sendOtpOnLoad(); // Trigger OTP send when screen loads
+    // Defer OTP send until after the widget tree is fully built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sendOtpOnLoad();
+    });
   }
 
   Future<void> _sendOtpOnLoad() async {
@@ -149,12 +152,18 @@ class _VerifyIdentityScreenState extends ConsumerState<VerifyIdentityScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryBg = isDark ? const Color(0xFF12151B) : Colors.white;
+
     return Scaffold(
+      backgroundColor: primaryBg,
       appBar: AppBar(
+        backgroundColor: primaryBg,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
         ),
       ),
       body: SafeArea(
@@ -163,32 +172,40 @@ class _VerifyIdentityScreenState extends ConsumerState<VerifyIdentityScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 'Verify Email Address',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Enter the code we sent to ${widget.email}.',
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 60),
 
-              // ✅ OTP Input Fields styled like ValarPay forms
               PinFieldAutoFill(
                 codeLength: 6,
                 decoration: BoxLooseDecoration(
                   gapSpace: 12,
-                  strokeColorBuilder: FixedColorBuilder(Colors.grey.shade400),
+                  strokeColorBuilder: FixedColorBuilder(
+                    isDark ? Colors.white24 : Colors.grey.shade400,
+                  ),
                   bgColorBuilder: FixedColorBuilder(
-                    Colors.grey.shade50.withOpacity(0.8),
+                    isDark ? const Color(0xFF1E232D) : Colors.grey.shade50.withOpacity(0.8),
                   ),
                   radius: const Radius.circular(8),
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                   strokeWidth: 1.4,
                 ),
@@ -219,7 +236,10 @@ class _VerifyIdentityScreenState extends ConsumerState<VerifyIdentityScreen>
                   child: RichText(
                     text: TextSpan(
                       text: "Didn't receive code? ",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      style: TextStyle(
+                        color: isDark ? Colors.grey.shade400 : Colors.grey[600],
+                        fontSize: 14,
+                      ),
                       children: [
                         TextSpan(
                           text: _resendTimer == 0

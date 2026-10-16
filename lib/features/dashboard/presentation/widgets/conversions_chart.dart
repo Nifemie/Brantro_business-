@@ -1,16 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
 import 'package:brantro_business/controllers/re_useable/app_texts.dart';
+import 'package:brantro_business/features/account/logic/analytics_provider.dart';
 
-class ConversionsChart extends StatelessWidget {
+class ConversionsChart extends ConsumerWidget {
   const ConversionsChart({super.key});
 
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    }
+    return number.toString();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final analytics = ref.watch(userAnalyticsProvider).value;
+
+    final followers = analytics?.followers ?? 0;
+    final reach = analytics?.reach ?? 0;
+    final impressions = analytics?.impressions ?? 0;
+
+    double conversionPercent = 65.2;
+    if (impressions > 0 && reach > 0) {
+      conversionPercent = ((reach / impressions) * 100).clamp(5.0, 99.0);
+    }
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -30,8 +51,10 @@ class ConversionsChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Conversions',
-            style: AppTexts.h3(color: AppColors.primaryColor),
+            'Audience Conversions',
+            style: AppTexts.h3(
+              color: isDark ? Colors.white : AppColors.primaryColor,
+            ),
           ),
           SizedBox(height: 30.h),
           SizedBox(
@@ -44,7 +67,7 @@ class ConversionsChart extends StatelessWidget {
                     startDegreeOffset: 140,
                     sectionsSpace: 0,
                     centerSpaceRadius: 70.r,
-                    sections: _buildDashedSections(),
+                    sections: _buildDashedSections(isDark, conversionPercent),
                   ),
                 ),
                 Positioned(
@@ -53,16 +76,20 @@ class ConversionsChart extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '65.2%',
+                        '${conversionPercent.toStringAsFixed(1)}%',
                         style: AppTexts.displayMedium(
-                          color: AppColors.primaryColor,
+                          color: isDark
+                              ? Colors.white
+                              : AppColors.primaryColor,
                         ),
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        'Returning Customer',
+                        'Audience Reach Ratio',
                         style: AppTexts.labelMedium(
-                          color: AppColors.primaryColor,
+                          color: isDark
+                              ? Colors.white70
+                              : AppColors.primaryColor,
                         ).copyWith(fontWeight: FontWeight.w400),
                       ),
                     ],
@@ -75,31 +102,10 @@ class ConversionsChart extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('This Week', '23.5k'),
-              _buildStatItem('Last Week', '41.05k'),
+              _buildStatItem('Followers', _formatNumber(followers)),
+              _buildStatItem('Total Reach', _formatNumber(reach)),
+              _buildStatItem('Impressions', _formatNumber(impressions)),
             ],
-          ),
-          SizedBox(height: 24.h),
-          SizedBox(
-            width: double.infinity,
-            height: 48.h,
-            child: TextButton(
-              onPressed: () {
-                // TODO: Navigate to conversions details
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: isDark
-                    ? Colors.grey[800]
-                    : const Color(0xFFEFF1F5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
-              child: Text(
-                'View Details',
-                style: AppTexts.buttonMedium(color: AppColors.primaryColor),
-              ),
-            ),
           ),
         ],
       ),
@@ -107,23 +113,28 @@ class ConversionsChart extends StatelessWidget {
   }
 
   Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(label, style: AppTexts.labelMedium(color: AppColors.grey500)),
-        SizedBox(height: 8.h),
-        Text(value, style: AppTexts.h2(color: AppColors.primaryColor)),
-      ],
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Column(
+          children: [
+            Text(label, style: AppTexts.labelMedium(color: AppColors.grey500)),
+            SizedBox(height: 8.h),
+            Text(
+              value,
+              style: AppTexts.h2(
+                color: isDark ? Colors.white : AppColors.primaryColor,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  List<PieChartSectionData> _buildDashedSections() {
+  List<PieChartSectionData> _buildDashedSections(bool isDark, double filledPercentage) {
     List<PieChartSectionData> sections = [];
-    final double filledPercentage = 65.2;
-    final double unfilledPercentage = 34.8;
-
-    // The chart is a partial circle (approx 260 degrees).
-    // Sum of visible parts = 100.
-    // Hidden part to make 100 units = 260 degrees is 38.46 units.
+    final double unfilledPercentage = 100.0 - filledPercentage;
     final double hiddenPercentage = 38.46;
 
     final double dashValue = 1.0;
@@ -175,8 +186,8 @@ class ConversionsChart extends StatelessWidget {
 
     sections.add(
       PieChartSectionData(
-        value: unfilledPercentage - gapBeforeUnfilled,
-        color: const Color(0xFFEFF1F5),
+        value: (unfilledPercentage - gapBeforeUnfilled).clamp(0.0, 100.0),
+        color: isDark ? Colors.grey[700] : const Color(0xFFEFF1F5),
         radius: 25.w,
         showTitle: false,
       ),

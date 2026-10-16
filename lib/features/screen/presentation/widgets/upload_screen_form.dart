@@ -7,6 +7,7 @@ import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../core/widgets/option_picker_sheet.dart';
 import '../../../../core/constants/nigerian_locations.dart';
 import '../../../category/logic/category_provider.dart';
+import '../../../category/data/models/category_model.dart';
 
 class UploadScreenForm extends ConsumerWidget {
   final TextEditingController titleController;
@@ -16,8 +17,12 @@ class UploadScreenForm extends ConsumerWidget {
   final TextEditingController addressController;
   final TextEditingController rateAmountController;
   final TextEditingController totalSlotsController;
+  final TextEditingController estimatedReachController;
+  final TextEditingController latitudeController;
+  final TextEditingController longitudeController;
   
   final String? selectedType;
+  final String? selectedClass;
   final int? selectedCategoryId;
   final String? selectedCountry;
   final String? selectedState;
@@ -25,8 +30,10 @@ class UploadScreenForm extends ConsumerWidget {
   final String? selectedRateUnit;
   final String? thumbnailImage;
   final String? videoClip;
+  final List<String> galleryImages;
   
   final ValueChanged<String?> onTypeChanged;
+  final ValueChanged<String?> onClassChanged;
   final ValueChanged<int?> onCategoryChanged;
   final ValueChanged<String?> onCountryChanged;
   final ValueChanged<String?> onStateChanged;
@@ -34,6 +41,7 @@ class UploadScreenForm extends ConsumerWidget {
   final ValueChanged<String?> onRateUnitChanged;
   final ValueChanged<String?> onThumbnailChanged;
   final ValueChanged<String?> onVideoClipChanged;
+  final ValueChanged<List<String>> onGalleryImagesChanged;
 
   const UploadScreenForm({
     super.key,
@@ -44,7 +52,11 @@ class UploadScreenForm extends ConsumerWidget {
     required this.addressController,
     required this.rateAmountController,
     required this.totalSlotsController,
+    required this.estimatedReachController,
+    required this.latitudeController,
+    required this.longitudeController,
     required this.selectedType,
+    required this.selectedClass,
     required this.selectedCategoryId,
     required this.selectedCountry,
     required this.selectedState,
@@ -52,7 +64,9 @@ class UploadScreenForm extends ConsumerWidget {
     required this.selectedRateUnit,
     required this.thumbnailImage,
     required this.videoClip,
+    required this.galleryImages,
     required this.onTypeChanged,
+    required this.onClassChanged,
     required this.onCategoryChanged,
     required this.onCountryChanged,
     required this.onStateChanged,
@@ -60,6 +74,7 @@ class UploadScreenForm extends ConsumerWidget {
     required this.onRateUnitChanged,
     required this.onThumbnailChanged,
     required this.onVideoClipChanged,
+    required this.onGalleryImagesChanged,
   });
 
   @override
@@ -68,6 +83,7 @@ class UploadScreenForm extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final categoryState = ref.watch(categoryProvider);
     final locationCategories = categoryState.locationCategories;
+    final displayCategories = _getFilteredCategories(locationCategories);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,7 +108,7 @@ class UploadScreenForm extends ConsumerWidget {
                 label: 'Type',
                 value: selectedType,
                 hint: 'Select type',
-                onTap: () => _showTypePicker(context),
+                onTap: null,
                 isDark: isDark,
               ),
             ),
@@ -101,17 +117,17 @@ class UploadScreenForm extends ConsumerWidget {
               child: _buildDropdownField(
                 context: context,
                 label: 'Category',
-                value: selectedCategoryId != null && locationCategories.isNotEmpty
-                    ? locationCategories
+                value: selectedCategoryId != null && displayCategories.isNotEmpty
+                    ? displayCategories
                         .firstWhere(
                           (cat) => cat.id == selectedCategoryId,
-                          orElse: () => locationCategories.first,
+                          orElse: () => displayCategories.first,
                         )
                         .name
                     : null,
                 hint: categoryState.isLoading 
                     ? 'Loading...' 
-                    : (locationCategories.isEmpty ? 'No categories' : 'Choose a category'),
+                    : (displayCategories.isEmpty ? 'No categories' : 'Choose a category'),
                 onTap: () => _showCategoryPicker(context, ref),
                 isDark: isDark,
               ),
@@ -131,6 +147,58 @@ class UploadScreenForm extends ConsumerWidget {
 
         SizedBox(height: 16.h),
         
+        Row(
+          children: [
+            Expanded(
+              child: _buildDropdownField(
+                context: context,
+                label: 'Class',
+                value: selectedClass,
+                hint: 'Select class',
+                onTap: () => _showClassPicker(context),
+                isDark: isDark,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _buildTextField(
+                controller: estimatedReachController,
+                label: 'Estimated Reach',
+                hint: '45000',
+                isDark: isDark,
+                keyboardType: TextInputType.number,
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 16.h),
+        
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: latitudeController,
+                label: 'Latitude',
+                hint: '1.789',
+                isDark: isDark,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _buildTextField(
+                controller: longitudeController,
+                label: 'Longitude',
+                hint: '1.908',
+                isDark: isDark,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 16.h),
         _buildTextField(
           controller: featuresController,
           label: 'Features (Optional)',
@@ -237,12 +305,24 @@ class UploadScreenForm extends ConsumerWidget {
         _buildSectionTitle('Media Files', isDark),
         SizedBox(height: 16.h),
         
-        Text(
-          'Thumbnail Image',
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : AppColors.textPrimary,
+        RichText(
+          text: TextSpan(
+            text: 'Thumbnail Image ',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white : AppColors.textPrimary,
+            ),
+            children: [
+              TextSpan(
+                text: '*',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(height: 8.h),
@@ -306,19 +386,143 @@ class UploadScreenForm extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.add_photo_alternate_outlined,
-                        size: 48.sp,
+                        Icons.camera_alt_outlined,
+                        size: 32.sp,
                         color: isDark ? Colors.white38 : Colors.grey[400],
                       ),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 8.h),
                       Text(
-                        'Click to upload thumbnail',
+                        'Click to upload',
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: isDark ? Colors.white60 : Colors.grey[600],
                         ),
                       ),
                     ],
+                  ),
+          ),
+        ),
+
+        SizedBox(height: 16.h),
+
+        Text(
+          'Gallery',
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        
+        InkWell(
+          onTap: () => _pickGalleryImages(context),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: galleryImages.isEmpty ? 32.h : 12.h, horizontal: 12.w),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[850] : Colors.grey[50],
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                width: 2,
+              ),
+            ),
+            child: galleryImages.isEmpty
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.collections_outlined,
+                        size: 32.sp,
+                        color: isDark ? Colors.white38 : Colors.grey[400],
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Drop images here or click to upload.',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: isDark ? Colors.white60 : Colors.grey[600],
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Upload 1 - 8 images',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: isDark ? Colors.white38 : Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  )
+                : SizedBox(
+                    height: 80.h,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: galleryImages.length + (galleryImages.length < 8 ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == galleryImages.length) {
+                          return GestureDetector(
+                            onTap: () => _pickGalleryImages(context),
+                            child: Container(
+                              width: 80.w,
+                              height: 80.h,
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Icon(
+                                Icons.add_a_photo_outlined,
+                                size: 24.sp,
+                                color: isDark ? Colors.white60 : Colors.grey[600],
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        final path = galleryImages[index];
+                        return Container(
+                          margin: EdgeInsets.only(right: 12.w),
+                          width: 80.w,
+                          height: 80.h,
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: Image.file(
+                                  File(path),
+                                  width: 80.w,
+                                  height: 80.h,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 4.h,
+                                right: 4.w,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    final newList = List<String>.from(galleryImages)..removeAt(index);
+                                    onGalleryImagesChanged(newList);
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.all(4.w),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 10.sp,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
           ),
         ),
@@ -518,15 +722,19 @@ class UploadScreenForm extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  value ?? hint,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: value == null
-                        ? (isDark ? Colors.white38 : Colors.grey[400])
-                        : (isDark ? Colors.white : AppColors.textPrimary),
+                Expanded(
+                  child: Text(
+                    value ?? hint,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: value == null
+                          ? (isDark ? Colors.white38 : Colors.grey[400])
+                          : (isDark ? Colors.white : AppColors.textPrimary),
+                    ),
                   ),
                 ),
+                SizedBox(width: 4.w),
                 Icon(
                   Icons.keyboard_arrow_down,
                   color: isDisabled 
@@ -542,19 +750,16 @@ class UploadScreenForm extends ConsumerWidget {
   }
 
 
-  Future<void> _showTypePicker(BuildContext context) async {
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const OptionPickerSheet(
-        title: 'Select Type',
-        options: ['BILLBOARD', 'SCREEN', 'WALL'],
-      ),
-    );
-    
-    if (result != null) {
-      onTypeChanged(result);
-    }
+
+
+  List<CategoryModel> _getFilteredCategories(List<CategoryModel> categories) {
+    final filtered = categories.where((cat) {
+      final name = cat.name.toLowerCase();
+      return name.contains('screen') || 
+             name.contains('display') || 
+             name.contains('mall');
+    }).toList();
+    return filtered.isNotEmpty ? filtered : categories;
   }
 
   Future<void> _showCategoryPicker(BuildContext context, WidgetRef ref) async {
@@ -567,14 +772,16 @@ class UploadScreenForm extends ConsumerWidget {
       return;
     }
 
-    if (categoryState.locationCategories.isEmpty) {
+    final displayCategories = _getFilteredCategories(categoryState.locationCategories);
+
+    if (displayCategories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No categories available')),
       );
       return;
     }
 
-    final categoryNames = categoryState.locationCategories
+    final categoryNames = displayCategories
         .map((cat) => cat.name)
         .toList();
 
@@ -588,9 +795,34 @@ class UploadScreenForm extends ConsumerWidget {
     );
     
     if (result != null) {
-      final selectedCategory = categoryState.locationCategories
+      final selectedCategory = displayCategories
           .firstWhere((cat) => cat.name == result);
       onCategoryChanged(selectedCategory.id);
+    }
+  }
+
+  Future<void> _showClassPicker(BuildContext context) async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const OptionPickerSheet(
+        title: 'Select Class',
+        options: [
+          'LED Screen',
+          'LCD Screen',
+          'Video Wall',
+          'Projection Screen',
+          'Mall Screen',
+          'Elevator Screen',
+          'Airport Screen',
+          'Stadium Screen',
+          'UNIPOLAR'
+        ],
+      ),
+    );
+    
+    if (result != null) {
+      onClassChanged(result);
     }
   }
 
@@ -695,6 +927,40 @@ class UploadScreenForm extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error picking video: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickGalleryImages(BuildContext context) async {
+    try {
+      final picker = ImagePicker();
+      final images = await picker.pickMultiImage();
+      
+      if (images.isNotEmpty) {
+        final List<String> paths = images.map((img) => img.path).toList();
+        final combined = [...galleryImages, ...paths];
+        if (combined.length > 8) {
+          onGalleryImagesChanged(combined.sublist(0, 8));
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('You can only select up to 8 images.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        } else {
+          onGalleryImagesChanged(combined);
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking gallery images: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );

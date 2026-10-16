@@ -8,6 +8,8 @@ import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
 import '../../../../../core/widgets/search_filter_card.dart';
 import '../../../../../core/widgets/filter_sheet.dart';
 import '../../../../../core/widgets/empty_state.dart';
+import '../../../../../core/widgets/skeleton_loading.dart';
+import '../../../logic/service_provider.dart';
 import 'widgets/service_list.dart';
 
 class ServiceMarketplaceScreen extends ConsumerStatefulWidget {
@@ -21,9 +23,6 @@ class ServiceMarketplaceScreen extends ConsumerStatefulWidget {
 class _ServiceMarketplaceScreenState
     extends ConsumerState<ServiceMarketplaceScreen> {
   final TextEditingController _searchController = TextEditingController();
-  
-  // TODO: Replace with actual data from API/Provider
-  final bool _hasServices = true; // Change to false when no data
 
   @override
   void dispose() {
@@ -41,6 +40,7 @@ class _ServiceMarketplaceScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final serviceState = ref.watch(serviceProvider);
 
     return PopScope(
       canPop: false,
@@ -57,37 +57,68 @@ class _ServiceMarketplaceScreenState
             children: [
               const DashboardAppBar(title: 'SERVICES'),
               
-              // Content with collapsible search card
               Expanded(
-                child: CustomScrollView(
-                  slivers: [
-                    // Search Filter Card as Sliver
-                    SliverToBoxAdapter(
-                      child: SearchFilterCard(
-                        title: 'All Services',
-                        searchController: _searchController,
-                        searchHint: 'Search services...',
-                        onFilterTap: _showFilters,
-                        onActionButtonTap: _addService,
-                        actionButtonLabel: 'Add Service',
-                        actionButtonIcon: Icons.add_business,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await ref.read(serviceProvider.notifier).refreshServices();
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      // Search Filter Card as Sliver
+                      SliverToBoxAdapter(
+                        child: SearchFilterCard(
+                          title: 'All Services',
+                          searchController: _searchController,
+                          searchHint: 'Search services...',
+                          onFilterTap: _showFilters,
+                          onActionButtonTap: _addService,
+                          actionButtonLabel: 'Add Service',
+                          actionButtonIcon: Icons.add_business,
+                          selectedFilters: ref.read(serviceProvider.notifier).selectedFilters,
+                          onRemoveFilter: (key) => ref.read(serviceProvider.notifier).removeFilter(key),
+                          onClearFilters: () => ref.read(serviceProvider.notifier).clearFilters(),
+                          onChanged: (query) => ref.read(serviceProvider.notifier).updateSearch(query),
+                        ),
                       ),
-                    ),
-                    
-                    // Content - Empty State or Service List
-                    _hasServices
-                        ? SliverFillRemaining(
-                            child: const ServiceList(),
-                          )
-                        : SliverFillRemaining(
-                            child: const EmptyState(
-                              icon: Icons.business_center_outlined,
-                              title: 'No Services Yet',
-                              message: 'Start by adding your first service',
-                              showIconBackground: false,
+                      
+                      // Content - Loading state, Error state, Empty state or Service List
+                      if (serviceState.isInitialLoading)
+                        SliverPadding(
+                          padding: EdgeInsets.all(16.w),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => const SkeletonCampaignCard(),
+                              childCount: 3,
                             ),
                           ),
-                  ],
+                        )
+                      else if (serviceState.message != null)
+                        SliverFillRemaining(
+                          child: EmptyState(
+                            icon: Icons.wifi_off_outlined,
+                            title: 'Connection Error',
+                            message: serviceState.message!.contains('SocketException') || serviceState.message!.contains('Failed host lookup')
+                                ? 'Failed to load services. Please check your internet connection and try again.'
+                                : serviceState.message!,
+                            showIconBackground: true,
+                          ),
+                        )
+                      else if ((serviceState.data ?? []).isEmpty)
+                        const SliverFillRemaining(
+                          child: EmptyState(
+                            icon: Icons.business_center_outlined,
+                            title: 'No Services Yet',
+                            message: 'Start by adding your first service',
+                            showIconBackground: false,
+                          ),
+                        )
+                      else
+                        const SliverToBoxAdapter(
+                          child: ServiceList(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -98,7 +129,9 @@ class _ServiceMarketplaceScreenState
   }
 
   Future<void> _showFilters() async {
-    final filters = await showModalBottomSheet<Map<String, String?>>(
+    final currentFilters = ref.read(serviceProvider.notifier).selectedFilters;
+
+    await showModalBottomSheet<Map<String, String?>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -121,29 +154,33 @@ class _ServiceMarketplaceScreenState
                 'Consulting',
                 'Other',
               ],
+              selectedValue: currentFilters['Category'],
             ),
             FilterSection(
               title: 'Price Range',
-              options: ['Under ₦10,000', '₦10,000 - ₦50,000', '₦50,000 - ₦100,000', 'Above ₦100,000'],
+              options: ['All', 'Under ₦10,000', '₦10,000 - ₦50,000', '₦50,000 - ₦100,000', 'Above ₦100,000'],
+              selectedValue: currentFilters['Price Range'],
             ),
             FilterSection(
               title: 'Status',
-              options: ['Active', 'Inactive', 'Pending'],
+              options: ['All', 'Active', 'Inactive', 'Pending'],
+              selectedValue: currentFilters['Status'],
             ),
             FilterSection(
               title: 'Rating',
               options: [
+                'All',
                 '1 ⭐ & Above',
                 '2 ⭐ & Above',
                 '3 ⭐ & Above',
                 '4 ⭐ & Above',
                 '5 ⭐',
               ],
+              selectedValue: currentFilters['Rating'],
             ),
           ],
           onApply: (selectedFilters) {
-            // TODO: Apply filters
-            print('Selected filters: $selectedFilters');
+            ref.read(serviceProvider.notifier).updateFilters(selectedFilters);
           },
         ),
       ),
@@ -151,17 +188,6 @@ class _ServiceMarketplaceScreenState
   }
 
   void _addService() {
-    // TODO: Navigate to add service screen
-    // context.push('/add-service');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Add Service feature coming soon'),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(16.w),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-      ),
-    );
+    context.push('/upload-service');
   }
 }

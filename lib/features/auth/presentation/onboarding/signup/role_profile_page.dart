@@ -19,26 +19,32 @@ class RoleProfilePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryBg = isDark ? const Color(0xFF12151B) : Colors.grey[50];
+    final cardBg = isDark ? const Color(0xFF1E232D) : Colors.white;
+    final borderColor = isDark ? Colors.white12 : Colors.grey[200]!;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
-        backgroundColor: Colors.white,
+        backgroundColor: primaryBg,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
           onPressed: () => context.pop(),
         ),
         title: Text(
           '$role Profile',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
       ),
-      backgroundColor: Colors.grey[50],
+      backgroundColor: primaryBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: PlatformResponsive.all(24),
@@ -46,11 +52,11 @@ class RoleProfilePage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Profile Header
-              _buildProfileHeader(),
+              _buildProfileHeader(isDark, cardBg, borderColor),
               SizedBox(height: 32.h),
 
               // Dynamic Profile Sections
-              ..._buildProfileSections(),
+              ..._buildProfileSections(isDark, cardBg, borderColor),
 
               SizedBox(height: 32.h),
 
@@ -63,7 +69,7 @@ class RoleProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(bool isDark, Color cardBg, Color borderColor) {
     String title = '';
     String subtitle = '';
 
@@ -109,11 +115,12 @@ class RoleProfilePage extends ConsumerWidget {
     return Container(
       padding: PlatformResponsive.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16.rsp),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -126,12 +133,12 @@ class RoleProfilePage extends ConsumerWidget {
             width: 64.rw,
             height: 64.rh,
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
+              color: AppColors.primaryColor.withOpacity(isDark ? 0.25 : 0.1),
               borderRadius: BorderRadius.circular(12.rsp),
             ),
             child: Icon(
               _getRoleIcon(),
-              color: AppColors.primaryColor,
+              color: isDark ? const Color(0xFFFF8B3D) : AppColors.primaryColor,
               size: 32.rsp,
             ),
           ),
@@ -141,21 +148,21 @@ class RoleProfilePage extends ConsumerWidget {
             style: TextStyle(
               fontSize: 24.rsp,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           if (subtitle.isNotEmpty) ...[
             SizedBox(height: 8.h),
             Text(
               subtitle,
-              style: TextStyle(fontSize: 14.rsp, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 14.rsp, color: isDark ? Colors.grey[400] : Colors.grey[600]),
             ),
           ],
           SizedBox(height: 12.h),
           Container(
             padding: PlatformResponsive.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
+              color: AppColors.primaryColor.withOpacity(isDark ? 0.25 : 0.1),
               borderRadius: BorderRadius.circular(8.rsp),
             ),
             child: Text(
@@ -163,7 +170,7 @@ class RoleProfilePage extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12.rsp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primaryColor,
+                color: isDark ? const Color(0xFFFF8B3D) : AppColors.primaryColor,
               ),
             ),
           ),
@@ -172,161 +179,162 @@ class RoleProfilePage extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildProfileSections() {
+  List<Widget> _buildProfileSections(bool isDark, Color cardBg, Color borderColor) {
     final sections = <Widget>[];
 
     switch (role) {
       case 'Artist':
         sections.addAll([
           _buildSection('Professional Information', [
-            _buildField('Stage Name', profileData['stageName']),
-            _buildField('Profession', profileData['profession']),
-            _buildField('Category', profileData['category']),
-          ]),
+            _buildField('Stage Name', profileData['stageName'], isDark),
+            _buildField('Profession', profileData['profession'], isDark),
+            _buildField('Category', profileData['category'], isDark),
+          ], isDark, cardBg, borderColor),
           _buildSection('Contact & Bio', [
-            _buildField('Management Contact', profileData['managementContact']),
-            _buildField('Bio', profileData['bio']),
-          ]),
+            _buildField('Management Contact', profileData['managementContact'], isDark),
+            _buildField('Bio', profileData['bio'], isDark),
+          ], isDark, cardBg, borderColor),
         ]);
         break;
 
       case 'Influencer':
         sections.addAll([
           _buildSection('Basic Information', [
-            _buildField('Display Name', profileData['displayName']),
-            _buildField('Niche', profileData['niche']),
-            _buildField('Location', profileData['location']),
-          ]),
+            _buildField('Display Name', profileData['displayName'], isDark),
+            _buildField('Niche', profileData['niche'], isDark),
+            _buildField('Location', profileData['location'], isDark),
+          ], isDark, cardBg, borderColor),
           _buildSection('Platform Information', [
-            _buildField('Primary Platform', profileData['primaryPlatform']),
-            _buildField('Estimated Reach', profileData['estimatedReach']),
-          ]),
-          _buildSection('About', [_buildField('Bio', profileData['bio'])]),
+            _buildField('Primary Platform', profileData['primaryPlatform'], isDark),
+            _buildField('Estimated Reach', profileData['estimatedReach'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('About', [_buildField('Bio', profileData['bio'], isDark)], isDark, cardBg, borderColor),
         ]);
         break;
 
       case 'Radio Station':
         sections.addAll([
           _buildSection('Station Information', [
-            _buildField('Station Name', profileData['stationName']),
-            _buildField('Frequency', profileData['frequency']),
-            _buildField('Coverage Area', profileData['coverageArea']),
-          ]),
+            _buildField('Station Name', profileData['stationName'], isDark),
+            _buildField('Frequency', profileData['frequency'], isDark),
+            _buildField('Coverage Area', profileData['coverageArea'], isDark),
+          ], isDark, cardBg, borderColor),
           _buildSection('Business Details', [
-            _buildField('Media Type', profileData['mediaType']),
+            _buildField('Media Type', profileData['mediaType'], isDark),
             _buildField(
               'Business Registration Number',
               profileData['businessRegNumber'],
+              isDark,
             ),
-          ]),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Contact Information', [
+            _buildField('Contact Person', profileData['contactPerson'], isDark),
+            _buildField('Management Email', profileData['managementEmail'], isDark),
+            _buildField('Management Phone', profileData['managementPhone'], isDark),
+          ], isDark, cardBg, borderColor),
         ]);
         break;
 
       case 'TV Station':
         sections.addAll([
           _buildSection('Station Information', [
-            _buildField('Station Name', profileData['stationName']),
-            _buildField('Channel Number', profileData['channelNumber']),
-            _buildField('Coverage Area', profileData['coverageArea']),
-          ]),
+            _buildField('Station Name', profileData['stationName'], isDark),
+            _buildField('Channel Number', profileData['channelNumber'], isDark),
+            _buildField('Coverage Area', profileData['coverageArea'], isDark),
+          ], isDark, cardBg, borderColor),
           _buildSection('Business Details', [
-            _buildField('Media Type', profileData['mediaType']),
+            _buildField('Media Type', profileData['mediaType'], isDark),
             _buildField(
               'Business Registration Number',
               profileData['businessRegNumber'],
+              isDark,
             ),
-            _buildField('License Number', profileData['licenseNumber']),
-          ]),
-          _buildSection('Location', [
-            _buildField('Studio Address', profileData['studioAddress']),
-          ]),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Contact Information', [
+            _buildField('Contact Person', profileData['contactPerson'], isDark),
+            _buildField('Management Email', profileData['managementEmail'], isDark),
+            _buildField('Management Phone', profileData['managementPhone'], isDark),
+          ], isDark, cardBg, borderColor),
         ]);
         break;
 
       case 'Media House':
         sections.addAll([
-          _buildSection('Basic Information', [
-            _buildField('Media Name', profileData['mediaName']),
-            _buildField('Media Type', profileData['mediaType']),
-            _buildField('Website', profileData['websiteUrl']),
-          ]),
-          _buildSection('Metrics', [
+          _buildSection('Media House Information', [
+            _buildField('Media Name', profileData['mediaName'], isDark),
+            _buildField('Media Type', profileData['mediaType'], isDark),
+            _buildField('Coverage Area', profileData['coverageArea'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Business Details', [
             _buildField(
-              'Monthly Visitors',
-              profileData['monthlyVisitors']?.toString(),
+              'Business Registration Number',
+              profileData['businessRegNumber'],
+              isDark,
             ),
-          ]),
-          _buildSection('Social Media', [
-            _buildField('Facebook', profileData['facebookHandle']),
-            _buildField('Instagram', profileData['instagramHandle']),
-            _buildField('TikTok', profileData['tiktokHandle']),
-            _buildField('Twitter', profileData['twitterHandle']),
-          ]),
+            _buildField('Specialization', profileData['specialization'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Contact Information', [
+            _buildField('Contact Person', profileData['contactPerson'], isDark),
+            _buildField('Management Email', profileData['managementEmail'], isDark),
+            _buildField('Management Phone', profileData['managementPhone'], isDark),
+          ], isDark, cardBg, borderColor),
         ]);
         break;
 
       case 'Advertiser':
         sections.addAll([
           _buildSection('Business Information', [
-            _buildField('Business Name', profileData['businessName']),
-            _buildField('Industry', profileData['industry']),
-            _buildField('Business Address', profileData['businessAdress']),
-            _buildField('Website', profileData['businessWebsite']),
-          ]),
-        ]);
-        break;
-
-      case 'Host':
-        sections.addAll([
-          _buildSection('Business Information', [
-            _buildField('Business Name', profileData['businessName']),
-            _buildField('Industry', profileData['industry']),
-            _buildField('Business Address', profileData['businessAddress']),
-            _buildField('Website', profileData['businessWebsite']),
-          ]),
-          _buildSection('Contact & Details', [
-            _buildField('Telephone', profileData['telephoneNumber']),
-            _buildField(
-              'Signage Permit Number',
-              profileData['signagePermitNumber'],
-            ),
-          ]),
+            _buildField('Business Name', profileData['businessName'], isDark),
+            _buildField('Industry', profileData['industry'], isDark),
+            _buildField('Company Size', profileData['companySize'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Advertising Goals', [
+            _buildField('Target Audience', profileData['targetAudience'], isDark),
+            _buildField('Primary Objective', profileData['primaryObjective'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Contact Information', [
+            _buildField('Contact Person', profileData['contactPerson'], isDark),
+            _buildField('Designation', profileData['designation'], isDark),
+          ], isDark, cardBg, borderColor),
         ]);
         break;
 
       case 'Screen / Billboard':
         sections.addAll([
-          _buildSection('Host Information', [
-            _buildField('Business Name', profileData['businessName']),
-            _buildField('Industry', profileData['industry']),
-            _buildField('Business Address', profileData['businessAddress']),
-          ]),
-          _buildSection('Contact & Details', [
-            _buildField('Telephone', profileData['telephoneNumber']),
-            _buildField('Website', profileData['businessWebsite']),
-            _buildField(
-              'Signage Permit Number',
-              profileData['signagePermitNumber'],
-            ),
-          ]),
+          _buildSection('Billboard Information', [
+            _buildField('Business Name', profileData['businessName'], isDark),
+            _buildField('Location', profileData['location'], isDark),
+            _buildField('Billboard Type', profileData['billboardType'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Specifications', [
+            _buildField('Size', profileData['size'], isDark),
+            _buildField('Daily Impressions', profileData['dailyImpressions'], isDark),
+          ], isDark, cardBg, borderColor),
         ]);
         break;
 
       case 'Content Producer':
         sections.addAll([
-          _buildSection('Business Information', [
-            _buildField('Business Name', profileData['businessName']),
-            _buildField('Business Address', profileData['businessAddress']),
-            _buildField('Website', profileData['businessWebsite']),
-          ]),
-          _buildSection('Contact', [
-            _buildField('Telephone', profileData['telephoneNumber']),
-          ]),
           _buildSection('Production Details', [
-            _buildField('Production Type', profileData['productionType']),
-            _buildField('Content Type', profileData['contentType']),
-            _buildField('Genre', profileData['genre']),
-          ]),
+            _buildField('Business Name', profileData['businessName'], isDark),
+            _buildField('Content Type', profileData['contentType'], isDark),
+            _buildField('Specialization', profileData['specialization'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('Portfolio & Experience', [
+            _buildField('Years of Experience', profileData['yearsOfExperience'], isDark),
+            _buildField('Key Projects', profileData['keyProjects'], isDark),
+          ], isDark, cardBg, borderColor),
+        ]);
+        break;
+
+      case 'Host':
+        sections.addAll([
+          _buildSection('Hosting Details', [
+            _buildField('Business Name', profileData['businessName'], isDark),
+            _buildField('Industry', profileData['industry'], isDark),
+            _buildField('Experience Level', profileData['experienceLevel'], isDark),
+          ], isDark, cardBg, borderColor),
+          _buildSection('About', [_buildField('Bio', profileData['bio'], isDark)], isDark, cardBg, borderColor),
         ]);
         break;
     }
@@ -334,7 +342,7 @@ class RoleProfilePage extends ConsumerWidget {
     return sections;
   }
 
-  Widget _buildSection(String title, List<Widget> fields) {
+  Widget _buildSection(String title, List<Widget> fields, bool isDark, Color cardBg, Color borderColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -343,16 +351,16 @@ class RoleProfilePage extends ConsumerWidget {
           style: TextStyle(
             fontSize: 16.rsp,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
         SizedBox(height: 12.h),
         Container(
           padding: PlatformResponsive.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardBg,
             borderRadius: BorderRadius.circular(12.rsp),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: borderColor),
           ),
           child: Column(children: [...fields.map((field) => field).toList()]),
         ),
@@ -361,7 +369,7 @@ class RoleProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildField(String label, dynamic value) {
+  Widget _buildField(String label, dynamic value, bool isDark) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Column(
@@ -372,7 +380,7 @@ class RoleProfilePage extends ConsumerWidget {
             style: TextStyle(
               fontSize: 12.rsp,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
           SizedBox(height: 4.h),
@@ -381,10 +389,10 @@ class RoleProfilePage extends ConsumerWidget {
             style: TextStyle(
               fontSize: 14.rsp,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
-          if (value != null) SizedBox(height: 0),
+          if (value != null) const SizedBox(height: 0),
         ],
       ),
     );

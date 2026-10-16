@@ -33,7 +33,7 @@ class DesignerSignupHandler extends BaseSignupHandler {
     );
 
     return SignUpRequest(
-      role: UserRole.DESIGNER.value,
+      role: UserRole.CREATOR.value,
       authProvider: AuthProvider.INTERNAL.value,
       accountType: accountType,
       designerInfo: designerInfo,

@@ -169,7 +169,7 @@ class _FilterSheetState extends State<FilterSheet> {
                         Navigator.pop(context, selectedFilters);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
+                        backgroundColor: isDark ? AppColors.secondaryColor : AppColors.primaryColor,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(vertical: 14.h),
                         shape: RoundedRectangleBorder(
@@ -244,6 +244,7 @@ class _FilterSheetState extends State<FilterSheet> {
   }) {
     final isSelected = value == groupValue;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? AppColors.secondaryColor : AppColors.primaryColor;
     
     return InkWell(
       onTap: () => onChanged(value),
@@ -258,7 +259,7 @@ class _FilterSheetState extends State<FilterSheet> {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isSelected 
-                      ? AppColors.primaryColor 
+                      ? activeColor 
                       : (isDark ? Colors.grey[600]! : AppColors.grey400),
                   width: 2,
                 ),
@@ -270,7 +271,7 @@ class _FilterSheetState extends State<FilterSheet> {
                         height: 10.w,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.primaryColor,
+                          color: activeColor,
                         ),
                       ),
                     )
@@ -283,7 +284,7 @@ class _FilterSheetState extends State<FilterSheet> {
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: isSelected 
-                      ? (isDark ? Colors.white : AppColors.textPrimary)
+                      ? (isDark ? activeColor : AppColors.textPrimary)
                       : (isDark ? Colors.white60 : AppColors.grey600),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),

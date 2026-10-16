@@ -26,12 +26,7 @@ class BillboardList extends ConsumerWidget {
         itemBuilder: (context, index) {
           final billboard = billboards[index];
           return BillboardCard(
-            image: billboard.images.isNotEmpty ? billboard.images.first : '',
-            name: billboard.name,
-            location: billboard.address,
-            size: billboard.size,
-            price: '₦${billboard.price.toStringAsFixed(0)}/month',
-            isActive: billboard.isActive,
+            billboard: billboard,
             onViewSlots: () {
               context.push('/ad-slots', extra: {
                 'parentId': billboard.id,

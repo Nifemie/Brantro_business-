@@ -20,15 +20,18 @@ class WalletModel {
   });
 
   factory WalletModel.fromJson(Map<String, dynamic> json) {
+    final rawCurrency = json['currency']?.toString() ?? '₦';
+    final currencySymbol = (rawCurrency.trim() == 'NGN') ? '₦' : rawCurrency;
+
     return WalletModel(
-      id: json['id'] as int,
-      userId: json['userId'] as int,
-      balance: json['balance'] as String,
-      pendingBalance: json['pendingBalance'] as String,
-      status: json['status'] as String,
-      currency: json['currency'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      userId: int.tryParse(json['userId']?.toString() ?? '0') ?? 0,
+      balance: json['balance']?.toString() ?? '0.00',
+      pendingBalance: json['pendingBalance']?.toString() ?? '0.00',
+      status: json['status']?.toString() ?? 'ACTIVE',
+      currency: currencySymbol,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now() : DateTime.now(),
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now() : DateTime.now(),
     );
   }
 
@@ -50,4 +53,5 @@ class WalletModel {
   double get pendingBalanceAmount => double.tryParse(pendingBalance) ?? 0.0;
   double get totalBalance => balanceAmount + pendingBalanceAmount;
   bool get isActive => status == 'ACTIVE';
+  String get currencySymbol => (currency.trim() == 'NGN') ? '₦' : currency;
 }

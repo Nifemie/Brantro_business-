@@ -167,9 +167,7 @@ class _ProfileDetailsScreenState extends ConsumerState<ProfileDetailsScreen> {
           width: 3,
         ),
         image: DecorationImage(
-          image: AvatarHelper.isDefaultAvatar(avatarUrl)
-              ? AssetImage(avatarUrl) as ImageProvider
-              : NetworkImage(avatarUrl),
+          image: AvatarHelper.getImageProvider(avatarUrl),
           fit: BoxFit.cover,
         ),
       ),

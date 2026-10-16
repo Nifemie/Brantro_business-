@@ -40,7 +40,7 @@ class ArtistFormConfig extends BaseRoleFormConfig {
         'required': true,
       },
       {
-        'name': 'availability',
+        'name': 'availabilityType',
         'label': 'Availability',
         'type': 'dropdown',
         'hint': 'Select your availability',

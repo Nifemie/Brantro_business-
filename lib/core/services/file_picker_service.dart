@@ -24,6 +24,9 @@ class FilePickerService {
       }
       return null;
     } catch (e) {
+      print('=== FILE PICKER EXCEPTION (pickImage) ===');
+      print(e);
+      print('=========================================');
       throw FilePickerException('Failed to pick image: $e');
     }
   }
@@ -44,6 +47,9 @@ class FilePickerService {
       }
       return null;
     } catch (e) {
+      print('=== FILE PICKER EXCEPTION (pickFile) ===');
+      print(e);
+      print('========================================');
       throw FilePickerException('Failed to pick file: $e');
     }
   }

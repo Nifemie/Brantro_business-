@@ -55,32 +55,31 @@ class OrderConfigHelper {
   }
 
   static Map<String, dynamic> getStatusConfig(String status) {
-    switch (status.toLowerCase()) {
+    final lower = status.toLowerCase();
+    switch (lower) {
       case 'pending':
-        return {
-          'label': 'PENDING',
-          'color': const Color(0xFFF59E0B),
-        };
+        return {'label': 'PENDING', 'color': const Color(0xFFF59E0B)};
+      case 'in_progress':
+      case 'inprogress':
+      case 'accepted':
+        return {'label': 'INPROGRESS', 'color': const Color(0xFFF76301)};
+      case 'delivered':
+        return {'label': 'DELIVERED', 'color': const Color(0xFF8B5CF6)};
       case 'active':
-        return {
-          'label': 'ACTIVE',
-          'color': const Color(0xFF10B981),
-        };
+        return {'label': 'ACTIVE', 'color': const Color(0xFF10B981)};
       case 'completed':
-        return {
-          'label': 'COMPLETED',
-          'color': const Color(0xFF3B82F6),
-        };
+      case 'approved':
+      case 'success':
+        return {'label': 'COMPLETED', 'color': const Color(0xFF3B82F6)};
       case 'cancelled':
-        return {
-          'label': 'CANCELLED',
-          'color': const Color(0xFFEF4444),
-        };
+        return {'label': 'CANCELLED', 'color': const Color(0xFFEF4444)};
+      case 'rejected':
+        return {'label': 'REJECTED', 'color': const Color(0xFFEF4444)};
+      case 'failed':
+        return {'label': 'FAILED', 'color': const Color(0xFFEF4444)};
       default:
-        return {
-          'label': status.toUpperCase(),
-          'color': Colors.grey,
-        };
+        final cleanLabel = status.replaceAll('_', ' ').toUpperCase();
+        return {'label': cleanLabel, 'color': Colors.grey};
     }
   }
 }

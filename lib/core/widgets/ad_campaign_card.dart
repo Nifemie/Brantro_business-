@@ -13,8 +13,9 @@ class AdCampaignCard extends StatelessWidget {
   final int dislikes;
   final String date;
   final double budget;
-  final VoidCallback? onMenuTap;
-  final VoidCallback? onActionTap;
+  final VoidCallback onMenuTap;
+  final VoidCallback onActionTap;
+  final VoidCallback? onCancelTap;
 
   const AdCampaignCard({
     super.key,
@@ -28,8 +29,9 @@ class AdCampaignCard extends StatelessWidget {
     required this.dislikes,
     required this.date,
     required this.budget,
-    this.onMenuTap,
-    this.onActionTap,
+    required this.onMenuTap,
+    required this.onActionTap,
+    this.onCancelTap,
   });
 
   @override
@@ -39,7 +41,6 @@ class AdCampaignCard extends StatelessWidget {
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
-      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12.r),
@@ -54,26 +55,46 @@ class AdCampaignCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Icon + Ref + Status Badge
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
+          // Banner Area
+          Container(
+            height: 120.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[850] : const Color(0xFFF3F6F9),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(12.r),
+                topRight: Radius.circular(12.r),
+              ),
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Icon(
+                    Icons.movie_creation_outlined, // Clapperboard icon
+                    size: 48.sp,
+                    color: isDark ? Colors.white54 : const Color(0xFF7A8D9C),
+                  ),
+                ),
+                Positioned(
+                  top: 16.h,
+                  right: 16.w,
+                  child: _buildStatusBadge(status, isDark),
+                ),
+              ],
+            ),
+          ),
+
+          // Content Area
+          Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Row: Ref & Budget
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(10.w),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[800] : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 24.sp,
-                        color: isDark ? Colors.white70 : Colors.grey[600],
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,237 +108,241 @@ class AdCampaignCard extends StatelessWidget {
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: 2.h),
+                          SizedBox(height: 12.h),
                           Icon(
                             Icons.copy,
-                            size: 14.sp,
-                            color: isDark ? Colors.grey[500] : Colors.grey[400],
+                            size: 16.sp,
+                            color: isDark ? Colors.grey[500] : const Color(0xFF7A8D9C),
                           ),
                         ],
                       ),
                     ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Budget',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: isDark ? Colors.grey[400] : const Color(0xFF7A8D9C),
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(bottom: 2.h, right: 4.w),
+                              child: Text(
+                                'NGN',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: isDark ? Colors.grey[400] : const Color(0xFF7A8D9C),
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '₦${budget.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ),
-              SizedBox(width: 8.w),
-              _buildStatusBadge(status, isDark),
-            ],
-          ),
 
-          SizedBox(height: 16.h),
+                SizedBox(height: 16.h),
 
-          // Ad Slots Count
-          Text(
-            '$adSlots Ad Slots',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1A2B4B),
-            ),
-          ),
-
-          SizedBox(height: 12.h),
-
-          // Payment Method
-          Row(
-            children: [
-              Icon(
-                Icons.credit_card,
-                size: 16.sp,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
-              SizedBox(width: 6.w),
-              Flexible(
-                child: Text(
-                  'Payment',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Flexible(
-                child: Text(
-                  paymentMethod,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1A2B4B),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 12.h),
-
-          // Remark/Order ID
-          Row(
-            children: [
-              Icon(
-                Icons.chat_bubble_outline,
-                size: 16.sp,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
-              SizedBox(width: 6.w),
-              Text(
-                'Remark',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            'Order ID: $orderId',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: isDark ? Colors.grey[300] : Colors.grey[700],
-            ),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Advertiser Section
-          Text(
-            'Advertiser',
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person_outline,
-                  size: 20.sp,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Text(
-                  advertiserName,
+                Text(
+                  '$adSlots Ad Slots',
                   style: TextStyle(
                     fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                    color: isDark ? Colors.grey[400] : const Color(0xFF7A8D9C),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              SizedBox(width: 8.w),
-              // Likes/Dislikes
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+
+                SizedBox(height: 16.h),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.thumb_up, size: 16.sp, color: Colors.orange),
-                    SizedBox(width: 4.w),
-                    Text(
-                      '$likes',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: isDark ? Colors.white70 : Colors.grey[700],
+                    Icon(
+                      Icons.account_balance_wallet,
+                      size: 16.sp,
+                      color: isDark ? Colors.grey[400] : const Color(0xFF4A6583),
+                    ),
+                    SizedBox(width: 8.w),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Payment',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: isDark ? Colors.grey[400] : const Color(0xFF4A6583),
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          paymentMethod.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16.h),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.play_circle_fill,
+                      size: 16.sp,
+                      color: isDark ? Colors.grey[400] : const Color(0xFF4A6583),
+                    ),
+                    SizedBox(width: 8.w),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Remark',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: isDark ? Colors.grey[400] : const Color(0xFF4A6583),
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          'Campaign order', // Currently hardcoded in the original design
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16.h),
+
+                Text(
+                  'Advertiser',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? Colors.grey[400] : const Color(0xFF7A8D9C),
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12.r,
+                      backgroundColor: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
+                      child: Icon(
+                        Icons.person,
+                        size: 16.sp,
+                        color: isDark ? Colors.white70 : const Color(0xFF7A8D9C),
                       ),
                     ),
                     SizedBox(width: 8.w),
-                    Icon(Icons.favorite, size: 16.sp, color: Colors.red),
-                    SizedBox(width: 4.w),
-                    Text(
-                      '$dislikes',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: isDark ? Colors.white70 : Colors.grey[700],
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          advertiserName,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : const Color(0xFF1A2B4B),
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 12.sp, color: Colors.amber),
+                            SizedBox(width: 4.w),
+                            Text(
+                              '$likes',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: isDark ? Colors.grey[400] : const Color(0xFF7A8D9C),
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Icon(Icons.favorite, size: 12.sp, color: Colors.red),
+                            SizedBox(width: 4.w),
+                            Text(
+                              '$dislikes',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: isDark ? Colors.grey[400] : const Color(0xFF7A8D9C),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
 
-          SizedBox(height: 16.h),
+                SizedBox(height: 16.h),
+                Divider(color: isDark ? Colors.grey[800] : Colors.grey[200]),
+                SizedBox(height: 16.h),
 
-          // Date
-          Text(
-            date,
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                Text(
+                  date,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? Colors.grey[400] : const Color(0xFF4A6583),
+                  ),
+                ),
+
+                SizedBox(height: 20.h),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    // Menu Button
+                    Container(
+                      width: 56.w,
+                      height: 48.h,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[850] : const Color(0xFFFFF5F5),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: isDark ? Colors.grey[700]! : const Color(0xFFFFE5E5),
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: onMenuTap,
+                        icon: Icon(
+                          Icons.more_horiz,
+                          color: isDark ? Colors.white70 : const Color(0xFFFF6B6B),
+                          size: 24.sp,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    // Action Button (Cancel/Approve/Cancelled)
+                    Expanded(
+                      child: _buildActionButton(status, isDark),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Budget
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Budget',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-              ),
-              Text(
-                'NGN ₦${budget.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1A2B4B),
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Action Buttons
-          Row(
-            children: [
-              // Menu Button
-              Container(
-                width: 56.w,
-                height: 56.h,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[850] : const Color(0xFFFFF5F5),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: isDark ? Colors.grey[700]! : const Color(0xFFFFE5E5),
-                  ),
-                ),
-                child: IconButton(
-                  onPressed: onMenuTap,
-                  icon: Icon(
-                    Icons.more_horiz,
-                    color: isDark ? Colors.white70 : const Color(0xFFFF6B6B),
-                    size: 24.sp,
-                  ),
-                  padding: EdgeInsets.zero,
-                ),
-              ),
-
-              SizedBox(width: 12.w),
-
-              // Action Button (Cancel/Approve/Cancelled)
-              Expanded(
-                child: _buildActionButton(status, isDark),
-              ),
-            ],
           ),
         ],
       ),
@@ -328,9 +353,10 @@ class AdCampaignCard extends StatelessWidget {
     Color badgeColor;
     String badgeText;
 
-    switch (status.toLowerCase()) {
+    switch (status.trim().toLowerCase()) {
       case 'pending':
-        badgeColor = Colors.orange;
+      case 'requested':
+        badgeColor = const Color(0xFFFF7A45); // Matching screenshot orange
         badgeText = 'Pending';
         break;
       case 'cancelled':
@@ -346,8 +372,11 @@ class AdCampaignCard extends StatelessWidget {
         badgeText = 'Completed';
         break;
       default:
+        debugPrint('AdCampaignCard received unknown status: "$status"');
         badgeColor = Colors.grey;
-        badgeText = status;
+        badgeText = status.isNotEmpty 
+            ? status[0].toUpperCase() + status.substring(1).toLowerCase() 
+            : 'Unknown';
     }
 
     return Container(
@@ -368,19 +397,20 @@ class AdCampaignCard extends StatelessWidget {
   }
 
   Widget _buildActionButton(String status, bool isDark) {
-    switch (status.toLowerCase()) {
+    switch (status.trim().toLowerCase()) {
       case 'pending':
+      case 'requested':
         return Row(
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: onActionTap,
+                onPressed: onCancelTap ?? onActionTap,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDark ? Colors.white70 : Colors.grey[700],
                   side: BorderSide(
                     color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
@@ -388,13 +418,13 @@ class AdCampaignCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.close, size: 18.sp),
-                    SizedBox(width: 8.w),
+                    Icon(Icons.cancel_outlined, size: 16.sp),
+                    SizedBox(width: 6.w),
                     Text(
                       'Cancel',
                       style: TextStyle(
                         fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -408,7 +438,7 @@ class AdCampaignCard extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF003D82),
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
@@ -417,13 +447,13 @@ class AdCampaignCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.check_circle_outline, size: 18.sp),
-                    SizedBox(width: 8.w),
+                    Icon(Icons.check_circle_outline, size: 16.sp),
+                    SizedBox(width: 6.w),
                     Text(
                       'Approve',
                       style: TextStyle(
                         fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -438,7 +468,7 @@ class AdCampaignCard extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red.withOpacity(0.3),
             foregroundColor: Colors.red,
-            padding: EdgeInsets.symmetric(vertical: 16.h),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.r),
             ),
@@ -447,7 +477,7 @@ class AdCampaignCard extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.cancel_outlined, size: 18.sp),
+              Icon(Icons.cancel_outlined, size: 16.sp),
               SizedBox(width: 8.w),
               Text(
                 'Cancelled',
@@ -465,7 +495,7 @@ class AdCampaignCard extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF003D82),
             foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 16.h),
+            padding: EdgeInsets.symmetric(vertical: 12.h),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.r),
             ),

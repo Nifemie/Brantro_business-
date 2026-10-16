@@ -34,7 +34,7 @@ class ProfileBannerStack extends StatelessWidget {
             ),
             image: DecorationImage(
               image: profileData.bannerUrl.isNotEmpty
-                  ? NetworkImage(profileData.bannerUrl)
+                  ? AvatarHelper.getImageProvider(profileData.bannerUrl)
                   : const AssetImage('assets/promotions/billboard1.jpg')
                         as ImageProvider,
               fit: BoxFit.cover,
@@ -55,9 +55,7 @@ class ProfileBannerStack extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 4),
                   image: DecorationImage(
-                    image: AvatarHelper.isDefaultAvatar(avatarUrl)
-                        ? AssetImage(avatarUrl) as ImageProvider
-                        : NetworkImage(avatarUrl),
+                    image: AvatarHelper.getImageProvider(avatarUrl),
                     fit: BoxFit.cover,
                   ),
                 ),

@@ -4,7 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:marquee/marquee.dart';
 import '../../../../core/theme/theme_provider.dart';
+import '../../../notification/logic/notification_provider.dart';
 import 'app_popup_menu.dart';
+import 'persona_switcher_pill.dart';
 
 class DashboardAppBar extends ConsumerStatefulWidget {
   final String title;
@@ -82,7 +84,15 @@ class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
           widget.showBackButton
               ? IconButton(
                   onPressed: () {
-                    context.pop();
+                    if (context.canPop()) {
+                      try {
+                        context.pop();
+                      } catch (e) {
+                        context.go('/dashboard');
+                      }
+                    } else {
+                      context.go('/dashboard');
+                    }
                   },
                   icon: Icon(
                     Icons.arrow_back,
@@ -92,6 +102,8 @@ class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(minWidth: 40.w),
                 )
+              : SizedBox.shrink(),
+          /*
               : IconButton(
                   onPressed: () {
                     Scaffold.of(context).openDrawer();
@@ -145,6 +157,7 @@ class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(minWidth: 40.w),
                 ),
+          */
           SizedBox(width: 8.w),
           Expanded(
             child: _shouldAnimate
@@ -182,7 +195,7 @@ class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
                     maxLines: 1,
                   ),
           ),
-          SizedBox(width: 8.w),
+          const PersonaSwitcherPill(),
           IconButton(
             onPressed: () {
               ref.read(themeModeProvider.notifier).toggleTheme();
@@ -195,7 +208,7 @@ class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
               size: 24.sp,
             ),
             padding: EdgeInsets.zero,
-            constraints: BoxConstraints(minWidth: 40.w),
+            constraints: BoxConstraints(minWidth: 36.w),
           ),
           Stack(
             children: [
@@ -211,28 +224,31 @@ class _DashboardAppBarState extends ConsumerState<DashboardAppBar> {
                 padding: EdgeInsets.zero,
                 constraints: BoxConstraints(minWidth: 40.w),
               ),
-              Positioned(
-                right: 4,
-                top: 2,
-                child: Container(
-                  padding: EdgeInsets.all(4.w),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF05252),
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: BoxConstraints(minWidth: 18.w, minHeight: 18.h),
-                  child: Center(
-                    child: Text(
-                      '3',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
+              if (ref.watch(notificationProvider).unreadCount > 0)
+                Positioned(
+                  right: 4,
+                  top: 2,
+                  child: Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF05252),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: BoxConstraints(minWidth: 18.w, minHeight: 18.h),
+                    child: Center(
+                      child: Text(
+                        ref.watch(notificationProvider).unreadCount > 99
+                            ? '99+'
+                            : '${ref.watch(notificationProvider).unreadCount}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           const AppPopupMenu(),

@@ -103,6 +103,7 @@ class CustomPickerField extends StatelessWidget {
   final List<String> options;
   final bool isDark;
   final bool isRequired;
+  final ValueChanged<String>? onChanged;
 
   const CustomPickerField({
     super.key,
@@ -112,6 +113,7 @@ class CustomPickerField extends StatelessWidget {
     required this.options,
     required this.isDark,
     this.isRequired = false,
+    this.onChanged,
   });
 
   @override
@@ -171,6 +173,9 @@ class CustomPickerField extends StatelessWidget {
 
             if (selected != null) {
               controller.text = selected;
+              if (onChanged != null) {
+                onChanged!(selected);
+              }
             }
           },
           validator: isRequired

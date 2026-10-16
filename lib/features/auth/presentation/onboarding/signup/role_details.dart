@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -44,28 +45,54 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
     return _formStateManager.getFormFields(_selectedAccountType);
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      final handler = RoleDetailsHandler(ref, context);
-      final formData = handler.collectFormData(_formStateManager.controllers);
+      try {
+        final handler = RoleDetailsHandler(ref, context);
+        final formData = handler.collectFormData(_formStateManager.controllers);
 
-      handler.handleSubmit(
-        role: widget.role,
-        accountType: _selectedAccountType,
-        formData: formData,
-        setLoading: (loading) {
-          if (mounted) {
-            setState(() => _isLoading = loading);
-          }
-        },
+        await handler.handleSubmit(
+          role: widget.role,
+          accountType: _selectedAccountType,
+          formData: formData,
+          setLoading: (loading) {
+            if (mounted) {
+              setState(() => _isLoading = loading);
+            }
+          },
+        );
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Registration error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted && _isLoading) {
+          setState(() => _isLoading = false);
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all required fields'),
+          backgroundColor: Colors.orange,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryBg = isDark ? const Color(0xFF12151B) : Colors.white;
     final fields = _getFormFields();
 
     return Scaffold(
@@ -73,21 +100,21 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
-        backgroundColor: Colors.white,
+        backgroundColor: primaryBg,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
           onPressed: () => context.pop(),
         ),
         title: Text(
           '${widget.role} Details',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: primaryBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 60.h),
@@ -102,12 +129,16 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                   style: TextStyle(
                     fontSize: 24.rsp,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   'Please fill in the details below to set up your account',
-                  style: TextStyle(fontSize: 14.rsp, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 14.rsp,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                 ),
                 SizedBox(height: 32.h),
 
@@ -129,15 +160,26 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                 ...fields.map((field) {
                   final fieldType = field['type'] as String? ?? 'text';
                   final fieldName = field['name'] as String;
+                  final fieldLabel = field['label'] as String;
+                  final bool isOptional = fieldLabel.toLowerCase().contains('optional') ||
+                      field['required'] == false ||
+                      field['isRequired'] == false;
+                  final isFieldRequired = !isOptional &&
+                      ((field['isRequired'] as bool?) ??
+                          (field['required'] as bool?) ??
+                          false);
 
                   if (fieldType == 'dropdown') {
+                    final currentValue = _formStateManager.controllers[fieldName]?.text;
                     return Padding(
                       padding: EdgeInsets.only(bottom: 16.h),
                       child: CustomDropdownField(
-                        label: field['label'] as String,
+                        key: ValueKey('${fieldName}_${(field['options'] as List?)?.length}_${_formStateManager.controllers['state']?.text}'),
+                        label: fieldLabel,
                         hint: field['hint'] as String?,
+                        initialValue: currentValue != null && currentValue.isNotEmpty ? currentValue : null,
                         options: field['options'] as List<Map<String, String>>,
-                        isRequired: field['isRequired'] as bool? ?? field['required'] as bool? ?? true,
+                        isRequired: isFieldRequired,
                         onChanged: (value) {
                           setState(() {
                             _formStateManager.handleDropdownChange(fieldName, value);
@@ -149,10 +191,10 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                     return Padding(
                       padding: EdgeInsets.only(bottom: 16.h),
                       child: CustomMultiselectDropdownField(
-                        label: field['label'] as String,
+                        label: fieldLabel,
                         hint: field['hint'] as String?,
                         options: field['options'] as List<Map<String, String>>,
-                        isRequired: field['isRequired'] as bool? ?? field['required'] as bool? ?? true,
+                        isRequired: isFieldRequired,
                         onChanged: (values) {
                           setState(() {
                             _formStateManager.handleMultiselectChange(fieldName, values);
@@ -167,35 +209,33 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                       padding: EdgeInsets.only(bottom: 16.h),
                       child: _buildTextField(
                         controller: _formStateManager.controllers[fieldName]!,
-                        label: field['label'] as String,
+                        fieldName: fieldName,
+                        label: fieldLabel,
                         hint: field['hint'] as String?,
                         maxLines: field['maxLines'] as int? ?? 1,
-                        isRequired:
-                            field['isRequired'] as bool? ??
-                            field['required'] as bool? ??
-                            true,
+                        isRequired: isFieldRequired,
                         isPassword: isPassword,
+                        isDark: isDark,
                       ),
                     );
                   }
                 }).toList(),
 
-                SizedBox(height: 50.h),
+                SizedBox(height: 24.h),
 
                 // Submit Button
                 SizedBox(
                   width: double.infinity,
-                  height: 56.h,
+                  height: 52.h,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.rsp),
-                      ),
                       elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
                     ),
                     child: _isLoading
                         ? SizedBox(
@@ -227,10 +267,45 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
     required TextEditingController controller,
     required String label,
     required String? hint,
+    String fieldName = '',
     int maxLines = 1,
     bool isRequired = true,
     bool isPassword = false,
+    bool isDark = false,
   }) {
+    final lowerLabel = label.toLowerCase();
+    final lowerName = fieldName.toLowerCase();
+    final isPhoneField = lowerName.contains('phone') || lowerLabel.contains('phone') || lowerLabel.contains('telephone');
+
+    Widget? phonePrefix;
+    if (isPhoneField) {
+      phonePrefix = Container(
+        margin: EdgeInsets.only(right: 8.w, left: 12.w),
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🇳🇬', style: TextStyle(fontSize: 16.sp)),
+            SizedBox(width: 6.w),
+            Text(
+              '+234',
+              style: TextStyle(
+                fontSize: 14.rsp,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Container(
+              width: 1,
+              height: 20.h,
+              color: isDark ? Colors.white24 : Colors.grey.shade300,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,14 +317,14 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                 style: TextStyle(
                   fontSize: 14.rsp,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               if (isRequired)
-                TextSpan(
+                const TextSpan(
                   text: '*',
                   style: TextStyle(
-                    fontSize: 14.rsp,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.red,
                   ),
@@ -263,10 +338,84 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
           maxLines: maxLines,
           minLines: maxLines == 1 ? 1 : maxLines,
           obscureText: isPassword,
-          decoration: _inputDecoration(hint),
+          keyboardType: isPhoneField ? TextInputType.phone : null,
+          inputFormatters: isPhoneField
+              ? [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ]
+              : null,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14.rsp),
+          decoration: _inputDecoration(isPhoneField ? '8012345678' : hint, isDark, prefixIcon: phonePrefix),
           validator: (value) {
-            if (isRequired && (value == null || value.isEmpty)) {
-              return 'This field is required';
+            final val = value?.trim() ?? '';
+            if (isRequired && val.isEmpty) {
+              return '$label is required';
+            }
+            if (val.isNotEmpty) {
+              // Phone validation: +234 represents the beginning 0
+              if (isPhoneField) {
+                final digits = val.replaceAll(RegExp(r'\D'), '');
+                if (digits.startsWith('0')) {
+                  if (digits.length != 11) {
+                    return 'Enter a valid 11-digit phone number starting with 0';
+                  }
+                } else {
+                  if (digits.length != 10) {
+                    return 'Enter 10 digits after +234 (e.g. 8012345678)';
+                  }
+                }
+              }
+
+              // Full Name validation (BRT-004, BRT-043)
+              if (lowerName.contains('fullname') || lowerLabel == 'full name' || lowerLabel == 'name') {
+                if (RegExp(r'^\d+$').hasMatch(val)) {
+                  return 'Name cannot contain only numbers';
+                }
+                if (val.length < 2) {
+                  return 'Name must be at least 2 characters';
+                }
+              }
+
+              // Email validation (BRT-043, BRT-004)
+              if (lowerName.contains('email') || lowerLabel.contains('email')) {
+                final emailRegex = RegExp(r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$');
+                if (!emailRegex.hasMatch(val) || !val.contains('.')) {
+                  return 'Please enter a valid email address';
+                }
+              }
+
+              // Password validation (BRT-005, BRT-047)
+              if (isPassword || lowerName.contains('password') || lowerLabel.contains('password')) {
+                if (val.length < 8) {
+                  return 'Password must be at least 8 characters long';
+                }
+                if (!RegExp(r'[A-Za-z]').hasMatch(val) || !RegExp(r'[0-9]').hasMatch(val)) {
+                  return 'Password must include both letters and numbers';
+                }
+              }
+
+              // Website & Portfolio validation (BRT-044, BRT-036)
+              if (lowerLabel.contains('website') || lowerLabel.contains('portfolio') || lowerName.contains('website') || lowerName.contains('portfolio')) {
+                final urlRegex = RegExp(r'^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$');
+                if (!urlRegex.hasMatch(val) && !val.contains('.')) {
+                  return 'Please enter a valid URL (e.g. example.com)';
+                }
+              }
+
+              // TIN validation (BRT-038, BRT-044)
+              if (lowerName.contains('tin') || lowerLabel.contains('tin')) {
+                if (!RegExp(r'^[a-zA-Z0-9-]+$').hasMatch(val)) {
+                  return 'TIN can only contain numbers, letters, and hyphens';
+                }
+              }
+
+              // ID Number validation (BRT-038, BRT-044)
+              if (lowerName.contains('idnumber') || lowerLabel.contains('id number')) {
+                if (!RegExp(r'^[a-zA-Z0-9/-]+$').hasMatch(val)) {
+                  return 'ID Number can only contain numbers, letters, and hyphens';
+                }
+              }
             }
             return null;
           },
@@ -275,21 +424,25 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String? hint) {
+  InputDecoration _inputDecoration(String? hint, bool isDark, {Widget? prefixIcon}) {
     return InputDecoration(
+      filled: true,
+      fillColor: isDark ? const Color(0xFF1E232D) : Colors.grey[50],
       hintText: hint,
+      prefixIcon: prefixIcon,
+      prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
       hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.rsp),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.rsp),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.rsp),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.rsp),
-        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
+        borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
       ),
       contentPadding: PlatformResponsive.symmetric(
         horizontal: 16,

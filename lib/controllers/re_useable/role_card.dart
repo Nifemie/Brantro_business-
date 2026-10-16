@@ -21,6 +21,9 @@ class RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onSelect,
       child: Card(
@@ -28,11 +31,15 @@ class RoleCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
           side: BorderSide(
-            color: isSelected ? AppColors.primaryColor : Colors.grey.shade200,
+            color: isSelected
+                ? AppColors.primaryColor
+                : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200),
             width: isSelected ? 2 : 1,
           ),
         ),
-        color: isSelected ? AppColors.primaryColor.withOpacity(0.05) : Colors.white,
+        color: isSelected
+            ? (isDark ? AppColors.primaryColor.withOpacity(0.2) : AppColors.primaryColor.withOpacity(0.05))
+            : (isDark ? const Color(0xFF1E232D) : Colors.white),
         child: Padding(
           padding: EdgeInsets.all(10.w),
           child: Column(
@@ -45,11 +52,11 @@ class RoleCard extends StatelessWidget {
                 width: 45.w,
                 height: 45.w,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor.withOpacity(0.1),
+                  color: AppColors.primaryColor.withOpacity(isDark ? 0.25 : 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Icon(icon, size: 24.sp, color: AppColors.primaryColor),
+                  child: Icon(icon, size: 24.sp, color: isDark ? const Color(0xFFFF8B3D) : AppColors.primaryColor),
                 ),
               ),
               SizedBox(height: 12.h),
@@ -62,7 +69,7 @@ class RoleCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -77,7 +84,7 @@ class RoleCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 10.sp,
-                    color: Colors.grey.shade600,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                     height: 1.2,
                   ),
                   maxLines: 3,

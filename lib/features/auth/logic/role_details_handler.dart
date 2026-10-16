@@ -54,26 +54,48 @@ class RoleDetailsHandler {
     Map<String, dynamic> formData,
     Function(bool) setLoading,
   ) async {
-    final authNotifier = ref.read(authNotifierProvider.notifier);
+    try {
+      final authNotifier = ref.read(authNotifierProvider.notifier);
 
-    // For individual advertisers, advertiserInfo is null - they only provide personal info
-    final signUpRequest = SignUpRequest(
-      role: UserRole.ADVERTISER.value,
-      authProvider: AuthProvider.INTERNAL.value,
-      accountType: AccountType.INDIVIDUAL.value,
-      advertiserInfo: null,
-      name: formData['fullName'] ?? '',
-      emailAddress: formData['email'] ?? '',
-      phoneNumber: formData['phoneNumber'] ?? '',
-      password: formData['password'] ?? '',
-      country: 'Nigeria',
-      state: formData['state'],
-      city: formData['city'],
-      address: formData['streetAddress'],
-    );
+      String cleanPhone = (formData['phoneNumber'] ?? '').toString().trim().replaceAll(RegExp(r'\D'), '');
+      if (cleanPhone.startsWith('234')) {
+        cleanPhone = cleanPhone.substring(3);
+      }
+      if (cleanPhone.startsWith('0')) {
+        cleanPhone = cleanPhone.substring(1);
+      }
+      final phone = cleanPhone;
 
-    await authNotifier.signupUser(signUpRequest);
-    await handleSignupResponse(formData, setLoading);
+      // For individual advertisers, advertiserInfo is null - they only provide personal info
+      final signUpRequest = SignUpRequest(
+        role: UserRole.ADVERTISER.value,
+        authProvider: AuthProvider.INTERNAL.value,
+        accountType: AccountType.INDIVIDUAL.value,
+        advertiserInfo: null,
+        name: formData['fullName'] ?? '',
+        emailAddress: (formData['email'] ?? '').toString().trim().toLowerCase(),
+        phoneNumber: phone,
+        password: formData['password'] ?? '',
+        country: 'Nigeria',
+        state: formData['state'],
+        city: formData['city'],
+        address: formData['streetAddress'],
+      );
+
+      await authNotifier.signupUser(signUpRequest);
+      await handleSignupResponse(formData, setLoading);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Registration error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   /// Handle signup response - show success/error and navigate
@@ -81,41 +103,42 @@ class RoleDetailsHandler {
     Map<String, dynamic> formData,
     Function(bool) setLoading,
   ) async {
+    setLoading(false);
     if (!context.mounted) return;
 
     final authState = ref.read(authNotifierProvider);
 
     if (authState.isDataAvailable) {
-      setLoading(false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authState.message ?? 'Account created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
       
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authState.message ?? 'Account created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Navigate to verification screen with email and phone number
-        context.push(
-          '/verify-identity',
-          extra: {
-            'email': formData['email'],
-            'phoneNumber': formData['phoneNumber'],
-          },
-        );
-      }
-    } else if (authState.message != null) {
-      setLoading(false);
-      
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authState.message!),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      String cleanPhone = (formData['phoneNumber'] ?? '').toString().trim().replaceAll(RegExp(r'\D'), '');
+      if (cleanPhone.startsWith('234')) cleanPhone = cleanPhone.substring(3);
+      if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+      final phone = cleanPhone;
+
+      // Navigate to verification screen with email and phone number
+      context.push(
+        '/verify-identity',
+        extra: {
+          'email': (formData['email'] ?? '').toString().trim().toLowerCase(),
+          'phoneNumber': phone,
+        },
+      );
+    } else {
+      final errorMsg = authState.message?.isNotEmpty == true
+          ? authState.message!
+          : 'Registration failed. Please check your details and try again.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

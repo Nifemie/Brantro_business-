@@ -21,12 +21,25 @@ class AdvertiserSignupHandler extends BaseSignupHandler {
   }) async {
     AdvertiserInfo? advertiserInfo;
 
+    String cleanPhone = phone.trim().replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.startsWith('234')) cleanPhone = cleanPhone.substring(3);
+    if (!cleanPhone.startsWith('0')) cleanPhone = '0$cleanPhone';
+
+    String? rawTel = roleData['businessTelephoneNumber']?.toString().trim();
+    String? formattedTel;
+    if (rawTel != null && rawTel.isNotEmpty) {
+      String cleanTel = rawTel.replaceAll(RegExp(r'\D'), '');
+      if (cleanTel.startsWith('234')) cleanTel = cleanTel.substring(3);
+      if (!cleanTel.startsWith('0')) cleanTel = '0$cleanTel';
+      formattedTel = cleanTel;
+    }
+
     if (accountType == 'BUSINESS') {
       advertiserInfo = AdvertiserInfo(
         businessName: roleData['businessName'],
         businessAddress: roleData['businessAddress'],
         industry: roleData['industry'],
-        telephoneNumber: roleData['businessTelephoneNumber'],
+        telephoneNumber: formattedTel ?? roleData['businessTelephoneNumber'],
         businessWebsite: roleData['businessWebsite'],
         idType: idType ?? (roleData['businessRegistrationNumber'] != null ? 'CAC' : null),
         idNumber: roleData['businessRegistrationNumber'] ?? idNumber,
@@ -35,13 +48,13 @@ class AdvertiserSignupHandler extends BaseSignupHandler {
     }
 
     return SignUpRequest(
-      role: 'USER',
+      role: UserRole.ADVERTISER.value,
       authProvider: AuthProvider.INTERNAL.value,
       accountType: accountType,
       advertiserInfo: advertiserInfo,
       name: name,
       emailAddress: email,
-      phoneNumber: phone,
+      phoneNumber: cleanPhone,
       password: password,
       country: country ?? 'Nigeria',
       state: state,

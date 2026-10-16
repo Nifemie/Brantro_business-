@@ -1,65 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../logic/creative_provider.dart';
 import 'creative_card.dart';
 import 'creative_menu_sheet.dart';
 
-class CreativeList extends StatelessWidget {
+class CreativeList extends ConsumerWidget {
   const CreativeList({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // TODO: Replace with actual data from API/Provider
-    final mockCreatives = [
-      {
-        'bannerImage': 'assets/promotions/billboard1.jpg',
-        'title': 'Liquid Logo Animation Loop',
-        'category': 'VIDEO',
-        'type': 'STANDARD',
-        'duration': '10s',
-        'size': '3.6MB',
-        'isActive': true,
-      },
-      {
-        'bannerImage': 'assets/promotions/billboard2.jpg',
-        'title': 'Modern Brand Identity Kit',
-        'category': 'DESIGN',
-        'type': 'PREMIUM',
-        'duration': '5 Files',
-        'size': '12MB',
-        'isActive': true,
-      },
-      {
-        'bannerImage': 'assets/promotions/billboard3.jpg',
-        'title': 'Social Media Content Pack',
-        'category': 'DESIGN',
-        'type': 'STANDARD',
-        'duration': '20 Files',
-        'size': '8.5MB',
-        'isActive': false,
-      },
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final creativeState = ref.watch(creativeProvider);
+    final creatives = creativeState.data ?? [];
 
     return ListView.builder(
-      padding: EdgeInsets.all(16.w),
-      itemCount: mockCreatives.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      itemCount: creatives.length,
       itemBuilder: (context, index) {
-        final creative = mockCreatives[index];
+        final creative = creatives[index];
         return CreativeCard(
-          bannerImage: creative['bannerImage'] as String,
-          title: creative['title'] as String,
-          category: creative['category'] as String,
-          type: creative['type'] as String,
-          duration: creative['duration'] as String,
-          size: creative['size'] as String,
-          isActive: creative['isActive'] as bool,
+          bannerImage: creative.image,
+          title: creative.name,
+          rating: creative.rating,
+          favorites: creative.favorites,
+          price: creative.price,
+          discount: creative.discount,
+          ordersCount: creative.ordersCount,
+          onViewDetails: () {
+            context.push('/creative-details', extra: {'creative': creative});
+          },
           onViewOrders: () {
-            // TODO: Navigate to orders page
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('View orders for ${creative['title']}')),
-            );
+            context.push('/orders', extra: {'creativeId': creative.id});
           },
           onMenuTap: () {
-            showCreativeMenuSheet(context, creative['title'] as String);
+            showCreativeMenuSheet(context, creative.name);
           },
         );
       },

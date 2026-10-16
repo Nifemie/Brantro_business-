@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../controllers/re_useable/app_color.dart';
-import '../../../controllers/re_useable/app_texts.dart';
+import '../../../core/service/session_service.dart';
 import '../logic/contact_notifier.dart';
 import '../data/models/contact_message_request.dart';
 import 'widgets/contact/contact_form_fields.dart';
@@ -25,6 +26,32 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
   final _addressController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _prefillUserData();
+  }
+
+  Future<void> _prefillUserData() async {
+    final user = await SessionService.getUser();
+    if (user != null && mounted) {
+      setState(() {
+        if (_nameController.text.isEmpty && user['fullName'] != null) {
+          _nameController.text = user['fullName'].toString();
+        }
+        if (_emailController.text.isEmpty && user['email'] != null) {
+          _emailController.text = user['email'].toString();
+        }
+        if (_phoneController.text.isEmpty && user['phoneNumber'] != null) {
+          _phoneController.text = user['phoneNumber'].toString();
+        }
+        if (_addressController.text.isEmpty && user['address'] != null) {
+          _addressController.text = user['address'].toString();
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -40,7 +67,6 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
       return;
     }
 
-    // Prepare the request
     final request = ContactMessageRequest(
       name: _nameController.text.trim(),
       emailAddress: _emailController.text.trim(),
@@ -50,36 +76,43 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
       address: _addressController.text.trim(),
     );
 
-    // Send message using notifier
     await ref.read(contactNotifierProvider.notifier).sendMessage(request);
 
-    // Listen to state changes
     final state = ref.read(contactNotifierProvider);
 
     if (mounted) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+
       if (state.isDataAvailable && state.singleData != null) {
-        // Show success dialog
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF1E232D) : Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(16.r),
             ),
             title: Column(
               children: [
-                Icon(Icons.check_circle, color: AppColors.success, size: 60.sp),
-                SizedBox(height: 16.h),
+                Icon(Icons.check_circle_rounded, color: AppColors.success, size: 56.sp),
+                SizedBox(height: 12.h),
                 Text(
-                  'Report Submitted',
-                  style: AppTexts.h3(color: AppColors.textPrimary),
+                  'Message Sent',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
             content: Text(
               state.singleData!.message,
-              style: AppTexts.bodyMedium(color: AppColors.grey700),
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: isDark ? Colors.white70 : AppColors.grey700,
+              ),
               textAlign: TextAlign.center,
             ),
             actions: [
@@ -87,21 +120,24 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(ctx); // Close dialog
-                    Navigator.pop(context); // Go back to previous screen
-                    // Reset notifier state
+                    Navigator.pop(ctx);
+                    if (context.canPop()) {
+                      context.pop();
+                    }
                     ref.read(contactNotifierProvider.notifier).reset();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
+                    foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 14.h),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
+                    elevation: 0,
                   ),
                   child: Text(
                     'Done',
-                    style: AppTexts.labelMedium(color: Colors.white),
+                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -109,34 +145,47 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
           ),
         );
       } else if (state.message != null && !state.isDataAvailable) {
-        // Show error dialog
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF1E232D) : Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(16.r),
             ),
             title: Row(
               children: [
-                Icon(Icons.error_outline, color: AppColors.error, size: 24.sp),
-                SizedBox(width: 12.w),
-                Text('Error', style: AppTexts.h3(color: AppColors.textPrimary)),
+                Icon(Icons.error_outline_rounded, color: AppColors.error, size: 24.sp),
+                SizedBox(width: 10.w),
+                Text(
+                  'Unable to Send',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
               ],
             ),
             content: Text(
               state.message!,
-              style: AppTexts.bodyMedium(color: AppColors.grey700),
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: isDark ? Colors.white70 : AppColors.grey700,
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  // Clear error message
                   ref.read(contactNotifierProvider.notifier).clearMessage();
                 },
                 child: Text(
                   'OK',
-                  style: AppTexts.labelMedium(color: AppColors.primaryColor),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryColor,
+                  ),
                 ),
               ),
             ],
@@ -148,89 +197,116 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final contactState = ref.watch(contactNotifierProvider);
     final isSubmitting = contactState.isInitialLoading;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.grey[50],
+      backgroundColor: isDark ? const Color(0xFF12151B) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF12151B) : Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20.sp,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           'Contact Us',
-          style: AppTexts.h3(color: AppColors.textPrimary),
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
         ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16.h,
+            left: 16.w,
+            right: 16.w,
+            top: 12.h,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20.h,
           ),
           physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header Info
-                  const ContactHeader(),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const ContactHeader(),
 
-                  SizedBox(height: 24.h),
+                SizedBox(height: 20.h),
 
-                  ContactFormFields(
-                    nameController: _nameController,
-                    emailController: _emailController,
-                    phoneController: _phoneController,
-                    subjectController: _subjectController,
-                    addressController: _addressController,
-                    messageController: _messageController,
-                  ),
+                ContactFormFields(
+                  nameController: _nameController,
+                  emailController: _emailController,
+                  phoneController: _phoneController,
+                  subjectController: _subjectController,
+                  addressController: _addressController,
+                  messageController: _messageController,
+                ),
 
-                  SizedBox(height: 32.h),
+                SizedBox(height: 28.h),
 
-                  // Submit Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isSubmitting ? null : _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        disabledBackgroundColor: AppColors.grey300,
-                        padding: EdgeInsets.symmetric(vertical: 16.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        elevation: 0,
+                // Submit Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSubmitting ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      disabledBackgroundColor: AppColors.primaryColor.withOpacity(0.5),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
-                      child: isSubmitting
-                          ? SizedBox(
-                              height: 20.h,
-                              width: 20.w,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                      elevation: 0,
+                    ),
+                    child: isSubmitting
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 18.w,
+                                width: 18.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               ),
-                            )
-                          : Text(
-                              'Submit Report',
-                              style: AppTexts.labelLarge(color: Colors.white),
+                              SizedBox(width: 12.w),
+                              Text(
+                                'Sending Message...',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            'Submit Message',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
-                    ),
+                          ),
                   ),
+                ),
 
-                  SizedBox(height: 80.h),
-                ],
-              ),
+                SizedBox(height: 40.h),
+              ],
             ),
           ),
         ),

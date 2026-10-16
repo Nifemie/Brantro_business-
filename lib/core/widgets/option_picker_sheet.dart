@@ -93,6 +93,23 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
               itemCount: widget.options.length,
               itemBuilder: (context, index) {
                 final option = widget.options[index];
+                final isHeader = option.startsWith('##HEADER##');
+                final displayText = isHeader ? option.substring(10) : option;
+
+                if (isHeader) {
+                  return Padding(
+                    padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 16.h, bottom: 8.h),
+                    child: Text(
+                      displayText,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  );
+                }
+
                 final isSelected = _selectedOption == option;
 
                 return InkWell(
@@ -100,7 +117,9 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
                     setState(() => _selectedOption = option);
                     // Return selected option after a short delay for visual feedback
                     Future.delayed(const Duration(milliseconds: 200), () {
-                      Navigator.pop(context, option);
+                      if (mounted) {
+                        Navigator.pop(context, option);
+                      }
                     });
                   },
                   child: Container(
@@ -125,7 +144,7 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
                       children: [
                         Expanded(
                           child: Text(
-                            option,
+                            displayText,
                             style: TextStyle(
                               fontSize: 15.sp,
                               color: isSelected

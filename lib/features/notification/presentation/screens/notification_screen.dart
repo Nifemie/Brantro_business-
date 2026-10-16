@@ -1,96 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../dashboard/presentation/widgets/sidebar_menu.dart';
-import '../widgets/notification_card.dart';
+import '../../logic/notification_provider.dart';
 import '../../models/notification_model.dart';
-import 'package:go_router/go_router.dart';
+import '../widgets/notification_card.dart';
 
-class NotificationScreen extends StatefulWidget {
+class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  ConsumerState<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
-  String _selectedFilter = 'All';
-  
-  final List<NotificationModel> _notifications = [
-    NotificationModel(
-      id: '1',
-      type: NotificationType.order,
-      title: 'New Order Received',
-      message: 'You have a new order for "Summer Billboard Campaign" worth ₦45,000',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      isRead: false,
-    ),
-    NotificationModel(
-      id: '2',
-      type: NotificationType.payment,
-      title: 'Payment Received',
-      message: 'Payment of ₦32,500 has been credited to your wallet',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      isRead: false,
-    ),
-    NotificationModel(
-      id: '3',
-      type: NotificationType.order,
-      title: 'Order Delivered',
-      message: 'Your creative design has been delivered successfully',
-      timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-      isRead: true,
-    ),
-    NotificationModel(
-      id: '4',
-      type: NotificationType.system,
-      title: 'Profile Update Required',
-      message: 'Please update your KYC information to continue receiving payments',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      isRead: true,
-    ),
-    NotificationModel(
-      id: '5',
-      type: NotificationType.order,
-      title: 'Order Cancelled',
-      message: 'Order #BRT-2024-089 has been cancelled by the customer',
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      isRead: true,
-    ),
-    NotificationModel(
-      id: '6',
-      type: NotificationType.payment,
-      title: 'Withdrawal Successful',
-      message: 'Your withdrawal of ₦50,000 has been processed successfully',
-      timestamp: DateTime.now().subtract(const Duration(days: 2)),
-      isRead: true,
-    ),
-    NotificationModel(
-      id: '7',
-      type: NotificationType.message,
-      title: 'New Message',
-      message: 'You have a new message from customer regarding order #BRT-2024-087',
-      timestamp: DateTime.now().subtract(const Duration(days: 2)),
-      isRead: true,
-    ),
-    NotificationModel(
-      id: '8',
-      type: NotificationType.system,
-      title: 'Maintenance Notice',
-      message: 'Scheduled maintenance on Sunday 2AM - 4AM. Services may be temporarily unavailable',
-      timestamp: DateTime.now().subtract(const Duration(days: 3)),
-      isRead: true,
-    ),
-  ];
+class _NotificationScreenState extends ConsumerState<NotificationScreen> {
+  final ScrollController _scrollController = ScrollController();
 
-  List<NotificationModel> get _filteredNotifications {
-    if (_selectedFilter == 'All') return _notifications;
-    if (_selectedFilter == 'Unread') {
-      return _notifications.where((n) => !n.isRead).toList();
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(notificationProvider.notifier).loadMore();
     }
-    return _notifications;
+  }
+
+  void _handleNotificationTap(NotificationModel notification) {
+    // Mark as read
+    ref.read(notificationProvider.notifier).markAsRead(notification.id);
+
+    // Deep link or navigate based on actionUrl or type
+    if (notification.actionUrl != null && notification.actionUrl!.isNotEmpty) {
+      final url = notification.actionUrl!;
+      if (url.startsWith('/')) {
+        context.push(url);
+      }
+    } else {
+      switch (notification.type) {
+        case NotificationType.order:
+        case NotificationType.revision:
+          final orderId = notification.metadata?['orderId']?.toString();
+          if (orderId != null) {
+            context.push('/orders/details/$orderId');
+          } else {
+            context.push('/orders');
+          }
+          break;
+        case NotificationType.payment:
+          context.push('/wallet');
+          break;
+        case NotificationType.message:
+          context.push('/chat');
+          break;
+        case NotificationType.system:
+          break;
+      }
+    }
   }
 
   Future<bool> _onWillPop() async {
@@ -104,7 +82,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final unreadCount = _notifications.where((n) => !n.isRead).length;
+    final notifState = ref.watch(notificationProvider);
+    final notifNotifier = ref.read(notificationProvider.notifier);
+
+    final filteredList = notifState.filteredNotifications;
+    final unreadCount = notifState.unreadCount;
 
     return PopScope(
       canPop: false,
@@ -120,26 +102,45 @@ class _NotificationScreenState extends State<NotificationScreen> {
           child: Column(
             children: [
               const DashboardAppBar(title: 'NOTIFICATIONS'),
-              
-              // Filter Tabs
-              _buildFilterTabs(isDark, unreadCount),
-              
+
+              // Filter Tabs & Mark All Read Row
+              _buildFilterAndActionRow(isDark, notifState.selectedFilter, unreadCount),
+
               // Notifications List
               Expanded(
-                child: _filteredNotifications.isEmpty
-                    ? _buildEmptyState(isDark)
-                    : ListView.builder(
-                        padding: EdgeInsets.all(16.w),
-                        itemCount: _filteredNotifications.length,
-                        itemBuilder: (context, index) {
-                          final notification = _filteredNotifications[index];
-                          return NotificationCard(
-                            notification: notification,
-                            onTap: () => _markAsRead(notification.id),
-                            onDelete: () => _deleteNotification(notification.id),
-                          );
-                        },
-                      ),
+                child: notifState.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : notifState.error != null && notifState.notifications.isEmpty
+                        ? _buildErrorState(isDark, notifState.error!)
+                        : filteredList.isEmpty
+                            ? _buildEmptyState(isDark)
+                            : RefreshIndicator(
+                                onRefresh: () => notifNotifier.fetchNotifications(isRefresh: true),
+                                color: AppColors.primaryColor,
+                                child: ListView.builder(
+                                  controller: _scrollController,
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                                  itemCount: filteredList.length + (notifState.isLoadingMore ? 1 : 0),
+                                  itemBuilder: (context, index) {
+                                    if (index == filteredList.length) {
+                                      return Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      );
+                                    }
+
+                                    final notification = filteredList[index];
+                                    return NotificationCard(
+                                      notification: notification,
+                                      onTap: () => _handleNotificationTap(notification),
+                                      onDelete: () => notifNotifier.removeNotification(notification.id),
+                                    );
+                                  },
+                                ),
+                              ),
               ),
             ],
           ),
@@ -148,35 +149,76 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _buildFilterTabs(bool isDark, int unreadCount) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(8.r),
-      ),
+  Widget _buildFilterAndActionRow(bool isDark, String selectedFilter, int unreadCount) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       child: Row(
         children: [
-          _buildFilterTab('All', isDark),
-          _buildFilterTab('Unread', isDark, badge: unreadCount > 0 ? unreadCount : null),
+          // Filter Tabs (All / Unread)
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.all(4.w),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[850] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                children: [
+                  _buildFilterTab('All', isDark, selectedFilter == 'All'),
+                  _buildFilterTab(
+                    'Unread',
+                    isDark,
+                    selectedFilter == 'Unread',
+                    badge: unreadCount > 0 ? unreadCount : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          SizedBox(width: 10.w),
+
+          // "Mark all as read" button
+          if (unreadCount > 0)
+            InkWell(
+              onTap: () => ref.read(notificationProvider.notifier).markAllAsRead(),
+              borderRadius: BorderRadius.circular(8.r),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.done_all_rounded, color: AppColors.primaryColor, size: 16.sp),
+                    SizedBox(width: 4.w),
+                    Text(
+                      'Read all',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterTab(String label, bool isDark, {int? badge}) {
-    final isSelected = _selectedFilter == label;
-    
+  Widget _buildFilterTab(String label, bool isDark, bool isSelected, {int? badge}) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedFilter = label),
+        onTap: () => ref.read(notificationProvider.notifier).setFilter(label),
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 10.h),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
           decoration: BoxDecoration(
-            color: isSelected 
-                ? (isDark ? Colors.grey[800] : Colors.white)
-                : Colors.transparent,
+            color: isSelected ? (isDark ? Colors.grey[800] : Colors.white) : Colors.transparent,
             borderRadius: BorderRadius.circular(6.r),
           ),
           child: Row(
@@ -185,7 +227,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: 13.sp,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected
                       ? (isDark ? Colors.white : AppColors.textPrimary)
@@ -249,18 +291,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  void _markAsRead(String id) {
-    setState(() {
-      final index = _notifications.indexWhere((n) => n.id == id);
-      if (index != -1) {
-        _notifications[index] = _notifications[index].copyWith(isRead: true);
-      }
-    });
-  }
-
-  void _deleteNotification(String id) {
-    setState(() {
-      _notifications.removeWhere((n) => n.id == id);
-    });
+  Widget _buildErrorState(bool isDark, String error) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline_rounded, size: 60.sp, color: Colors.red[300]),
+            SizedBox(height: 16.h),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14.sp, color: isDark ? Colors.white70 : Colors.black87),
+            ),
+            SizedBox(height: 16.h),
+            ElevatedButton(
+              onPressed: () => ref.read(notificationProvider.notifier).fetchNotifications(isRefresh: true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

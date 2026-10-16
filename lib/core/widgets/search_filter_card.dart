@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../controllers/re_useable/app_color.dart';
+import 'active_filter_chips.dart';
 
 class SearchFilterCard extends StatelessWidget {
   final String title;
@@ -12,6 +13,10 @@ class SearchFilterCard extends StatelessWidget {
   final IconData? actionButtonIcon;
   final bool showActionButton;
   final bool showFilterButton;
+  final Map<String, String?>? selectedFilters;
+  final Function(String key)? onRemoveFilter;
+  final VoidCallback? onClearFilters;
+  final Function(String query)? onChanged;
 
   const SearchFilterCard({
     super.key,
@@ -24,12 +29,24 @@ class SearchFilterCard extends StatelessWidget {
     this.actionButtonIcon,
     this.showActionButton = true,
     this.showFilterButton = true,
+    this.selectedFilters,
+    this.onRemoveFilter,
+    this.onClearFilters,
+    this.onChanged,
   });
+
+  int get _activeFilterCount {
+    if (selectedFilters == null) return 0;
+    return selectedFilters!.values
+        .where((v) => v != null && v.isNotEmpty)
+        .length;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final activeColor = isDark ? AppColors.secondaryColor : AppColors.primaryColor;
 
     return Container(
       margin: EdgeInsets.all(16.w),
@@ -71,6 +88,7 @@ class SearchFilterCard extends StatelessWidget {
             ),
             child: TextField(
               controller: searchController,
+              onChanged: onChanged,
               style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimary),
               decoration: InputDecoration(
                 hintText: searchHint,
@@ -83,6 +101,15 @@ class SearchFilterCard extends StatelessWidget {
                   color: isDark ? Colors.white60 : AppColors.grey500,
                   size: 20.sp,
                 ),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.clear, size: 18.sp),
+                        onPressed: () {
+                          searchController.clear();
+                          if (onChanged != null) onChanged!('');
+                        },
+                      )
+                    : null,
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16.w,
@@ -97,33 +124,76 @@ class SearchFilterCard extends StatelessWidget {
           // Buttons Row
           Row(
             children: [
-              // Filters Button
+              // Filters Button with Badge
               if (showFilterButton)
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onFilterTap,
-                    icon: Icon(
-                      Icons.filter_list,
-                      size: 20.sp,
-                      color: isDark ? Colors.white70 : AppColors.grey700,
-                    ),
-                    label: Text(
-                      'Filters',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: isDark ? Colors.white70 : AppColors.grey700,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: onFilterTap,
+                        icon: Icon(
+                          Icons.filter_list,
+                          size: 20.sp,
+                          color: _activeFilterCount > 0
+                              ? activeColor
+                              : (isDark ? Colors.white70 : AppColors.grey700),
+                        ),
+                        label: Text(
+                          _activeFilterCount > 0
+                              ? 'Filters ($_activeFilterCount)'
+                              : 'Filters',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: _activeFilterCount > 0
+                                ? FontWeight.w700
+                                : FontWeight.normal,
+                            color: _activeFilterCount > 0
+                                ? activeColor
+                                : (isDark ? Colors.white70 : AppColors.grey700),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: Size(double.infinity, 44.h),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          side: BorderSide(
+                            color: _activeFilterCount > 0
+                                ? activeColor
+                                : (isDark ? Colors.grey[700]! : AppColors.grey300),
+                            width: _activeFilterCount > 0 ? 1.5 : 1,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
                       ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      side: BorderSide(
-                        color: isDark ? Colors.grey[700]! : AppColors.grey300,
-                        width: 1,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
+                      if (_activeFilterCount > 0)
+                        Positioned(
+                          right: 8.w,
+                          top: -6.h,
+                          child: Container(
+                            padding: EdgeInsets.all(4.w),
+                            decoration: BoxDecoration(
+                              color: activeColor,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: BoxConstraints(
+                              minWidth: 18.w,
+                              minHeight: 18.h,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$_activeFilterCount',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
 
@@ -155,8 +225,19 @@ class SearchFilterCard extends StatelessWidget {
                 ),
             ],
           ),
+
+          // Active Filter Chips
+          if (selectedFilters != null &&
+              onRemoveFilter != null &&
+              onClearFilters != null)
+            ActiveFilterChips(
+              selectedFilters: selectedFilters!,
+              onRemoveFilter: onRemoveFilter!,
+              onClearAll: onClearFilters!,
+            ),
         ],
       ),
     );
   }
 }
+

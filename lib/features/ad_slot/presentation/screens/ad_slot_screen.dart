@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
 import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/search_filter_card.dart';
+import '../widgets/ad_slot_search_filter_card.dart';
 import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../logic/ad_slot_provider.dart';
 import '../widgets/ad_slot_item_card.dart';
@@ -55,6 +56,9 @@ class _AdSlotScreenState extends ConsumerState<AdSlotScreen> {
   }
 
   String get _screenTitle {
+    if (widget.parentName.isNotEmpty) {
+      return '${widget.parentName.toUpperCase()} AD SLOTS';
+    }
     switch (widget.parentType.toLowerCase()) {
       case 'billboard':
         return 'BILLBOARD AD SLOTS';
@@ -80,18 +84,23 @@ class _AdSlotScreenState extends ConsumerState<AdSlotScreen> {
             DashboardAppBar(title: _screenTitle),
             
             Expanded(
-              child: CustomScrollView(
-                slivers: [
-                  // Search and Create Slot Section as Sliver
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await ref.read(adSlotProvider.notifier).fetchSlots(widget.parentId, widget.parentType);
+                },
+                child: CustomScrollView(
+                  slivers: [
+                    // Search and Create Slot Section as Sliver
                   SliverToBoxAdapter(
-                    child: SearchFilterCard(
-                      title: 'Ad Slots',
+                    child: AdSlotSearchFilterCard(
+                      title: 'All Advertisement Slots',
                       searchController: _searchController,
-                      searchHint: 'Search slots...',
-                      showFilterButton: false,
-                      actionButtonLabel: 'Create Slot',
-                      actionButtonIcon: Icons.add,
-                      onActionButtonTap: () {
+                      selectedPlatform: ref.read(adSlotProvider.notifier).selectedPlatform,
+                      selectedPartnerType: ref.read(adSlotProvider.notifier).selectedPartnerType,
+                      onSearchChanged: (query) => ref.read(adSlotProvider.notifier).updateSearch(query),
+                      onPlatformSelected: (platform) => ref.read(adSlotProvider.notifier).updatePlatform(platform),
+                      onPartnerTypeSelected: (partnerType) => ref.read(adSlotProvider.notifier).updatePartnerType(partnerType),
+                      onCreateSlotTap: () {
                         context.push('/create-ad-slot', extra: {
                           'parentId': widget.parentId,
                           'parentType': widget.parentType,
@@ -124,29 +133,61 @@ class _AdSlotScreenState extends ConsumerState<AdSlotScreen> {
                   SliverToBoxAdapter(child: SizedBox(height: 16.h)),
                   
                   // Slots List
-                  adSlotState.isLoading
-                      ? SliverFillRemaining(
-                          child: const Center(child: CircularProgressIndicator()),
+                  adSlotState.isInitialLoading
+                      ? SliverPadding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => const SkeletonAdSlotCard(),
+                              childCount: 3,
+                            ),
+                          ),
                         )
-                      : adSlotState.slots.isEmpty
+                      : adSlotState.message != null
                           ? SliverFillRemaining(
-                              child: EmptyState(
-                                icon: Icons.layers_outlined,
-                                title: 'No Slots Yet',
-                                message: 'Create slots to start managing bookings for this $_typeLabel',
-                                showIconBackground: false,
+                              child: Builder(
+                                builder: (context) {
+                                  final rawMsg = adSlotState.message!;
+                                  final msg = rawMsg
+                                      .replaceAll(RegExp(r'Exception:\s*'), '')
+                                      .replaceAll(RegExp(r'Failed to fetch ad slots:\s*'), '')
+                                      .trim();
+                                  final isNetworkError = msg.contains('SocketException') || msg.contains('Failed host lookup') || msg.contains('Network error');
+                                  
+                                  return EmptyState(
+                                    icon: isNetworkError ? Icons.wifi_off_outlined : Icons.inbox_outlined,
+                                    title: isNetworkError ? 'Connection Error' : 'Notice',
+                                    message: isNetworkError ? 'Failed to load ad slots. Please check your internet connection and try again.' : msg,
+                                    showIconBackground: isNetworkError,
+                                  );
+                                }
                               ),
                             )
+                          : (adSlotState.data ?? []).isEmpty
+                              ? SliverFillRemaining(
+                                  child: EmptyState(
+                                    icon: Icons.layers_clear_outlined,
+                                    title: 'No Ad Slots Available',
+                                    message: 'This $_typeLabel does not have any ad slots configured yet. Get started by clicking "Create Slot" to setup your first ad slot booking!',
+                                    showIconBackground: true,
+                                  ),
+                                )
                           : SliverPadding(
                               padding: EdgeInsets.symmetric(horizontal: 16.w),
                               sliver: SliverList(
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
-                                    final slot = adSlotState.slots[index];
+                                    final slot = (adSlotState.data ?? [])[index];
                                     return AdSlotItemCard(
                                       slot: slot,
                                       onEdit: () {
-                                        print('Edit slot ${slot.slotNumber}');
+                                        context.push('/create-ad-slot', extra: {
+                                          'parentId': widget.parentId,
+                                          'parentType': widget.parentType,
+                                          'parentName': widget.parentName,
+                                          'isUpdate': true,
+                                          'existingSlot': slot,
+                                        });
                                       },
                                       onDelete: () async {
                                         final confirm = await _showDeleteConfirmation(context, slot.slotNumber);
@@ -175,12 +216,13 @@ class _AdSlotScreenState extends ConsumerState<AdSlotScreen> {
                                       },
                                     );
                                   },
-                                  childCount: adSlotState.slots.length,
+                                  childCount: (adSlotState.data ?? []).length,
                                 ),
                               ),
                             ),
                 ],
               ),
+            ),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'quick_action_button.dart';
 
 class QuickActionsGrid extends StatelessWidget {
@@ -11,24 +12,20 @@ class QuickActionsGrid extends StatelessWidget {
       children: [
         Expanded(
           child: QuickActionButton(
-            label: 'Fund Wallet',
+            label: 'Withdraw',
             isPrimary: true,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Add money screen coming soon')),
-              );
+              context.push('/wallet/withdraw');
             },
           ),
         ),
         SizedBox(width: 12.w),
         Expanded(
           child: QuickActionButton(
-            label: 'Withdraw',
+            label: 'Withdrawal Settings',
             isPrimary: false,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Withdraw screen coming soon')),
-              );
+              context.push('/wallet/withdrawal-accounts');
             },
           ),
         ),

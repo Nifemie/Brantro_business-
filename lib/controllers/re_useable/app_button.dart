@@ -19,7 +19,7 @@ class PrimaryButton extends StatelessWidget {
       width: MediaQuery.of(context).size.width,
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xFFF76301),
+        color: isEnabled ? const Color(0xFFF76301) : const Color(0xFFF76301).withOpacity(0.4),
         borderRadius: BorderRadius.circular(24),
       ),
       child: TextButton(
@@ -32,8 +32,8 @@ class PrimaryButton extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isEnabled ? Colors.white : Colors.white70,
             fontFamily: 'SF Pro',
             fontSize: 14,
             fontWeight: FontWeight.w400,

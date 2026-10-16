@@ -172,53 +172,53 @@ class ProfileHeaderWidget extends ConsumerWidget {
                   ],
                 ),
 
+                // SizedBox(height: 16.h),
+
+                // // Action Buttons (Message & Follow)
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: ElevatedButton.icon(
+                //         onPressed: () {
+                //           // TODO: Navigate to messages
+                //         },
+                //         icon: Icon(Icons.chat_bubble_outline, size: 18.sp),
+                //         label: Text('Message'),
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: AppColors.primaryColor,
+                //           foregroundColor: Colors.white,
+                //           padding: EdgeInsets.symmetric(vertical: 12.h),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(8.r),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //     SizedBox(width: 12.w),
+                //     Expanded(
+                //       child: OutlinedButton.icon(
+                //         onPressed: () {
+                //           // TODO: Follow/Unfollow
+                //         },
+                //         icon: Icon(Icons.add, size: 18.sp),
+                //         label: Text('Follow'),
+                //         style: OutlinedButton.styleFrom(
+                //           foregroundColor: AppColors.secondaryColor,
+                //           side: BorderSide(
+                //             color: AppColors.secondaryColor,
+                //             width: 1.5,
+                //           ),
+                //           padding: EdgeInsets.symmetric(vertical: 12.h),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(8.r),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
+
                 SizedBox(height: 16.h),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Navigate to messages
-                        },
-                        icon: Icon(Icons.chat_bubble_outline, size: 18.sp),
-                        label: Text('Message'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 12.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          // TODO: Follow/Unfollow
-                        },
-                        icon: Icon(Icons.add, size: 18.sp),
-                        label: Text('Follow'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.secondaryColor,
-                          side: BorderSide(
-                            color: AppColors.secondaryColor,
-                            width: 1.5,
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 12.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 24.h),
 
                 // Stats Section
                 Row(

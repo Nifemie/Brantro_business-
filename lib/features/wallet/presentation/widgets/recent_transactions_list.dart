@@ -1,28 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../logic/transactions_notifier.dart';
 import 'transaction_card.dart';
-import '../utils/mock_transaction_data.dart';
 
-class RecentTransactionsList extends StatelessWidget {
+class RecentTransactionsList extends ConsumerWidget {
   const RecentTransactionsList({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Show top 5 entries from central mock data
-    final displayItems = allMockTransactions.take(5).toList();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final transactionsState = ref.watch(transactionsProvider);
+
+    if (transactionsState.isInitialLoading) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(20.h),
+          child: const CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (transactionsState.message != null && !transactionsState.isDataAvailable) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(20.h),
+          child: Text(
+            'Failed to load transactions: ${transactionsState.message}',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.red, fontSize: 14.sp),
+          ),
+        ),
+      );
+    }
+
+    final displayItems = (transactionsState.data ?? []).take(5).toList();
+
+    if (displayItems.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(20.h),
+          child: Text(
+            'No recent transactions.',
+            style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+          ),
+        ),
+      );
+    }
 
     return Column(
-      children: displayItems
-          .map(
-            (tx) => TransactionCard(
-              type: tx.type,
-              description: tx.description,
-              amount: tx.amount,
-              date: tx.date,
-              reference: tx.reference,
-              status: tx.status,
-            ),
-          )
-          .toList(),
+      children: displayItems.map((tx) {
+        // Map string type to TransactionType enum
+        TransactionType mappedType = TransactionType.deposit;
+        if (tx.isDebit) mappedType = TransactionType.withdrawal;
+        
+        final formattedDate = DateFormat('MMM dd, yyyy • hh:mm a').format(tx.createdAt);
+
+        return TransactionCard(
+          type: mappedType,
+          description: tx.description,
+          amount: '₦${NumberFormat('#,##0.00').format(tx.amount)}',
+          date: formattedDate,
+          reference: tx.reference,
+          status: TransactionStatus.completed,
+          onTap: () {
+            context.push('/wallet/transaction-receipt', extra: {'transaction': tx});
+          },
+        );
+      }).toList(),
     );
   }
 }

@@ -1,12 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'local_storage_service.dart';
-
-// TODO: Create these model files when implementing authentication
-// import 'package:brantro_business/features/auth/models/login.dart';
-// import 'package:brantro_business/features/auth/models/user.dart';
+import '../../features/dashboard/logic/dashboard_navigation_provider.dart';
+import '../../features/account/logic/profile_provider.dart';
+import '../../features/account/logic/persona_provider.dart';
+import '../../features/wallet/logic/wallet_notifier.dart';
+import '../../features/account/logic/analytics_provider.dart';
+import '../../features/notification/logic/notification_provider.dart';
+import '../../features/wallet/logic/withdrawal_accounts_notifier.dart';
 
 class SessionService {
   late BuildContext context;
@@ -36,6 +40,21 @@ class SessionService {
     // Save access token if available
     if (response.accessToken != null) {
       await prefs.setString(_userAccessToken, response.accessToken!);
+    }
+  }
+
+  // Update/save cached user details
+  static Future<void> saveUser(Map<String, dynamic> user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userDetailsKey, jsonEncode(user));
+    if (user['name'] != null && user['name'].toString().isNotEmpty) {
+      await prefs.setString(_userFullnameKey, user['name'].toString());
+    }
+    if (user['phoneNumber'] != null && user['phoneNumber'].toString().isNotEmpty) {
+      await prefs.setString(_userPhoneNumberKey, user['phoneNumber'].toString());
+    }
+    if (user['emailAddress'] != null && user['emailAddress'].toString().isNotEmpty) {
+      await prefs.setString(_usernameKey, user['emailAddress'].toString());
     }
   }
 
@@ -83,12 +102,57 @@ class SessionService {
     return jsonDecode(userJson);
   }
 
-  static Future<bool> isLoggedIn() async {
-    bool isLogged = await getAccessToken() != null && await getUser() != null;
-    return isLogged;
+  /// Get all roles assigned to current user as a normalized List of uppercase strings
+  static Future<List<String>> getRoles() async {
+    final user = await getUser();
+    if (user == null) return [];
+
+    final List<String> result = [];
+
+    // Check 'roles' array/string
+    if (user['roles'] != null) {
+      if (user['roles'] is List) {
+        for (var r in (user['roles'] as List)) {
+          if (r != null && r.toString().isNotEmpty) {
+            result.add(r.toString().trim().toUpperCase());
+          }
+        }
+      } else if (user['roles'] is String) {
+        final rolesStr = user['roles'] as String;
+        final split = rolesStr.split(',');
+        for (var r in split) {
+          if (r.trim().isNotEmpty) {
+            result.add(r.trim().toUpperCase());
+          }
+        }
+      }
+    }
+
+    // Check fallback single 'role' field
+    if (user['role'] != null && user['role'].toString().isNotEmpty) {
+      final singleRole = user['role'].toString().trim().toUpperCase();
+      if (!result.contains(singleRole)) {
+        result.add(singleRole);
+      }
+    }
+
+    return result;
   }
 
-  // Clear session data without navigation (for guest mode)
+  /// Check if user has a specific role (case-insensitive)
+  static Future<bool> hasRole(String role) async {
+    final roles = await getRoles();
+    final target = role.trim().toUpperCase();
+    return roles.contains(target);
+  }
+
+  static Future<bool> isLoggedIn() async {
+    final token = await getAccessToken();
+    final user = await getUser();
+    return token != null && token.isNotEmpty && user != null;
+  }
+
+  // Clear all session data from local storage
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userDetailsKey);
@@ -96,33 +160,58 @@ class SessionService {
     await prefs.remove(_usernameKey);
     await prefs.remove(_userFullnameKey);
     await prefs.remove(_userPhoneNumberKey);
+    await prefs.remove(_userActualUsernameKey);
+    await prefs.clear();
+  }
+
+  /// Complete logout clearing storage, invalidating providers, and resetting router to /signin
+  static Future<void> performFullLogout(
+    WidgetRef ref,
+    BuildContext context,
+  ) async {
+    // 1. Invalidate all user-specific state providers
+    ref.invalidate(dashboardNavigationProvider);
+    ref.invalidate(profileHeaderProvider);
+    ref.invalidate(walletProvider);
+    ref.invalidate(userAnalyticsProvider);
+    ref.invalidate(notificationProvider);
+    ref.invalidate(withdrawalAccountsProvider);
+    ref.invalidate(activePersonaProvider);
+
+    // 2. Clear all local storage preferences
+    await clearSession();
+
+    // 3. Navigate directly to /signin root route
+    if (context.mounted) {
+      context.go('/signin');
+    }
+  }
+
+  /// Complete logout clearing storage, resetting router to /signin
+  static Future<void> performLogout({
+    BuildContext? context,
+  }) async {
+    await clearSession();
+    if (context != null && context.mounted) {
+      context.go('/signin');
+    }
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userDetailsKey);
-    await prefs.remove(_userAccessToken);
-
-    final fpEnabled = await LocalStorageService.getBool(
-      'pref_biometric_fingerprint',
-    );
-    final faceEnabled = await LocalStorageService.getBool(
-      'pref_biometric_faceid',
-    );
-    if (await SessionService.getUsername() != null &&
-        (fpEnabled == true || faceEnabled == true)) {
-      context.pushReplacement('/biometric-login');
-    } else {
-      context.pushReplacement('/signin');
+    await SessionService.clearSession();
+    if (context.mounted) {
+      context.go('/signin');
     }
   }
 
   Future<void> checkSession() async {
     final loggedIn = await SessionService.isLoggedIn();
     if (loggedIn) {
-      context.pushReplacement('/');
+      if (context.mounted) {
+        context.go('/dashboard');
+      }
     } else {
-      logout();
+      await logout();
     }
   }
 }

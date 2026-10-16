@@ -2,7 +2,6 @@
 enum UserRole {
   ADVERTISER('ADVERTISER'),
   ARTIST('ARTIST'),
-  SCREEN_BILLBOARD('Screen / Billboard'),
   PRODUCER('PRODUCER'),
   INFLUENCER('INFLUENCER'),
   UGC_CREATOR('UGC_CREATOR'),
@@ -10,15 +9,20 @@ enum UserRole {
   TV_STATION('TV_STATION'),
   RADIO_STATION('RADIO_STATION'),
   MEDIA_HOUSE('MEDIA_HOUSE'),
-  DESIGNER('CREATIVE'),
+  DESIGNER('CREATOR'),
+  CREATOR('CREATOR'),
   TALENT_MANAGER('TALENT_MANAGER');
 
   final String value;
   const UserRole(this.value);
 
   static UserRole fromString(String value) {
+    final upper = value.toUpperCase();
+    if (upper == 'CREATIVE' || upper == 'DESIGNER') {
+      return UserRole.CREATOR;
+    }
     return UserRole.values.firstWhere(
-      (role) => role.value == value,
+      (role) => role.value == upper,
       orElse: () => UserRole.ADVERTISER,
     );
   }

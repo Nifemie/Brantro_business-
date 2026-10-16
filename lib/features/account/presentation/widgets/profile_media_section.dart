@@ -7,7 +7,18 @@ import '../../../../controllers/re_useable/app_color.dart';
 import 'media_selection_card.dart';
 
 class ProfileMediaSection extends ConsumerStatefulWidget {
-  const ProfileMediaSection({super.key});
+  final String? initialAvatarUrl;
+  final String? initialCoverUrl;
+  final ValueChanged<File?>? onProfileImageChanged;
+  final ValueChanged<File?>? onCoverImageChanged;
+
+  const ProfileMediaSection({
+    super.key,
+    this.initialAvatarUrl,
+    this.initialCoverUrl,
+    this.onProfileImageChanged,
+    this.onCoverImageChanged,
+  });
 
   @override
   ConsumerState<ProfileMediaSection> createState() =>
@@ -32,8 +43,10 @@ class _ProfileMediaSectionState extends ConsumerState<ProfileMediaSection> {
         setState(() {
           if (isProfile) {
             _profileImage = File(pickedFile.path);
+            widget.onProfileImageChanged?.call(_profileImage);
           } else {
             _coverImage = File(pickedFile.path);
+            widget.onCoverImageChanged?.call(_coverImage);
           }
         });
       }
@@ -178,7 +191,12 @@ class _ProfileMediaSectionState extends ConsumerState<ProfileMediaSection> {
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 4.w),
                   child: MediaSelectionCard(
-                    imagePath: 'assets/promotions/intro1.jpg',
+                    imagePath: (widget.initialCoverUrl != null &&
+                            widget.initialCoverUrl!.isNotEmpty)
+                        ? widget.initialCoverUrl!
+                        : 'assets/promotions/intro1.jpg',
+                    isAsset: (widget.initialCoverUrl == null ||
+                        widget.initialCoverUrl!.isEmpty),
                     imageFile: _coverImage,
                     type: MediaCardType.rectangular,
                     onTap: () => _showPicker(context, 'Cover Thumbnail', false),
@@ -191,7 +209,12 @@ class _ProfileMediaSectionState extends ConsumerState<ProfileMediaSection> {
                   child: Stack(
                     children: [
                       MediaSelectionCard(
-                        imagePath: 'assets/promotions/logo_design.png',
+                        imagePath: (widget.initialAvatarUrl != null &&
+                                widget.initialAvatarUrl!.isNotEmpty)
+                            ? widget.initialAvatarUrl!
+                            : 'assets/promotions/logo_design.png',
+                        isAsset: (widget.initialAvatarUrl == null ||
+                            widget.initialAvatarUrl!.isEmpty),
                         imageFile: _profileImage,
                         type: MediaCardType.circular,
                         onTap: () =>

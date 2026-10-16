@@ -38,7 +38,7 @@ class AdvertiserFormConfig extends BaseRoleFormConfig {
         'name': 'phoneNumber',
         'label': 'Phone Number',
         'type': 'text',
-        'hint': '+234XXXXXXXXXX',
+        'hint': '8012345678',
         'required': true,
       },
       {
@@ -112,7 +112,7 @@ class AdvertiserFormConfig extends BaseRoleFormConfig {
         'name': 'businessTelephoneNumber',
         'label': 'Business Telephone Number',
         'type': 'text',
-        'hint': '+234XXXXXXXXXX',
+        'hint': '8012345678',
         'required': true,
       },
       {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/models/ad_slot_model.dart';
 import '../../logic/ad_slot_provider.dart';
 import 'ad_slot_item_card.dart';
@@ -34,8 +35,13 @@ class AdSlotList extends ConsumerWidget {
           return AdSlotItemCard(
             slot: slot,
             onEdit: () {
-              // TODO: Navigate to edit slot
-              print('Edit slot ${slot.slotNumber}');
+              context.push('/create-ad-slot', extra: {
+                'parentId': slot.parentId,
+                'parentType': slot.parentType,
+                'parentName': slot.title ?? slot.slotNumber,
+                'isUpdate': true,
+                'existingSlot': slot,
+              });
             },
             onDelete: () async {
               final confirm = await _showDeleteConfirmation(context, slot.slotNumber);

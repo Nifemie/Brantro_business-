@@ -17,11 +17,10 @@ class _IntroWrapperState extends State<IntroWrapper> {
   Timer? _timer;
 
   final List<String> _backgroundImages = [
-    'assets/promotions/intro1.jpg',
-    'assets/promotions/intro2.jpg',
-    'assets/promotions/intro3.jpg',
-    'assets/promotions/intro4.jpg',
-    'assets/promotions/intro5.jpg',
+    'assets/promotions/fron1.jpg',
+    'assets/promotions/fron2.jpg',
+    'assets/promotions/fron3.jpg',
+    'assets/promotions/fron4.jpg',
   ];
 
   @override

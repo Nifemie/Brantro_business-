@@ -1,7 +1,40 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import '../network/api_client.dart';
+
 /// Helper class for managing user avatars
 /// Provides default avatars for users without profile pictures
 class AvatarHelper {
   AvatarHelper._();
+
+  /// Get appropriate ImageProvider based on the URL type (asset, file, or network)
+  static ImageProvider getImageProvider(String? url) {
+    if (url == null || url.trim().isEmpty) {
+      return const AssetImage('assets/icons/avatars/avatars/avatar-1.jpg');
+    }
+    if (isDefaultAvatar(url)) {
+      return AssetImage(url);
+    }
+    if (url.startsWith('assets/')) {
+      return AssetImage(url);
+    }
+    if (url.startsWith('file://')) {
+      try {
+        final uri = Uri.parse(url);
+        return FileImage(File(uri.toFilePath()));
+      } catch (_) {
+        final cleanPath = url.replaceFirst('file://', '');
+        return FileImage(File(cleanPath));
+      }
+    }
+    if (url.startsWith('/') || url.contains(':/') || url.contains(':\\')) {
+      return FileImage(File(url));
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return NetworkImage('${ApiClient.fileBaseUrl}/$url');
+    }
+    return NetworkImage(url);
+  }
 
   /// List of default avatar paths
   static const List<String> _defaultAvatars = [

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:nigerian_states_and_lga/nigerian_states_and_lga.dart';
+import '../../../../core/constants/location_constants.dart';
 import 'role_form_configs/base_role_form_config.dart';
+
+import '../../../../core/constants/form_constants.dart';
 
 /// Manages form state and field interactions for role details form
 class RoleFormStateManager {
@@ -10,14 +12,12 @@ class RoleFormStateManager {
 
   RoleFormStateManager(this.formConfig);
 
-  /// Initialize text controllers for all text fields
+  /// Initialize text controllers for all fields including dropdowns and multiselects
   void initializeControllers(String accountType) {
     final fields = formConfig.getFormFields(accountType);
     for (var field in fields) {
-      // Only create text controllers for text fields, not for dropdowns
-      if (field['type'] != 'dropdown' && field['type'] != 'multiselect') {
-        controllers[field['name']] = TextEditingController();
-      }
+      // Create controllers for ALL field types so collectFormData always has a value
+      controllers[field['name']] = TextEditingController();
     }
   }
 
@@ -27,11 +27,24 @@ class RoleFormStateManager {
     
     // Update city field options if state is selected
     for (var field in fields) {
-      if (field['name'] == 'city' && selectedState != null) {
-        field['options'] = NigerianStatesAndLGA.getStateLGAs(selectedState!)
-            .map((lga) => {'label': lga, 'value': lga})
-            .toList();
-        field['hint'] = 'Select a city';
+      if (field['name'] == 'city') {
+        if (selectedState != null && selectedState!.isNotEmpty) {
+          field['options'] = LocationHelper.getLGAsForState(selectedState!)
+              .map((lga) => {'label': lga, 'value': lga})
+              .toList();
+          field['hint'] = 'Select City / Local Government';
+        } else {
+          field['options'] = <Map<String, String>>[];
+          field['hint'] = 'Select a state first';
+        }
+      }
+
+      // Update specialization options if profession is selected (BRT-040)
+      if (field['name'] == 'specialization' && controllers.containsKey('profession')) {
+        final currentProfession = controllers['profession']?.text;
+        if (currentProfession != null && currentProfession.isNotEmpty) {
+          field['options'] = getSpecializationsForProfession(currentProfession);
+        }
       }
     }
     
@@ -40,17 +53,25 @@ class RoleFormStateManager {
 
   /// Handle dropdown field changes
   void handleDropdownChange(String fieldName, String? value) {
-    if (value != null && value.isNotEmpty) {
-      // Store dropdown values in controllers
-      controllers[fieldName] = TextEditingController(text: value);
+    final textVal = value ?? '';
+    if (controllers.containsKey(fieldName)) {
+      controllers[fieldName]!.text = textVal;
+    } else {
+      controllers[fieldName] = TextEditingController(text: textVal);
+    }
 
-      // If state field changed, update selected state and clear city
-      if (fieldName == 'state') {
-        selectedState = value;
-        // Clear city selection when state changes
-        if (controllers.containsKey('city')) {
-          controllers['city']?.clear();
-        }
+    // If state field changed, update selected state and clear city
+    if (fieldName == 'state') {
+      selectedState = value;
+      if (controllers.containsKey('city')) {
+        controllers['city']!.clear();
+      }
+    }
+
+    // If profession field changed, clear specialization (BRT-040)
+    if (fieldName == 'profession') {
+      if (controllers.containsKey('specialization')) {
+        controllers['specialization']!.clear();
       }
     }
   }
