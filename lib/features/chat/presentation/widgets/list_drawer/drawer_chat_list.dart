@@ -4,80 +4,69 @@ import 'package:brantro_business/controllers/re_useable/app_color.dart';
 
 class DrawerChatList extends StatelessWidget {
   final bool isDark;
+  final List<dynamic> chats;
 
-  const DrawerChatList({super.key, required this.isDark});
+  const DrawerChatList({
+    super.key,
+    required this.isDark,
+    this.chats = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (chats.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.mark_chat_unread_outlined,
+                  size: 40.sp,
+                  color: isDark ? Colors.white38 : Colors.grey.shade400,
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  'No conversations yet',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  'When you connect with buyers or clients, your chats will appear here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? Colors.white38 : Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Expanded(
-      child: ListView(
+      child: ListView.builder(
         padding: EdgeInsets.zero,
-        children: [
-          _ChatListItem(
-            name: 'Anna M. Hines',
-            message: 'How are you today?',
-            time: '2 hours ago',
-            avatarIndex: 0,
+        itemCount: chats.length,
+        itemBuilder: (context, index) {
+          final chat = chats[index];
+          return _ChatListItem(
+            name: chat['name'] ?? '',
+            message: chat['message'] ?? '',
+            time: chat['time'] ?? '',
+            avatarIndex: index % 8,
             isDark: isDark,
-            isSelected: true,
-          ),
-          _ChatListItem(
-            name: 'Judith H. Fritsche',
-            message: "Hey! a reminder for tommorow's meeting...",
-            time: '2 hours ago',
-            avatarIndex: 1,
-            isDark: isDark,
-            isSelected: false,
-          ),
-          _ChatListItem(
-            name: 'Peter T. Smith',
-            message: "Hello! I just got your assignment, everything's alright. exce",
-            time: '3 hours ago',
-            avatarIndex: 2,
-            isDark: isDark,
-            isSelected: false,
-          ),
-          _ChatListItem(
-            name: 'Michael Collins',
-            message: "Can we reschedule our sync for later this afternoon?",
-            time: '5 hours ago',
-            avatarIndex: 3,
-            isDark: isDark,
-            isSelected: false,
-          ),
-          _ChatListItem(
-            name: 'Sarah Jenkins',
-            message: "The new design files are uploaded to the shared folder.",
-            time: 'Yesterday',
-            avatarIndex: 4,
-            isDark: isDark,
-            isSelected: false,
-          ),
-          _ChatListItem(
-            name: 'David O. Wellington',
-            message: "Great work on the presentation! The client really liked it.",
-            time: 'Yesterday',
-            avatarIndex: 5,
-            isDark: isDark,
-            isSelected: false,
-          ),
-          _ChatListItem(
-            name: 'Emily Chen',
-            message: "Are we still on for lunch?",
-            time: 'Tuesday',
-            avatarIndex: 6,
-            isDark: isDark,
-            isSelected: false,
-          ),
-          _ChatListItem(
-            name: 'Marcus Thorne',
-            message: "Please review the pull request when you get a chance. Thanks!",
-            time: 'Monday',
-            avatarIndex: 7,
-            isDark: isDark,
-            isSelected: false,
-          ),
-        ],
+            isSelected: index == 0,
+          );
+        },
       ),
     );
   }

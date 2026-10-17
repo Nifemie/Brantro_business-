@@ -305,7 +305,24 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
                   ),
                 ),
 
-                SizedBox(height: 40.h),
+                SizedBox(height: 16.h),
+
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => context.push('/faq'),
+                    icon: Icon(Icons.help_outline_rounded, size: 16.sp, color: AppColors.primaryColor),
+                    label: Text(
+                      'Browse Frequently Asked Questions (FAQ)',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 32.h),
               ],
             ),
           ),

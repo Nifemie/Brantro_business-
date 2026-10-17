@@ -400,7 +400,6 @@ class RoleProfilePage extends ConsumerWidget {
 
   Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
-    final authNotifier = ref.read(authNotifierProvider.notifier);
 
     return Column(
       children: [

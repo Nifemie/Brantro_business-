@@ -28,9 +28,9 @@ class ConversionsChart extends ConsumerWidget {
     final reach = analytics?.reach ?? 0;
     final impressions = analytics?.impressions ?? 0;
 
-    double conversionPercent = 65.2;
+    double conversionPercent = 0.0;
     if (impressions > 0 && reach > 0) {
-      conversionPercent = ((reach / impressions) * 100).clamp(5.0, 99.0);
+      conversionPercent = ((reach / impressions) * 100).clamp(0.0, 100.0);
     }
 
     return Container(

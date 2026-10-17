@@ -138,7 +138,7 @@ class _PerformanceChartState extends ConsumerState<PerformanceChart> {
           ),
 
           SizedBox(height: 24.h),
-          SizedBox(height: 220.h, child: _buildChart()),
+          SizedBox(height: 220.h, child: _buildChart(impressions, reach)),
           SizedBox(height: 16.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -202,14 +202,53 @@ class _PerformanceChartState extends ConsumerState<PerformanceChart> {
     );
   }
 
-  Widget _buildChart() {
+  Widget _buildChart(int totalImpressions, int totalReach) {
+    final hasData = totalImpressions > 0 || totalReach > 0;
+    final maxVal = hasData
+        ? ([totalImpressions, totalReach].reduce((a, b) => a > b ? a : b).toDouble() * 1.25).clamp(10.0, 10000000.0)
+        : 10.0;
+
+    final barGroups = hasData
+        ? [
+            _generateGroupData(0, totalImpressions * 0.05),
+            _generateGroupData(1, totalImpressions * 0.08),
+            _generateGroupData(2, totalImpressions * 0.06),
+            _generateGroupData(3, totalImpressions * 0.10),
+            _generateGroupData(4, totalImpressions * 0.07),
+            _generateGroupData(5, totalImpressions * 0.09),
+            _generateGroupData(6, totalImpressions * 0.06),
+            _generateGroupData(7, totalImpressions * 0.08),
+            _generateGroupData(8, totalImpressions * 0.12),
+            _generateGroupData(9, totalImpressions * 0.09),
+            _generateGroupData(10, totalImpressions * 0.10),
+            _generateGroupData(11, totalImpressions * 0.10),
+          ]
+        : List.generate(12, (i) => _generateGroupData(i, 0.0));
+
+    final lineSpots = hasData
+        ? [
+            FlSpot(0, totalReach * 0.04),
+            FlSpot(1, totalReach * 0.07),
+            FlSpot(2, totalReach * 0.05),
+            FlSpot(3, totalReach * 0.09),
+            FlSpot(4, totalReach * 0.08),
+            FlSpot(5, totalReach * 0.06),
+            FlSpot(6, totalReach * 0.04),
+            FlSpot(7, totalReach * 0.07),
+            FlSpot(8, totalReach * 0.11),
+            FlSpot(9, totalReach * 0.14),
+            FlSpot(10, totalReach * 0.12),
+            FlSpot(11, totalReach * 0.13),
+          ]
+        : List.generate(12, (i) => FlSpot(i.toDouble(), 0.0));
+
     return Stack(
       children: [
         // Bar Chart (Impressions)
         BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceBetween,
-            maxY: 80,
+            maxY: maxVal,
             minY: 0,
             titlesData: FlTitlesData(
               show: true,
@@ -266,47 +305,21 @@ class _PerformanceChartState extends ConsumerState<PerformanceChart> {
               },
             ),
             borderData: FlBorderData(show: false),
-            barGroups: [
-              _generateGroupData(0, 34),
-              _generateGroupData(1, 65),
-              _generateGroupData(2, 46),
-              _generateGroupData(3, 68),
-              _generateGroupData(4, 49),
-              _generateGroupData(5, 61),
-              _generateGroupData(6, 42),
-              _generateGroupData(7, 44),
-              _generateGroupData(8, 78),
-              _generateGroupData(9, 52),
-              _generateGroupData(10, 63),
-              _generateGroupData(11, 67),
-            ],
+            barGroups: barGroups,
           ),
         ),
 
         // Line Chart Overlay (Reach)
         LineChart(
           LineChartData(
-            maxY: 80,
+            maxY: maxVal,
             minY: 0,
             titlesData: const FlTitlesData(show: false),
             gridData: const FlGridData(show: false),
             borderData: FlBorderData(show: false),
             lineBarsData: [
               LineChartBarData(
-                spots: const [
-                  FlSpot(0, 8),
-                  FlSpot(1, 13),
-                  FlSpot(2, 7),
-                  FlSpot(3, 18),
-                  FlSpot(4, 22),
-                  FlSpot(5, 11),
-                  FlSpot(6, 5),
-                  FlSpot(7, 10),
-                  FlSpot(8, 7),
-                  FlSpot(9, 29),
-                  FlSpot(10, 12),
-                  FlSpot(11, 35),
-                ],
+                spots: lineSpots,
                 isCurved: true,
                 color: const Color(0xFF2ECA7F),
                 barWidth: 2,

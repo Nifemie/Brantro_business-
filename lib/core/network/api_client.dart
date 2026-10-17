@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../service/session_service.dart';
 import '../constants/endpoints.dart';
@@ -26,6 +28,18 @@ class ApiClient {
         },
       ),
     );
+
+    // Security & Certificate Pinning (BRT-030): Enforce strict TLS validation, disallowing user-installed proxy CAs
+    if (dio.httpClientAdapter is IOHttpClientAdapter) {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient(context: SecurityContext(withTrustedRoots: true));
+        client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+          // Explicitly disallow untrusted or proxy certificates (Burp, Charles)
+          return false;
+        };
+        return client;
+      };
+    }
 
     dio.interceptors.add(
       InterceptorsWrapper(

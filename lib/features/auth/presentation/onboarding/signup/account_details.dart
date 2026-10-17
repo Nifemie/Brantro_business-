@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:nigerian_states_and_lga/nigerian_states_and_lga.dart';
-import '../../../../../core/utils/color_utils.dart' hide AppColors;
 import '../../../../../core/utils/platform_responsive.dart';
 import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../logic/auth_notifiers.dart';
@@ -81,6 +80,51 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
       _tinNumberController.text = widget.roleData['tinNumber'].toString();
     }
 
+    // Pre-fill business/personal details from roleData (BRT-039)
+    final preName = widget.roleData['businessName'] ?? widget.roleData['fullName'] ?? widget.roleData['name'];
+    if (preName != null && preName.toString().isNotEmpty) {
+      _nameController.text = preName.toString();
+    }
+    final prePhone = widget.roleData['businessTelephoneNumber'] ?? widget.roleData['phoneNumber'];
+    if (prePhone != null && prePhone.toString().isNotEmpty) {
+      String cleanPhone = prePhone.toString().replaceAll(RegExp(r'\D'), '');
+      if (cleanPhone.startsWith('234')) cleanPhone = cleanPhone.substring(3);
+      if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+      _phoneController.text = cleanPhone;
+    }
+    final preEmail = widget.roleData['email'];
+    if (preEmail != null && preEmail.toString().isNotEmpty) {
+      _emailController.text = preEmail.toString().trim();
+    }
+    final preAddress = widget.roleData['businessAddress'] ?? widget.roleData['streetAddress'];
+    if (preAddress != null && preAddress.toString().isNotEmpty) {
+      _addressController.text = preAddress.toString();
+    }
+    if (widget.roleData['state'] != null && widget.roleData['state'].toString().isNotEmpty) {
+      _selectedState = widget.roleData['state'].toString();
+      _availableLGAs = LocationHelper.getLGAsForState(_selectedState!);
+      if (widget.roleData['city'] != null && _availableLGAs.contains(widget.roleData['city'].toString())) {
+        _selectedLGA = widget.roleData['city'].toString();
+      }
+    }
+
+    final preCountry = widget.roleData['country']?.toString();
+    if (preCountry != null && preCountry.isNotEmpty) {
+      _selectedCountry = Country.tryParse(preCountry);
+    }
+    _selectedCountry ??= Country.tryParse('NG') ?? Country(
+      phoneCode: '234',
+      countryCode: 'NG',
+      e164Sc: 0,
+      geographic: true,
+      level: 1,
+      name: 'Nigeria',
+      example: 'Nigeria',
+      displayName: 'Nigeria',
+      displayNameNoCountryCode: 'Nigeria',
+      e164Key: '',
+    );
+
     _selectedAccountType = _normalizeAccountType(widget.accountType);
     _scrollController.addListener(_onScroll);
   }
@@ -116,13 +160,38 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     super.dispose();
   }
 
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
+          backgroundColor: isError
+              ? Colors.red.shade700
+              : (message.toLowerCase().contains('please')
+                  ? Colors.orange.shade800
+                  : Colors.green.shade700),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+          margin: EdgeInsets.all(16.w),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+  }
+
   void _nextStep() {
+    FocusScope.of(context).unfocus();
     if (_formKey.currentState!.validate()) {
       setState(() => _currentStep = 2);
     }
   }
 
   void _previousStep() {
+    FocusScope.of(context).unfocus();
     setState(() => _currentStep = 1);
   }
 
@@ -138,22 +207,20 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   }
 
   Future<void> _submitForm() async {
+    FocusScope.of(context).unfocus();
+
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCountry == null) {
       setState(() => _countryError = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your country'), backgroundColor: Colors.orange),
-      );
+      _showSnackBar('Please select your country', isError: true);
       return;
     }
 
     final name = _nameController.text.trim();
     if (name.isEmpty || name.split(RegExp(r'\s+')).length < 2 || RegExp(r'^\d+$').hasMatch(name)) {
       setState(() => _currentStep = 1);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid first and last name in Step 1'), backgroundColor: Colors.orange),
-      );
+      _showSnackBar('Please enter a valid first and last name in Step 1', isError: true);
       return;
     }
 
@@ -161,30 +228,21 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     final emailRegex = RegExp(r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$');
     if (!emailRegex.hasMatch(formattedEmail) || !formattedEmail.contains('.')) {
       setState(() => _currentStep = 1);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address in Step 1'), backgroundColor: Colors.orange),
-      );
+      _showSnackBar('Please enter a valid email address in Step 1', isError: true);
       return;
     }
 
     final phoneDigits = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
     if (phoneDigits.length < 10 || phoneDigits.length > 11) {
       setState(() => _currentStep = 1);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid phone number in Step 1'), backgroundColor: Colors.orange),
-      );
+      _showSnackBar('Please enter a valid phone number in Step 1', isError: true);
       return;
     }
 
     final handler = SignupHandlerFactory.getHandler(widget.role);
     
     if (handler == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Signup for ${widget.role} is not yet implemented.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showSnackBar('Signup for ${widget.role} is not yet implemented.', isError: true);
       return;
     }
 
@@ -217,12 +275,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
       await authNotifier.signupUser(signUpRequest);
       await _handleSignupResponse(formattedEmail, formattedPhone);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Error: ${e.toString()}', isError: true);
     }
   }
 
@@ -232,11 +285,9 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     final authState = ref.read(authNotifierProvider);
 
     if (authState.isDataAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authState.message ?? 'Account created successfully!'),
-          backgroundColor: Colors.green,
-        ),
+      _showSnackBar(
+        authState.message ?? 'Account created successfully!',
+        isError: false,
       );
       context.push(
         '/verify-identity',
@@ -246,12 +297,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
         },
       );
     } else if (authState.message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authState.message!),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar(authState.message!, isError: true);
     }
   }
 
@@ -740,8 +786,17 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
               if (val.length < 8) {
                 return 'Password must be at least 8 characters long';
               }
-              if (!RegExp(r'[A-Za-z]').hasMatch(val) || !RegExp(r'[0-9]').hasMatch(val)) {
-                return 'Password must include both letters and numbers';
+              if (!RegExp(r'[A-Z]').hasMatch(val)) {
+                return 'Password must contain at least one uppercase letter';
+              }
+              if (!RegExp(r'[a-z]').hasMatch(val)) {
+                return 'Password must contain at least one lowercase letter';
+              }
+              if (!RegExp(r'[0-9]').hasMatch(val)) {
+                return 'Password must contain at least one number';
+              }
+              if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>\-_]').hasMatch(val)) {
+                return 'Password must contain at least one special character';
               }
               return null;
             },
@@ -784,6 +839,9 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
                 label: 'TIN Number (Optional)',
                 hint: 'Enter your Tax Identification Number',
                 isRequired: false,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9\-]')),
+                ],
                 isDark: isDark,
               ),
             ),

@@ -76,6 +76,7 @@ import 'package:brantro_business/features/KYC/presentation/face_verification_scr
 import 'package:brantro_business/features/KYC/presentation/kyc_status_screen.dart';
 import 'package:brantro_business/features/KYC/presentation/kyc_gate_screen.dart';
 import 'package:brantro_business/features/KYC/data/kyc_models.dart';
+import 'package:brantro_business/features/auth/presentation/lock_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -94,12 +95,21 @@ final router = GoRouter(
         loc.startsWith('/role-details') ||
         loc.startsWith('/account-details') ||
         loc.startsWith('/role-profile');
-    final isOnKyc = loc.startsWith('/kyc');
+    final isOnLock = loc == '/lock';
 
     // 1. If not logged in, only allow splash & auth routes
     if (!isLoggedIn) {
       if (isOnSplash || isOnAuth) return null;
       return '/signin';
+    }
+
+    // Check if session is locked (BRT-024)
+    final isLocked = await SessionService.isAppLocked();
+    if (isLocked) {
+      if (isOnLock) return null;
+      return '/lock';
+    } else if (isOnLock) {
+      return '/dashboard';
     }
 
     // 2. KYC Verification Gate (Temporarily commented for testing):
@@ -144,6 +154,11 @@ final router = GoRouter(
       path: '/signin',
       name: 'signin',
       builder: (context, state) => const SignInScreen(),
+    ),
+    GoRoute(
+      path: '/lock',
+      name: 'lock',
+      builder: (context, state) => const LockScreen(),
     ),
     GoRoute(
       path: '/signup',

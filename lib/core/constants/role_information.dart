@@ -15,12 +15,6 @@ class RoleInfo {
 
 /// All available roles with their information
 const Map<String, RoleInfo> ROLE_INFORMATION = {
-  'Advertiser': RoleInfo(
-    name: 'Advertiser',
-    description:
-        'Discover, compare, and book advertising across multiple channels.',
-    icon: Icons.campaign,
-  ),
   'Artist': RoleInfo(
     name: 'Artist',
     description:

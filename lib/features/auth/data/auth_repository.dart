@@ -7,7 +7,6 @@ import 'models/signup_request.dart';
 import 'models/signup_response.dart';
 import 'models/validate_account_request.dart';
 import 'models/verify_otp_request.dart';
-import 'models/user_model.dart';
 import 'models/login_request.dart';
 import 'models/login_response.dart';
 import 'models/forgot_password_request.dart';
@@ -23,22 +22,47 @@ class AuthRepository {
   /// Register a new user (generic for all roles)
   Future<SignUpResponse> signupUser(SignUpRequest request) async {
     try {
+      print('========================================');
+      print('[AuthRepository] Signup attempt for role: ${request.role}');
+      print('[AuthRepository] Payload: ${request.toJson()}');
       final response = await apiClient.post(
         ApiEndpoints.signup,
         data: request.toJson(),
       );
+      print('[AuthRepository] Signup response status: ${response.statusCode}');
+      print('[AuthRepository] Signup response data: ${response.data}');
+      print('========================================');
 
       final signupResponse = SignUpResponse.fromJson(response.data);
       return signupResponse;
     } on DioException catch (e) {
+      print('========================================');
+      print('[AuthRepository] Signup DioException status: ${e.response?.statusCode}');
+      print('[AuthRepository] Signup DioException data: ${e.response?.data}');
+      print('[AuthRepository] Signup DioException message: ${e.message}');
+      print('========================================');
       throw Exception(
-        e.response?.data['message'] ??
-            e.response?.data['error'] ??
-            'Signup failed. Please try again.',
+        _extractDioErrorMessage(e, 'Signup failed. Please try again.'),
       );
     } catch (e) {
+      print('[AuthRepository] Signup unexpected error: $e');
       throw Exception('An unexpected error occurred: $e');
     }
+  }
+
+  String _extractDioErrorMessage(DioException e, String fallback) {
+    final data = e.response?.data;
+    if (data is Map) {
+      final msg = data['message'] ?? data['error'];
+      if (msg is List) {
+        return msg.join(', ');
+      } else if (msg != null && msg.toString().trim().isNotEmpty) {
+        return msg.toString().trim();
+      }
+    } else if (data is String && data.trim().isNotEmpty) {
+      return data.trim();
+    }
+    return fallback;
   }
 
   /// Validate account by sending OTP to user's email/phone

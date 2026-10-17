@@ -17,8 +17,8 @@ class SignUpResponse {
     return SignUpResponse(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      user: json['user'] != null || json['data'] != null
-          ? UserModel.fromJson(json['user'] ?? json['data'])
+      user: json['user'] != null || json['data'] != null || json['payload'] != null
+          ? UserModel.fromJson(json['user'] ?? json['data'] ?? json['payload'])
           : null,
       accessToken: json['accessToken'] ?? json['token'],
     );

@@ -18,9 +18,9 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: theme.appBarTheme.backgroundColor,
       elevation: 0,
       centerTitle: false,
-      leadingWidth: 84.w,
+      leadingWidth: 96.w,
       leading: Padding(
-        padding: EdgeInsets.only(left: 4.w),
+        padding: EdgeInsets.only(left: 6.w),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -31,7 +31,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               icon: Icon(
                 Icons.arrow_back,
                 color: isDark ? Colors.white70 : AppColors.grey700,
-                size: 24.sp,
+                size: 22.sp,
               ),
               padding: EdgeInsets.zero,
               constraints: BoxConstraints(minWidth: 32.w),
@@ -41,7 +41,7 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
               child: Container(
                 width: 36.w,
                 height: 36.w,
-                margin: EdgeInsets.only(left: 4.w),
+                margin: EdgeInsets.only(left: 2.w),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF2A2E3D) : AppColors.grey200,
                   borderRadius: BorderRadius.circular(8.r),
@@ -80,7 +80,12 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       actions: [
         IconButton(
           onPressed: () {
-            // Video call action
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Video calling is not supported on the backend yet and will be available in an upcoming update.'),
+                duration: Duration(seconds: 2),
+              ),
+            );
           },
           icon: Icon(
             Icons.videocam_outlined,
@@ -92,7 +97,12 @@ class ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
         IconButton(
           onPressed: () {
-            // Voice call action
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Voice calling is not supported on the backend yet and will be available in an upcoming update.'),
+                duration: Duration(seconds: 2),
+              ),
+            );
           },
           icon: Icon(
             Icons.phone_outlined,

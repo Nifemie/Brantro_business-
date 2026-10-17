@@ -1,5 +1,4 @@
 import '../../data/models/signup_request.dart';
-import '../auth_notifiers.dart';
 
 /// Base class for all signup handlers
 abstract class BaseSignupHandler {
@@ -28,7 +27,14 @@ abstract class BaseSignupHandler {
       return genreData.map((e) => e.toString()).toList();
     }
     if (genreData is String) {
-      return [genreData];
+      if (genreData.contains(',')) {
+        return genreData
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      return genreData.trim().isNotEmpty ? [genreData.trim()] : [];
     }
     return [];
   }

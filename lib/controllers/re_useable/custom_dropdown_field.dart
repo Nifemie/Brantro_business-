@@ -27,6 +27,7 @@ class CustomDropdownField extends StatefulWidget {
 }
 
 class _CustomDropdownFieldState extends State<CustomDropdownField> {
+  final _fieldKey = GlobalKey<FormFieldState<String>>();
   late String? _selectedValue;
 
   @override
@@ -40,10 +41,20 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialValue != oldWidget.initialValue) {
       _selectedValue = widget.initialValue;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _fieldKey.currentState?.didChange(_selectedValue);
+        }
+      });
     }
     if (_selectedValue != null &&
         !widget.options.any((option) => option['value'] == _selectedValue)) {
       _selectedValue = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _fieldKey.currentState?.didChange(null);
+        }
+      });
     }
   }
 
@@ -52,7 +63,18 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // Deduplicate options by value to prevent runtime crashes (BRT-037)
+    final seen = <String>{};
+    final uniqueOptions = <Map<String, String>>[];
+    for (final opt in widget.options) {
+      final val = opt['value'] ?? '';
+      if (val.isNotEmpty && seen.add(val)) {
+        uniqueOptions.add(opt);
+      }
+    }
+
     return FormField<String>(
+      key: _fieldKey,
       initialValue: _selectedValue,
       validator:
           widget.validator ??
@@ -64,7 +86,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
           },
       builder: (FormFieldState<String> field) {
         final hasValidValue = field.value != null &&
-            widget.options.any((option) => option['value'] == field.value);
+            uniqueOptions.any((option) => option['value'] == field.value);
         final effectiveValue = hasValidValue ? field.value : null;
 
         return Column(
@@ -122,7 +144,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                     ),
                   ),
                   value: effectiveValue,
-                  items: widget.options.map((option) {
+                  items: uniqueOptions.map((option) {
                     return DropdownMenuItem<String>(
                       value: option['value'],
                       child: Padding(

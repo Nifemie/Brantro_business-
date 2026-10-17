@@ -66,15 +66,52 @@ class _VerifyIdentityScreenState extends ConsumerState<VerifyIdentityScreen>
 
       final authState = ref.read(authNotifierProvider);
       if (authState.isDataAvailable) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authState.message ?? 'Verification successful!'),
-            backgroundColor: Colors.green,
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                const Icon(Icons.check_circle_rounded, color: Colors.green, size: 64),
+                const SizedBox(height: 16),
+                const Text(
+                  'Verified!',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  authState.message ?? 'Your account has been verified successfully.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.go('/signin');
+                    },
+                    child: const Text(
+                      'Proceed to Sign In',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
-        // Navigate to success or signin or home.
-        // Assuming we go to signin or home. Let's go to signin based on context.
-        context.go('/signin');
       } else if (authState.message != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -139,16 +139,29 @@ class WalletRepository {
         data: account.toJson(),
       );
       
-      if (response.data != null && response.data['success'] == true) {
-        final payload = response.data['payload'];
-        if (payload != null) {
+      final isSuccess = response.data != null &&
+          (response.data['success'] == true ||
+           response.statusCode == 200 ||
+           response.statusCode == 201);
+
+      if (isSuccess) {
+        final payload = response.data['payload'] ??
+            response.data['data'] ??
+            response.data['account'];
+
+        if (payload != null && payload is Map<String, dynamic>) {
           return WithdrawalAccountModel.fromJson(payload);
         }
+        return account;
       }
-      throw Exception('Failed to add account. Invalid response.');
+      final msg = response.data?['message'] ?? 'Failed to add account. Invalid response.';
+      throw Exception(msg);
     } on DioException catch (e) {
       log('[WalletRepository] Failed to add withdrawal account: ${e.message}');
-      throw Exception(e.response?.data?['message'] ?? 'Failed to add withdrawal account.');
+      final msg = e.response?.data?['message'] ??
+          e.response?.data?['error'] ??
+          'Failed to add withdrawal account. Please check your bank details.';
+      throw Exception(msg);
     }
   }
 

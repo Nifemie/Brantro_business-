@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
-import 'core/constants/paystack_config.dart';
 
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});

@@ -30,7 +30,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final isLoggedIn = await SessionService.isLoggedIn();
     
     if (isLoggedIn) {
-      context.pushReplacement('/dashboard');
+      final isLocked = await SessionService.isAppLocked();
+      if (isLocked) {
+        context.pushReplacement('/lock');
+      } else {
+        context.pushReplacement('/dashboard');
+      }
     } else {
       context.pushReplacement('/intro');
     }
@@ -43,7 +48,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
-      child: Scaffold(
+      child: PopScope(
+        canPop: false,
+        child: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
           child: Column(
@@ -93,6 +100,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

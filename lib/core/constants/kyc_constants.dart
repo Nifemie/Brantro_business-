@@ -1,11 +1,15 @@
-/// Document types for individual accounts
+/// Document types for individual accounts (BRT-028)
 const List<Map<String, String>> INDIVIDUAL_DOCUMENT_TYPES = [
   {'label': 'National Identity Number (NIN)', 'value': 'NIN'},
+  {'label': "Voter's Card (VIN)", 'value': 'VOTERS_CARD'},
+  {'label': "Driver's License", 'value': 'DRIVERS_LICENSE'},
+  {'label': 'International Passport', 'value': 'PASSPORT'},
 ];
 
 /// Document types for business accounts
 const List<Map<String, String>> BUSINESS_DOCUMENT_TYPES = [
   {'label': 'Corporate Affairs Commission (CAC)', 'value': 'CAC'},
+  {'label': 'Tax Identification Number (TIN)', 'value': 'TIN'},
   {'label': 'National Identity Number (NIN)', 'value': 'NIN'},
 ];
 
@@ -102,6 +106,30 @@ class KycValidationRules {
       case 'CAC':
         if (!isValidCAC(clean)) {
           return 'Enter a valid CAC number (e.g. RC1234567 or 1234567)';
+        }
+        break;
+      case 'VOTERS_CARD':
+        if (clean.length < 8 || clean.length > 20) {
+          return "Enter a valid Voter's Card number";
+        }
+        break;
+      case 'DRIVERS_LICENSE':
+        if (clean.length < 8 || clean.length > 15) {
+          return "Enter a valid Driver's License number (8-15 characters)";
+        }
+        if (!RegExp(r'^[A-Za-z0-9\-_]{8,15}$').hasMatch(clean)) {
+          return "Driver's license number must be alphanumeric";
+        }
+        break;
+      case 'PASSPORT':
+        if (clean.length < 8 || clean.length > 12) {
+          return 'Enter a valid Passport number';
+        }
+        break;
+      case 'TIN':
+        final tinDigits = clean.replaceAll(RegExp(r'[\s\-]'), '');
+        if (tinDigits.length < 8 || tinDigits.length > 14) {
+          return 'Enter a valid TIN number (8-14 digits)';
         }
         break;
       default:

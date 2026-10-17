@@ -23,6 +23,13 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
   WithdrawalAccountModel? _selectedAccount;
   bool _isLoading = false;
 
+  Future<void> _navigateToAccounts() async {
+    await context.push('/wallet/withdrawal-accounts');
+    if (mounted) {
+      await ref.read(withdrawalAccountsProvider.notifier).fetchAccounts();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -181,7 +188,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                                     ),
                                     SizedBox(height: 8.h),
                                     InkWell(
-                                      onTap: () => context.push('/wallet/withdrawal-accounts'),
+                                      onTap: _navigateToAccounts,
                                       child: Text(
                                         'Manage & Verify Accounts →',
                                         style: TextStyle(
@@ -250,9 +257,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                           ),
                           if (accountsState.accounts.isNotEmpty)
                             TextButton(
-                              onPressed: () {
-                                context.push('/wallet/withdrawal-accounts');
-                              },
+                              onPressed: _navigateToAccounts,
                               child: Text('Manage', style: TextStyle(color: AppColors.primaryColor)),
                             ),
                         ],
@@ -331,9 +336,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
           SizedBox(height: 16.h),
           PrimaryButton(
             text: 'Add Account',
-            onPressed: () {
-              context.push('/wallet/withdrawal-accounts');
-            },
+            onPressed: _navigateToAccounts,
           ),
         ],
       ),

@@ -240,9 +240,14 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ref.read(withdrawalAccountsProvider.notifier).deleteAccount(account.id!);
+              final success = await ref.read(withdrawalAccountsProvider.notifier).deleteAccount(account.id!);
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Account deleted successfully'), backgroundColor: Colors.black87),
+                );
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

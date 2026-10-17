@@ -1,6 +1,6 @@
 // User Roles
 enum UserRole {
-  ADVERTISER('ADVERTISER'),
+  ADVERTISER('USER'),
   ARTIST('ARTIST'),
   PRODUCER('PRODUCER'),
   INFLUENCER('INFLUENCER'),
@@ -20,6 +20,9 @@ enum UserRole {
     final upper = value.toUpperCase();
     if (upper == 'CREATIVE' || upper == 'DESIGNER') {
       return UserRole.CREATOR;
+    }
+    if (upper == 'USER' || upper == 'ADVERTISER') {
+      return UserRole.ADVERTISER;
     }
     return UserRole.values.firstWhere(
       (role) => role.value == upper,

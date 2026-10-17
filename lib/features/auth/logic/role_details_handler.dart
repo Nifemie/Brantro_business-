@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../data/models/signup_request.dart';
 import '../../../core/constants/enum.dart';
+import '../../../core/utils/error_sanitizer.dart';
 import 'auth_notifiers.dart';
 
 /// Handles business logic for role details form submission
@@ -88,7 +89,7 @@ class RoleDetailsHandler {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registration error: ${e.toString()}'),
+            content: Text(ErrorSanitizer.sanitize(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -131,7 +132,7 @@ class RoleDetailsHandler {
       );
     } else {
       final errorMsg = authState.message?.isNotEmpty == true
-          ? authState.message!
+          ? ErrorSanitizer.sanitize(authState.message!)
           : 'Registration failed. Please check your details and try again.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

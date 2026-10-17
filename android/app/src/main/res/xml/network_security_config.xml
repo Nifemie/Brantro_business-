@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Disable cleartext HTTP traffic globally (BRT-030) -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Only trust verified system CAs, disallow user-installed proxy/Burp certificates -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.syroltech.com</domain>
+        <domain includeSubdomains="true">api.paystack.co</domain>
+        <domain includeSubdomains="true">realta360.b-cdn.net</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

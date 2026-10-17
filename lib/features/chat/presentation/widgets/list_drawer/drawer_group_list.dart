@@ -4,42 +4,66 @@ import 'package:brantro_business/controllers/re_useable/app_color.dart';
 
 class DrawerGroupList extends StatelessWidget {
   final bool isDark;
+  final List<dynamic> groups;
 
-  const DrawerGroupList({super.key, required this.isDark});
+  const DrawerGroupList({
+    super.key,
+    required this.isDark,
+    this.groups = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (groups.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.groups_outlined,
+                  size: 40.sp,
+                  color: isDark ? Colors.white38 : Colors.grey.shade400,
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  'No groups yet',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  'Community groups and project teams will appear here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? Colors.white38 : Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Expanded(
-      child: ListView(
+      child: ListView.builder(
         padding: EdgeInsets.zero,
-        children: [
-          _ActionItem(
-            icon: Icons.person,
-            title: 'New Group',
+        itemCount: groups.length,
+        itemBuilder: (context, index) {
+          final group = groups[index];
+          return _GroupItem(
+            initial: (group['title'] ?? 'G').toString().substring(0, 1).toUpperCase(),
+            title: group['title'] ?? '',
             isDark: isDark,
-            isOrange: true,
-          ),
-          _GroupItem(
-            initial: 'G',
-            title: '#Event Management',
-            isDark: isDark,
-          ),
-          _GroupItem(
-            initial: 'G',
-            title: '#Tourist Place of Portland',
-            isDark: isDark,
-          ),
-          _GroupItem(
-            initial: 'G',
-            title: '#UI / UX Design',
-            isDark: isDark,
-          ),
-          _GroupItem(
-            initial: 'G',
-            title: '#Travelling The World',
-            isDark: isDark,
-          ),
-        ],
+          );
+        },
       ),
     );
   }

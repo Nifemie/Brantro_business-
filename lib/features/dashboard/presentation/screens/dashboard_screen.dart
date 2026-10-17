@@ -17,38 +17,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  DateTime? _lastBackPressed;
-
   Future<bool> _onWillPop() async {
-    // Always prevent going back from dashboard (which would go to splash)
-    final now = DateTime.now();
-    final backButtonHasNotBeenPressedOrSnackBarHasBeenClosed =
-        _lastBackPressed == null ||
-        now.difference(_lastBackPressed!) > const Duration(seconds: 2);
-
-    if (backButtonHasNotBeenPressedOrSnackBarHasBeenClosed) {
-      _lastBackPressed = now;
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Press back again to exit'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(16.w),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-          ),
-        );
-      }
-      return false;
-    }
-
-    // Exit the app
-    SystemNavigator.pop();
-    return true;
+    // Never exit the app by tapping back button
+    return false;
   }
 
   @override

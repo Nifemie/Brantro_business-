@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
@@ -162,6 +163,7 @@ class ChatSettingsDrawer extends StatelessWidget {
                     textColor: textColor,
                     subtextColor: subtextColor,
                     iconColor: iconColor,
+                    onTap: () => context.push('/contact-us'),
                   ),
                 ],
               ),
@@ -180,6 +182,7 @@ class _SettingsOptionTile extends StatelessWidget {
   final Color textColor;
   final Color subtextColor;
   final Color iconColor;
+  final VoidCallback? onTap;
 
   const _SettingsOptionTile({
     required this.icon,
@@ -188,12 +191,13 @@ class _SettingsOptionTile extends StatelessWidget {
     required this.textColor,
     required this.subtextColor,
     required this.iconColor,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap ?? () {},
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
         child: Row(

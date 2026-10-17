@@ -1,3 +1,4 @@
+import '../../../../../category/data/models/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,7 +35,24 @@ class TemplateInformationForm extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     
     final categoryState = ref.watch(categoryProvider);
-    final categories = categoryState.templateCategories;
+    var categories = categoryState.templateCategories;
+    if (categories.isEmpty) {
+      final now = DateTime.now();
+      categories = TemplateConstants.templateCategories
+          .asMap()
+          .entries
+          .map((entry) => CategoryModel(
+                id: entry.key + 1,
+                name: entry.value,
+                type: 'TEMPLATE',
+                description: '${entry.value} Templates',
+                status: 'ACTIVE',
+                createdById: 1,
+                createdAt: now,
+                updatedAt: now,
+              ))
+          .toList();
+    }
     
     final selectedCategoryName = categories
         .where((c) => c.id == selectedCategoryId)

@@ -56,10 +56,12 @@ class _IntroWrapperState extends State<IntroWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
           // Background carousel
           PageView.builder(
             controller: _pageController,
@@ -197,6 +199,7 @@ class _IntroWrapperState extends State<IntroWrapper> {
           ),
         ],
       ),
+    ),
     );
   }
 }

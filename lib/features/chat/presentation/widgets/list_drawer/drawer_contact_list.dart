@@ -4,39 +4,67 @@ import 'package:brantro_business/controllers/re_useable/app_color.dart';
 
 class DrawerContactList extends StatelessWidget {
   final bool isDark;
+  final List<dynamic> contacts;
 
-  const DrawerContactList({super.key, required this.isDark});
+  const DrawerContactList({
+    super.key,
+    required this.isDark,
+    this.contacts = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (contacts.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.person_outline_rounded,
+                  size: 40.sp,
+                  color: isDark ? Colors.white38 : Colors.grey.shade400,
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  'No contacts yet',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  'Your saved contacts and client profiles will appear here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? Colors.white38 : Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Expanded(
-      child: ListView(
+      child: ListView.builder(
         padding: EdgeInsets.zero,
-        children: [
-          _ActionItem(
-            icon: Icons.person_add, // "New Contact" uses person_add icon
-            title: 'New Contact',
+        itemCount: contacts.length,
+        itemBuilder: (context, index) {
+          final contact = contacts[index];
+          return _ContactItem(
+            name: contact['name'] ?? '',
+            status: contact['status'] ?? '',
+            avatarIndex: index % 8,
             isDark: isDark,
-          ),
-          _ContactItem(
-            name: 'Anna M. Hines',
-            status: 'Hey there! I am using Chat.',
-            avatarIndex: 0,
-            isDark: isDark,
-          ),
-          _ContactItem(
-            name: 'Judith H. Fritsche',
-            status: '** no status **',
-            avatarIndex: 1,
-            isDark: isDark,
-          ),
-          _ContactItem(
-            name: 'Peter T. Smith',
-            status: '|| Karma ||',
-            avatarIndex: 2,
-            isDark: isDark,
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:brantro_business/features/auth/logic/auth_notifiers.dart';
 import 'package:brantro_business/features/auth/data/models/login_request.dart';
 import 'package:brantro_business/core/utils/app_messanger.dart';
-import 'package:brantro_business/core/utils/device_utils.dart';
 import 'package:brantro_business/core/utils/color_utils.dart';
 import 'package:brantro_business/controllers/re_useable/app_button.dart';
 import 'package:brantro_business/core/service/session_service.dart';
@@ -27,7 +26,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _hasIncorrectCred = false;
-  bool _hasStoredUsername = false;
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
@@ -47,7 +45,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
       if (authState.isDataAvailable) {
         // Check user role BEFORE navigation
-        final userRole = authState.singleData?.role?.toUpperCase()?.trim();
+        final userRole = authState.singleData?.role.toUpperCase().trim();
         
         final sellerRoles = [
           'ADMIN',
@@ -175,9 +173,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: Stack(
+          children: [
           // Background Image
           Positioned(
             top: -100,
@@ -435,6 +435,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 

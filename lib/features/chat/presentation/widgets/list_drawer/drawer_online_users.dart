@@ -3,16 +3,20 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
 
 class DrawerOnlineUsers extends StatelessWidget {
-  const DrawerOnlineUsers({super.key});
+  final List<dynamic> users;
+
+  const DrawerOnlineUsers({super.key, this.users = const []});
 
   @override
   Widget build(BuildContext context) {
+    if (users.isEmpty) return const SizedBox.shrink();
+
     return SizedBox(
       height: 64.h,
       child: ListView.builder(
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         scrollDirection: Axis.horizontal,
-        itemCount: 6,
+        itemCount: users.length,
         itemBuilder: (context, index) {
           return Padding(
             padding: EdgeInsets.only(right: 14.w),

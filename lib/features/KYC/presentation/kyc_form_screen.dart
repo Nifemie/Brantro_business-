@@ -240,7 +240,15 @@ class _KycFormScreenState extends ConsumerState<KycFormScreen> {
                                 ? 'NIN Number (11 digits)'
                                 : _selectedDocumentType == 'CAC'
                                     ? 'CAC Registration Number'
-                                    : 'Document Number',
+                                    : _selectedDocumentType == 'TIN'
+                                        ? 'Tax Identification Number (TIN)'
+                                        : _selectedDocumentType == 'VOTERS_CARD'
+                                            ? "Voter's Card Number (VIN)"
+                                            : _selectedDocumentType == 'DRIVERS_LICENSE'
+                                                ? "Driver's License Number"
+                                                : _selectedDocumentType == 'PASSPORT'
+                                                    ? 'Passport Number'
+                                                    : 'Document Number',
                             required: true,
                           ),
                           SizedBox(height: 8.h),
@@ -255,7 +263,15 @@ class _KycFormScreenState extends ConsumerState<KycFormScreen> {
                                   ? 'e.g. 12345678901 (11 digits)'
                                   : _selectedDocumentType == 'CAC'
                                       ? 'e.g. RC1234567'
-                                      : 'Enter number',
+                                      : _selectedDocumentType == 'TIN'
+                                          ? 'e.g. 12345678-0001'
+                                          : _selectedDocumentType == 'VOTERS_CARD'
+                                              ? 'e.g. 90F5B1234567890'
+                                              : _selectedDocumentType == 'DRIVERS_LICENSE'
+                                                  ? 'e.g. ABC12345AA'
+                                                  : _selectedDocumentType == 'PASSPORT'
+                                                      ? 'e.g. A12345678'
+                                                      : 'Enter document number',
                               isDark,
                             ),
                             keyboardType: _selectedDocumentType == 'NIN'
@@ -267,7 +283,7 @@ class _KycFormScreenState extends ConsumerState<KycFormScreen> {
                                     LengthLimitingTextInputFormatter(11),
                                   ]
                                 : [
-                                    LengthLimitingTextInputFormatter(14),
+                                    LengthLimitingTextInputFormatter(20),
                                   ],
                             textCapitalization: TextCapitalization.characters,
                             validator: _validateDocumentNumber,

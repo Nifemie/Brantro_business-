@@ -174,7 +174,7 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                     return Padding(
                       padding: EdgeInsets.only(bottom: 16.h),
                       child: CustomDropdownField(
-                        key: ValueKey('${fieldName}_${(field['options'] as List?)?.length}_${_formStateManager.controllers['state']?.text}'),
+                        key: ValueKey('dropdown_$fieldName'),
                         label: fieldLabel,
                         hint: field['hint'] as String?,
                         initialValue: currentValue != null && currentValue.isNotEmpty ? currentValue : null,
@@ -344,7 +344,11 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(11),
                 ]
-              : null,
+              : (lowerName.contains('tin') || lowerLabel.contains('tin'))
+                  ? [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\-]')),
+                    ]
+                  : null,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14.rsp),
           decoration: _inputDecoration(isPhoneField ? '8012345678' : hint, isDark, prefixIcon: phonePrefix),
           validator: (value) {
@@ -385,13 +389,22 @@ class _RoleDetailsScreenState extends ConsumerState<RoleDetailsScreen> {
                 }
               }
 
-              // Password validation (BRT-005, BRT-047)
+              // Password validation (BRT-047)
               if (isPassword || lowerName.contains('password') || lowerLabel.contains('password')) {
                 if (val.length < 8) {
                   return 'Password must be at least 8 characters long';
                 }
-                if (!RegExp(r'[A-Za-z]').hasMatch(val) || !RegExp(r'[0-9]').hasMatch(val)) {
-                  return 'Password must include both letters and numbers';
+                if (!RegExp(r'[A-Z]').hasMatch(val)) {
+                  return 'Password must contain at least one uppercase letter';
+                }
+                if (!RegExp(r'[a-z]').hasMatch(val)) {
+                  return 'Password must contain at least one lowercase letter';
+                }
+                if (!RegExp(r'[0-9]').hasMatch(val)) {
+                  return 'Password must contain at least one number';
+                }
+                if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>\-_]').hasMatch(val)) {
+                  return 'Password must contain at least one special character';
                 }
               }
 

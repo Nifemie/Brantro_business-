@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'local_storage_service.dart';
 import '../../features/dashboard/logic/dashboard_navigation_provider.dart';
 import '../../features/account/logic/profile_provider.dart';
 import '../../features/account/logic/persona_provider.dart';
@@ -24,6 +23,19 @@ class SessionService {
   static const String _userFullnameKey = 'user_fullname';
   static const String _userActualUsernameKey = 'user_actual_username';
   static const String _userPhoneNumberKey = 'user_phone_number';
+  static const String _isAppLockedKey = 'is_app_locked';
+
+  /// Check whether the app session has been locked (BRT-024)
+  static Future<bool> isAppLocked() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isAppLockedKey) ?? false;
+  }
+
+  /// Update the app session lock state (BRT-024)
+  static Future<void> setAppLocked(bool locked) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isAppLockedKey, locked);
+  }
 
   // Save login session
   static Future<void> saveSession(dynamic response) async {
@@ -41,6 +53,12 @@ class SessionService {
     if (response.accessToken != null) {
       await prefs.setString(_userAccessToken, response.accessToken!);
     }
+  }
+
+  // Save raw access token
+  static Future<void> saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userAccessToken, token);
   }
 
   // Update/save cached user details

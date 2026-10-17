@@ -114,10 +114,13 @@ class AppPopupMenu extends ConsumerWidget {
                 // TODO: Navigate to pricing
                 break;
               case 'help':
-                // TODO: Navigate to help
+                context.push('/contact-us');
                 break;
               case 'lock':
-                // TODO: Lock screen
+                await SessionService.setAppLocked(true);
+                if (context.mounted) {
+                  context.go('/lock');
+                }
                 break;
               case 'logout':
                 await _handleLogout(context, ref);
