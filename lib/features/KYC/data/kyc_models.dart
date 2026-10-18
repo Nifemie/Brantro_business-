@@ -252,3 +252,90 @@ class FaceVerificationRequest {
     );
   }
 }
+
+class KycOverrideRequest {
+  final String status;
+
+  KycOverrideRequest({required this.status});
+
+  Map<String, dynamic> toJson() => {'status': status};
+
+  factory KycOverrideRequest.fromJson(Map<String, dynamic> json) {
+    return KycOverrideRequest(
+      status: json['status']?.toString() ?? 'APPROVED',
+    );
+  }
+}
+
+class KycRecordModel {
+  final dynamic id;
+  final dynamic userId;
+  final String documentType;
+  final String documentNumber;
+  final String? fullName;
+  final String? phoneNumber;
+  final String? address;
+  final String status;
+  final String? rejectionReason;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final Map<String, dynamic>? rawData;
+
+  KycRecordModel({
+    required this.id,
+    this.userId,
+    required this.documentType,
+    required this.documentNumber,
+    this.fullName,
+    this.phoneNumber,
+    this.address,
+    required this.status,
+    this.rejectionReason,
+    this.createdAt,
+    this.updatedAt,
+    this.rawData,
+  });
+
+  factory KycRecordModel.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(dynamic d) {
+      if (d == null) return null;
+      try {
+        return DateTime.parse(d.toString());
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return KycRecordModel(
+      id: json['id'] ?? json['_id'] ?? '',
+      userId: json['userId'] ?? json['user_id'] ?? json['user']?['id'],
+      documentType: json['documentType']?.toString() ?? json['idType']?.toString() ?? 'NIN',
+      documentNumber: json['documentNumber']?.toString() ?? json['idNumber']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? json['name']?.toString() ?? json['user']?['name']?.toString(),
+      phoneNumber: json['phoneNumber']?.toString() ?? json['phone']?.toString() ?? json['user']?['phoneNumber']?.toString(),
+      address: json['address']?.toString(),
+      status: (json['status'] ?? json['kycStatus'] ?? 'PENDING').toString().toUpperCase(),
+      rejectionReason: json['rejectionReason']?.toString() ?? json['reason']?.toString(),
+      createdAt: parseDate(json['createdAt'] ?? json['created_at']),
+      updatedAt: parseDate(json['updatedAt'] ?? json['updated_at']),
+      rawData: json,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      if (userId != null) 'userId': userId,
+      'documentType': documentType,
+      'documentNumber': documentNumber,
+      if (fullName != null) 'fullName': fullName,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
+      if (address != null) 'address': address,
+      'status': status,
+      if (rejectionReason != null) 'rejectionReason': rejectionReason,
+      if (createdAt != null) 'createdAt': createdAt?.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
+}
+

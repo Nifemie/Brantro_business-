@@ -72,118 +72,111 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final walletState = ref.watch(walletProvider);
     final wallet = walletState.wallet;
+    final showBack = Navigator.canPop(context);
 
-    // Show loading while checking login status
+    Widget content;
     if (_isLoading) {
-      return const WalletSkeleton();
-    }
+      content = const WalletSkeleton();
+    } else if (_isGuest) {
+      content = const WalletGuestView();
+    } else if (walletState.isLoading && wallet == null) {
+      content = const WalletSkeleton();
+    } else if (walletState.errorMessage != null && wallet == null) {
+      content = _buildErrorState(walletState.errorMessage!);
+    } else {
+      content = RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: AppColors.primaryColor,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Balance Card
+              Builder(
+                builder: (context) {
+                  final transactionsState = ref.watch(transactionsProvider);
+                  final transactions = transactionsState.data ?? [];
+                  double totalCredits = 0.0;
+                  double totalDebits = 0.0;
+                  for (final tx in transactions) {
+                    if (tx.isCredit) {
+                      totalCredits += tx.amount;
+                    } else if (tx.isDebit) {
+                      totalDebits += tx.amount;
+                    }
+                  }
+                  return BalanceCard(
+                    balance: wallet?.balance ?? '0.00',
+                    pendingBalance: wallet?.pendingBalance ?? '0.00',
+                    currency: wallet?.currency ?? '₦',
+                    status: wallet?.status ?? 'INACTIVE',
+                    totalCredits: totalCredits,
+                    totalDebits: totalDebits,
+                    totalTransactions: transactions.length,
+                  );
+                },
+              ),
 
-    // Show guest view if not logged in
-    if (_isGuest) {
-      return const WalletGuestView();
-    }
+              SizedBox(height: 24.h),
 
-    // Logged in user view
-    if (walletState.isLoading && wallet == null) {
-      return const WalletSkeleton();
-    }
+              // Quick Actions
+              Text(
+                'Quick Actions',
+                style: AppTexts.h3(
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              const QuickActionsGrid(),
 
-    if (walletState.errorMessage != null && wallet == null) {
-      return _buildErrorState(walletState.errorMessage!);
+              SizedBox(height: 32.h),
+
+              // Recent Transactions
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Recent Transactions',
+                    style: AppTexts.h3(
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      context.push('/wallet/transactions');
+                    },
+                    child: Text(
+                      'View All',
+                      style: AppTexts.bodyMedium(
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 12.h),
+
+              // Transaction List - Real API data
+              const RecentTransactionsList(),
+
+              SizedBox(height: 24.h),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: const SidebarMenu(),
+      drawer: showBack ? null : const SidebarMenu(),
       body: SafeArea(
         child: Column(
           children: [
-            const DashboardAppBar(title: 'WALLET', showBackButton: false),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _handleRefresh,
-                color: AppColors.primaryColor,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.all(16.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Balance Card
-                      Builder(
-                        builder: (context) {
-                          final transactionsState = ref.watch(transactionsProvider);
-                          final transactions = transactionsState.data ?? [];
-                          double totalCredits = 0.0;
-                          double totalDebits = 0.0;
-                          for (final tx in transactions) {
-                            if (tx.isCredit) {
-                              totalCredits += tx.amount;
-                            } else if (tx.isDebit) {
-                              totalDebits += tx.amount;
-                            }
-                          }
-                          return BalanceCard(
-                            balance: wallet?.balance ?? '0.00',
-                            pendingBalance: wallet?.pendingBalance ?? '0.00',
-                            currency: wallet?.currency ?? '₦',
-                            status: wallet?.status ?? 'INACTIVE',
-                            totalCredits: totalCredits,
-                            totalDebits: totalDebits,
-                            totalTransactions: transactions.length,
-                          );
-                        },
-                      ),
-
-                      SizedBox(height: 24.h),
-
-                      // Quick Actions
-                      Text(
-                        'Quick Actions',
-                        style: AppTexts.h3(
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      SizedBox(height: 12.h),
-                      const QuickActionsGrid(),
-
-                      SizedBox(height: 32.h),
-
-                      // Recent Transactions
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Recent Transactions',
-                            style: AppTexts.h3(
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              context.push('/wallet/transactions');
-                            },
-                            child: Text(
-                              'View All',
-                              style: AppTexts.bodyMedium(
-                                color: AppColors.primaryColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 12.h),
-
-                      // Transaction List - Real API data
-                      const RecentTransactionsList(),
-
-                      SizedBox(height: 24.h),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            DashboardAppBar(title: 'WALLET', showBackButton: showBack),
+            Expanded(child: content),
           ],
         ),
       ),
@@ -218,7 +211,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 backgroundColor: AppColors.primaryColor,
                 foregroundColor: Colors.white,
               ),
-              child: Text('Retry'),
+              child: const Text('Retry'),
             ),
           ],
         ),

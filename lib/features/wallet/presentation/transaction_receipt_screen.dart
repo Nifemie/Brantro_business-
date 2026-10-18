@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -7,7 +8,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import '../data/models/transaction_model.dart';
-import '../../../../controllers/re_useable/app_texts.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 
 class TransactionReceiptScreen extends StatefulWidget {
@@ -43,6 +43,7 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
         await imageFile.writeAsBytes(imageBytes);
 
         // Share the image
+        // ignore: deprecated_member_use
         await Share.shareXFiles(
           [XFile(imagePath)],
           text: 'Transaction Receipt - ${widget.transaction.reference}',
@@ -323,10 +324,21 @@ class _TransactionReceiptScreenState extends State<TransactionReceiptScreen> {
                 ),
                 if (copyable) ...[
                   SizedBox(width: 8.w),
-                  Icon(
-                    Icons.copy,
-                    size: 14.sp,
-                    color: AppColors.primaryColor,
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: value));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Copied "$value" to clipboard'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.copy,
+                      size: 14.sp,
+                      color: AppColors.primaryColor,
+                    ),
                   ),
                 ],
               ],

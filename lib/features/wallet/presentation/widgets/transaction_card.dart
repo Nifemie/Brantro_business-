@@ -54,15 +54,15 @@ class TransactionCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isDark
-                  ? Colors.black.withOpacity(0.3)
-                  : const Color(0xFF000000).withOpacity(0.06),
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : const Color(0xFF000000).withValues(alpha: 0.06),
               blurRadius: 15,
               spreadRadius: 0,
               offset: const Offset(0, 8),
             ),
           ],
           border: isDark
-              ? Border.all(color: Colors.white.withOpacity(0.05), width: 1)
+              ? Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1)
               : Border.all(color: const Color(0xFFF0F0F0), width: 1),
         ),
         child: Row(
@@ -73,8 +73,8 @@ class TransactionCard extends StatelessWidget {
               width: 48.w,
               height: 48.w,
               decoration: BoxDecoration(
-                color: _getIconBackgroundColor().withOpacity(
-                  isDark ? 0.15 : 0.1,
+                color: _getIconBackgroundColor().withValues(
+                  alpha: isDark ? 0.15 : 0.1,
                 ),
                 borderRadius: BorderRadius.circular(14.r),
               ),
@@ -230,7 +230,7 @@ class TransactionCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.1),
+        color: badgeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4.r),
         border: Border.all(color: badgeColor, width: 1),
       ),

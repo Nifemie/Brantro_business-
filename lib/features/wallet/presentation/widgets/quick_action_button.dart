@@ -6,12 +6,14 @@ import '../../../../controllers/re_useable/app_texts.dart';
 class QuickActionButton extends StatelessWidget {
   final String label;
   final bool isPrimary;
+  final IconData? customIcon;
   final VoidCallback onTap;
 
   const QuickActionButton({
     super.key,
     required this.label,
     required this.isPrimary,
+    this.customIcon,
     required this.onTap,
   });
 
@@ -24,14 +26,14 @@ class QuickActionButton extends StatelessWidget {
     final bgColor = isPrimary ? AppColors.primaryColor : Colors.transparent;
 
     final borderColor = isPrimary
-        ? (isDark ? Colors.white.withOpacity(0.15) : Colors.transparent)
+        ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.transparent)
         : const Color(0xFFE87A4F); // Orange from the image
 
     final textColor = isPrimary
         ? Colors.white
         : const Color(0xFFE87A4F); // Orange from the image
 
-    final icon = isPrimary ? Icons.add_circle_outline : Icons.arrow_upward;
+    final icon = customIcon ?? (isPrimary ? Icons.arrow_upward : Icons.account_balance);
 
     return Material(
       color: Colors.transparent,

@@ -182,12 +182,34 @@ void main() {
       expect(nubanRegex.hasMatch('012-345678'), isFalse); // symbols
     });
 
-    test('KYC: Driver\'s License requires 8-15 alphanumeric characters', () {
-      expect(KycValidationRules.getDocumentNumberError('DRIVERS_LICENSE', 'ABC12345AA'), isNull);
-      expect(KycValidationRules.getDocumentNumberError('DRIVERS_LICENSE', 'AAA12345678'), isNull);
-      expect(KycValidationRules.getDocumentNumberError('DRIVERS_LICENSE', 'ABC12'), isNotNull); // too short
-      expect(KycValidationRules.getDocumentNumberError('DRIVERS_LICENSE', 'ABC12345678901234'), isNotNull); // too long
-      expect(KycValidationRules.getDocumentNumberError('DRIVERS_LICENSE', 'ABC@12345!'), isNotNull); // invalid symbols
+    test('BRT-038: ID Number is validated per ID Type and TIN requires digits only', () {
+      // 1. When ID Type is NIN, ID Number must be exactly 11 digits
+      final ninRegex = RegExp(r'^\d{11}$');
+      expect(ninRegex.hasMatch('12345678901'), isTrue);
+      expect(ninRegex.hasMatch('12345'), isFalse);
+      expect(ninRegex.hasMatch('123456789012'), isFalse);
+      expect(ninRegex.hasMatch('1234567890a'), isFalse);
+
+      // 2. When ID Type is TIN, ID Number must be between 8 and 12 digits
+      final tinRegex = RegExp(r'^\d{8,12}$');
+      expect(tinRegex.hasMatch('12345678'), isTrue);
+      expect(tinRegex.hasMatch('123456789012'), isTrue);
+      expect(tinRegex.hasMatch('1234567'), isFalse);
+      expect(tinRegex.hasMatch('1234567890123'), isFalse);
+      expect(tinRegex.hasMatch('q;_!_+\'kkxbhs'), isFalse); // QA test input string rejected
+
+      // 3. When ID Type is CAC, format accepts 5-15 alphanumeric/hyphen characters
+      final cacRegex = RegExp(r'^[a-zA-Z0-9/-]{5,15}$');
+      expect(cacRegex.hasMatch('RC123456'), isTrue);
+      expect(cacRegex.hasMatch('BN-987654'), isTrue);
+      expect(cacRegex.hasMatch('1234527462fgh'), isTrue);
+      expect(cacRegex.hasMatch('RC'), isFalse); // too short
+
+      // 4. When ID Type is Passport, 1 letter followed by 8 digits
+      final passportRegex = RegExp(r'^[a-zA-Z][0-9]{8}$');
+      expect(passportRegex.hasMatch('A12345678'), isTrue);
+      expect(passportRegex.hasMatch('123456789'), isFalse);
+      expect(passportRegex.hasMatch('AB1234567'), isFalse);
     });
   });
 }

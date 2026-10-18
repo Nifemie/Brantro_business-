@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../data/models/order_model.dart';
-import '../../../../controllers/re_useable/app_color.dart';
 
 class OrderRejectionCard extends StatelessWidget {
   final OrderModel order;

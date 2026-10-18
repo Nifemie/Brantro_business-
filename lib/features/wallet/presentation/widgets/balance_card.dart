@@ -96,7 +96,7 @@ class _BalanceCardState extends State<BalanceCard> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF6B35).withOpacity(0.3),
+            color: const Color(0xFFFF6B35).withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -116,7 +116,7 @@ class _BalanceCardState extends State<BalanceCard> {
                 borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -150,7 +150,7 @@ class _BalanceCardState extends State<BalanceCard> {
               Text(
                 'Wallet Balance',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w500,
                 ),

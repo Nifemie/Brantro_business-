@@ -9,6 +9,8 @@ class WalletGuestView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(32.w),
@@ -18,18 +20,18 @@ class WalletGuestView extends StatelessWidget {
             Icon(
               Icons.account_balance_wallet_outlined,
               size: 80.sp,
-              color: AppColors.grey400,
+              color: isDark ? Colors.white38 : AppColors.grey400,
             ),
             SizedBox(height: 24.h),
             Text(
               'Sign in to access your wallet',
-              style: AppTexts.h3(),
+              style: AppTexts.h3(color: isDark ? Colors.white : Colors.black87),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 12.h),
             Text(
               'Create an account or sign in to manage your wallet, view transactions, and make payments.',
-              style: AppTexts.bodyMedium(color: AppColors.grey600),
+              style: AppTexts.bodyMedium(color: isDark ? Colors.white70 : AppColors.grey600),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 32.h),

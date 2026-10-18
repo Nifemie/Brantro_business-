@@ -31,14 +31,26 @@ class WithdrawalAccountModel {
         statusStr == 'VERIFIED' ||
         json['verificationStatus']?.toString().toUpperCase() == 'VERIFIED';
 
+    final parsedId = int.tryParse(json['id']?.toString() ??
+        json['_id']?.toString() ??
+        json['accountId']?.toString() ??
+        json['withdrawalAccountId']?.toString() ??
+        '');
+    final parsedUserId = int.tryParse(json['userId']?.toString() ?? '');
+
+    final isActiveVal = json['isActive'] != false &&
+        json['isDeleted'] != true &&
+        statusStr != 'DELETED' &&
+        statusStr != 'INACTIVE';
+
     return WithdrawalAccountModel(
-      id: json['id'] as int?,
-      userId: json['userId'] as int?,
+      id: parsedId,
+      userId: parsedUserId,
       bankName: json['bankName']?.toString() ?? '',
       accountNumber: json['accountNumber']?.toString() ?? '',
       accountName: json['accountName']?.toString() ?? '',
       isVerified: isVerifiedVal,
-      isActive: json['isActive'] as bool? ?? true,
+      isActive: isActiveVal,
       isDefault: json['isDefault'] as bool? ?? false,
       status: statusStr ?? (isVerifiedVal ? 'VERIFIED' : 'PENDING'),
       createdAt: json['createdAt'] != null

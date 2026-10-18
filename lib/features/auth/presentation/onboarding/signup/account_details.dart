@@ -50,11 +50,21 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   late TextEditingController _idTypeController;
   late TextEditingController _idNumberController;
   late TextEditingController _tinNumberController;
+  String? _selectedIdType;
   Country? _selectedCountry;
   bool _countryError = false;
   String? _selectedState;
   String? _selectedLGA;
   List<String> _availableLGAs = [];
+
+  static const List<Map<String, String>> _kIdTypeOptions = [
+    {'value': 'CAC', 'label': 'CAC Registration (RC / BN Number)'},
+    {'value': 'TIN', 'label': 'Tax Identification Number (TIN)'},
+    {'value': 'NIN', 'label': 'National Identity Number (NIN)'},
+    {'value': 'DRIVERS_LICENSE', 'label': "Driver's License"},
+    {'value': 'PASSPORT', 'label': 'International Passport'},
+    {'value': 'BUSINESS_PERMIT', 'label': 'Business Permit / Other'},
+  ];
 
   @override
   void initState() {
@@ -72,9 +82,15 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
     if (widget.roleData['businessRegistrationNumber'] != null) {
       _idNumberController.text = widget.roleData['businessRegistrationNumber'].toString();
       _idTypeController.text = widget.roleData['idType']?.toString() ?? 'CAC';
+      _selectedIdType = 'CAC';
     } else if (widget.roleData['idNumber'] != null) {
       _idNumberController.text = widget.roleData['idNumber'].toString();
-      _idTypeController.text = widget.roleData['idType']?.toString() ?? 'CAC';
+      final preType = widget.roleData['idType']?.toString() ?? 'CAC';
+      _idTypeController.text = preType;
+      _selectedIdType = preType;
+    } else {
+      _selectedIdType = 'CAC';
+      _idTypeController.text = 'CAC';
     }
     if (widget.roleData['tinNumber'] != null) {
       _tinNumberController.text = widget.roleData['tinNumber'].toString();
@@ -260,9 +276,11 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
         city: _selectedLGA,
         address: _addressController.text.isEmpty ? null : _addressController.text.trim(),
         accountType: _selectedAccountType ?? AccountType.INDIVIDUAL.value,
-        idType: _idTypeController.text.isNotEmpty
-            ? _idTypeController.text.trim()
-            : (widget.roleData['businessRegistrationNumber'] != null ? 'CAC' : widget.roleData['idType']),
+        idType: (_selectedIdType != null && _selectedIdType!.isNotEmpty)
+            ? _selectedIdType
+            : (_idTypeController.text.isNotEmpty
+                ? _idTypeController.text.trim()
+                : (widget.roleData['businessRegistrationNumber'] != null ? 'CAC' : widget.roleData['idType'])),
         idNumber: _idNumberController.text.isNotEmpty
             ? _idNumberController.text.trim()
             : (widget.roleData['businessRegistrationNumber'] ?? widget.roleData['idNumber']),
@@ -341,7 +359,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Step ${_currentStep} of 2',
+                  'Step $_currentStep of 2',
                   style: TextStyle(
                     fontSize: 12.rsp,
                     fontWeight: FontWeight.w500,
@@ -805,44 +823,121 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
         if (_selectedAccountType == 'BUSINESS' &&
             widget.roleData['businessRegistrationNumber'] == null &&
             widget.roleData['idNumber'] == null) ...[
+          // ID Type Dropdown (Optional) - BRT-038
           Padding(
             padding: EdgeInsets.only(bottom: 16.h),
-            child: _buildTextField(
-              controller: _idTypeController,
-              label: 'ID Type',
-              hint: 'e.g., CAC, Business Permit, National ID',
-              isRequired: true,
-              isDark: isDark,
-              validator: (value) => (value == null || value.trim().isEmpty)
-                  ? 'ID Type is required for business accounts'
-                  : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ID Type (Optional)',
+                  style: TextStyle(
+                    fontSize: 14.rsp,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                DropdownButtonFormField<String>(
+                  key: const ValueKey('id_type_dropdown'),
+                  value: _selectedIdType,
+                  dropdownColor: isDark ? const Color(0xFF1E232D) : Colors.white,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14.rsp),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF1E232D) : Colors.grey[50],
+                    hintText: 'Select ID Type',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.rsp),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.rsp),
+                      borderSide: const BorderSide(color: AppColors.primaryColor, width: 1.5),
+                    ),
+                    contentPadding: PlatformResponsive.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                  items: [
+                    DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('None (Optional)', style: TextStyle(color: Colors.grey[500], fontSize: 14.rsp)),
+                    ),
+                    ..._kIdTypeOptions.map((opt) {
+                      return DropdownMenuItem<String>(
+                        value: opt['value'],
+                        child: Text(
+                          opt['label']!,
+                          style: TextStyle(fontSize: 14.rsp, color: isDark ? Colors.white : Colors.black87),
+                        ),
+                      );
+                    }),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedIdType = val;
+                      _idTypeController.text = val ?? '';
+                      _idNumberController.clear();
+                    });
+                  },
+                ),
+              ],
             ),
           ),
+          // ID Number Field (Required only when ID Type is chosen, validated per type) - BRT-038
           Padding(
             padding: EdgeInsets.only(bottom: 16.h),
             child: _buildTextField(
               controller: _idNumberController,
-              label: 'ID / Registration Number',
-              hint: 'Enter your ID or registration number',
-              isRequired: true,
+              label: (_selectedIdType != null && _selectedIdType!.isNotEmpty)
+                  ? 'ID / Registration Number'
+                  : 'ID / Registration Number (Optional)',
+              hint: _getIdNumberHint(_selectedIdType),
+              isRequired: _selectedIdType != null && _selectedIdType!.isNotEmpty,
+              keyboardType: (_selectedIdType == 'NIN' || _selectedIdType == 'TIN')
+                  ? TextInputType.number
+                  : TextInputType.text,
+              inputFormatters: _getIdNumberFormatters(_selectedIdType),
               isDark: isDark,
-              validator: (value) => (value == null || value.trim().isEmpty)
-                  ? 'ID Number is required for business accounts'
-                  : null,
+              validator: (value) {
+                if (_selectedAccountType == 'BUSINESS' && (value == null || value.trim().isEmpty)) {
+                  return 'ID / Registration Number is required for business accounts';
+                }
+                if (_selectedIdType == null || _selectedIdType!.isEmpty) {
+                  return null;
+                }
+                final cleanVal = value!.trim();
+                return _validateIdNumberForType(_selectedIdType!, cleanVal);
+              },
             ),
           ),
+          // TIN Number Field (Digits only) - BRT-038
           if (widget.roleData['tinNumber'] == null)
             Padding(
               padding: EdgeInsets.only(bottom: 16.h),
               child: _buildTextField(
                 controller: _tinNumberController,
                 label: 'TIN Number (Optional)',
-                hint: 'Enter your Tax Identification Number',
+                hint: 'Enter 8-12 digits TIN (numeric only)',
                 isRequired: false,
+                keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9\-]')),
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(12),
                 ],
                 isDark: isDark,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) return null;
+                  final digits = value.trim();
+                  if (digits.length < 8 || digits.length > 12) {
+                    return 'TIN must be between 8 and 12 digits';
+                  }
+                  return null;
+                },
               ),
             ),
         ],
@@ -990,6 +1085,100 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
         vertical: 14,
       ),
     );
+  }
+
+  String _getIdNumberHint(String? type) {
+    switch (type) {
+      case 'CAC':
+        return 'e.g. RC123456 or BN987654';
+      case 'NIN':
+        return 'Enter 11-digit National Identity Number';
+      case 'TIN':
+        return 'Enter 8-12 digit Tax ID Number';
+      case 'DRIVERS_LICENSE':
+        return 'e.g. ABC12345AA (8-15 alphanumeric characters)';
+      case 'PASSPORT':
+        return 'e.g. A12345678 (1 letter + 8 digits)';
+      case 'BUSINESS_PERMIT':
+        return 'Enter permit or registration number';
+      default:
+        return 'Select an ID Type first or leave empty';
+    }
+  }
+
+  List<TextInputFormatter>? _getIdNumberFormatters(String? type) {
+    if (type == 'NIN') {
+      return [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(11),
+      ];
+    } else if (type == 'TIN') {
+      return [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(12),
+      ];
+    } else if (type == 'PASSPORT') {
+      return [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+        LengthLimitingTextInputFormatter(9),
+      ];
+    } else if (type == 'DRIVERS_LICENSE') {
+      return [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+        LengthLimitingTextInputFormatter(15),
+      ];
+    } else if (type == 'CAC') {
+      return [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9/-]')),
+        LengthLimitingTextInputFormatter(15),
+      ];
+    }
+    return [
+      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9/-]')),
+    ];
+  }
+
+  String? _validateIdNumberForType(String type, String val) {
+    switch (type) {
+      case 'CAC':
+        if (val.length < 5 || val.length > 15) {
+          return 'CAC number must be between 5 and 15 characters';
+        }
+        if (!RegExp(r'^[a-zA-Z0-9/-]+$').hasMatch(val)) {
+          return 'CAC number can only contain letters, numbers, and hyphens';
+        }
+        return null;
+      case 'NIN':
+        if (!RegExp(r'^\d{11}$').hasMatch(val)) {
+          return 'NIN must be exactly 11 digits';
+        }
+        return null;
+      case 'TIN':
+        if (!RegExp(r'^\d{8,12}$').hasMatch(val)) {
+          return 'TIN must be between 8 and 12 digits';
+        }
+        return null;
+      case 'DRIVERS_LICENSE':
+        if (!RegExp(r'^[a-zA-Z0-9]{8,15}$').hasMatch(val)) {
+          return "Driver's license must be between 8 and 15 alphanumeric characters";
+        }
+        return null;
+      case 'PASSPORT':
+        if (!RegExp(r'^[a-zA-Z][0-9]{8}$').hasMatch(val)) {
+          return 'Passport must start with a letter followed by 8 digits (e.g. A12345678)';
+        }
+        return null;
+      case 'BUSINESS_PERMIT':
+        if (val.length < 4) {
+          return 'Permit number must be at least 4 characters';
+        }
+        return null;
+      default:
+        if (val.length < 3) {
+          return 'Please enter a valid ID number';
+        }
+        return null;
+    }
   }
 
   Widget _buildActionButtons() {

@@ -8,6 +8,7 @@ class TransactionModel {
   final double balanceAfter;
   final String reference;
   final String? narration;
+  final String status;
   final DateTime createdAt;
 
   TransactionModel({
@@ -20,13 +21,14 @@ class TransactionModel {
     required this.balanceAfter,
     required this.reference,
     this.narration,
+    this.status = 'COMPLETED',
     required this.createdAt,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
-      id: json['id'] as int? ?? 0,
-      walletId: json['walletId'] as int? ?? 0,
+      id: int.tryParse(json['id']?.toString() ?? json['_id']?.toString() ?? '0') ?? 0,
+      walletId: int.tryParse(json['walletId']?.toString() ?? '0') ?? 0,
       type: json['type'] as String? ?? 'UNKNOWN',
       source: json['source'] as String? ?? 'UNKNOWN',
       amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
@@ -34,8 +36,9 @@ class TransactionModel {
       balanceAfter: double.tryParse(json['balanceAfter']?.toString() ?? '0') ?? 0.0,
       reference: json['reference'] as String? ?? '',
       narration: json['narration'] as String?,
+      status: json['status']?.toString().toUpperCase() ?? 'COMPLETED',
       createdAt: json['createdAt'] != null 
-          ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }
@@ -51,20 +54,36 @@ class TransactionModel {
       'balanceAfter': balanceAfter,
       'reference': reference,
       'narration': narration,
+      'status': status,
       'createdAt': createdAt.toIso8601String(),
     };
   }
 
   // Helper getters
-  bool get isCredit => type == 'CREDIT' || type == 'UPDATE' || source == 'FUNDING';
-  bool get isDebit => type == 'DEBIT';
+  bool get isCredit {
+    final t = type.toUpperCase();
+    final s = source.toUpperCase();
+    return t == 'CREDIT' ||
+        t == 'DEPOSIT' ||
+        t == 'UPDATE' ||
+        t == 'REFUND' ||
+        t == 'TRANSFER_IN' ||
+        s == 'FUNDING';
+  }
+
+  bool get isDebit {
+    final t = type.toUpperCase();
+    return t == 'DEBIT' ||
+        t == 'WITHDRAWAL' ||
+        t == 'TRANSFER_OUT' ||
+        t == 'PAYMENT';
+  }
   
   // For UI display
   String get description => narration ?? source;
-  String get status => 'COMPLETED'; // All transactions in history are completed
   
   // For backward compatibility
-  bool get isCompleted => true;
-  bool get isPending => false;
-  bool get isFailed => false;
+  bool get isCompleted => status == 'COMPLETED' || status == 'SUCCESS';
+  bool get isPending => status == 'PENDING';
+  bool get isFailed => status == 'FAILED';
 }

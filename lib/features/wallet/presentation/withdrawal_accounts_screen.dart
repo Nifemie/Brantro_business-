@@ -28,6 +28,10 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
       }
     });
 
+    final activeAccounts = state.accounts
+        .where((acc) => acc.isActive && acc.status != 'DELETED')
+        .toList();
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton(
@@ -47,18 +51,18 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
           children: [
             const DashboardAppBar(title: 'WITHDRAWAL ACCOUNTS'),
             Expanded(
-              child: state.isLoading && state.accounts.isEmpty
+              child: state.isLoading && activeAccounts.isEmpty
                   ? const Center(child: CircularProgressIndicator())
-                  : state.accounts.isEmpty
+                  : activeAccounts.isEmpty
                       ? _buildEmptyState(isDark)
                       : RefreshIndicator(
                           onRefresh: () => ref.read(withdrawalAccountsProvider.notifier).fetchAccounts(),
                           child: ListView.separated(
                             padding: EdgeInsets.all(16.w),
-                            itemCount: state.accounts.length,
-                            separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                            itemCount: activeAccounts.length,
+                            separatorBuilder: (context, index) => SizedBox(height: 12.h),
                             itemBuilder: (context, index) {
-                              final account = state.accounts[index];
+                              final account = activeAccounts[index];
                               return _buildAccountCard(account, isDark);
                             },
                           ),
@@ -106,7 +110,7 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.05),
+            color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -127,7 +131,7 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
                 Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: AppColors.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.account_balance, color: AppColors.primaryColor, size: 24.sp),
@@ -160,7 +164,7 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.1),
+                      color: AppColors.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Text(
@@ -208,7 +212,9 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
                     title: const Text('Set as Default'),
                     onTap: () {
                       Navigator.pop(context);
-                      ref.read(withdrawalAccountsProvider.notifier).makeDefault(account.id!);
+                      if (account.id != null) {
+                        ref.read(withdrawalAccountsProvider.notifier).makeDefault(account.id!);
+                      }
                     },
                   ),
                 ListTile(
@@ -229,11 +235,14 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
   }
 
   void _confirmDelete(WithdrawalAccountModel account) {
+    final lastFour = account.accountNumber.length >= 4
+        ? account.accountNumber.substring(account.accountNumber.length - 4)
+        : account.accountNumber;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
-        content: Text('Are you sure you want to delete ${account.bankName} ending in ${account.accountNumber.substring(account.accountNumber.length - 4)}?'),
+        content: Text('Are you sure you want to delete ${account.bankName} ending in $lastFour?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -242,10 +251,16 @@ class _WithdrawalAccountsScreenState extends ConsumerState<WithdrawalAccountsScr
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              final success = await ref.read(withdrawalAccountsProvider.notifier).deleteAccount(account.id!);
-              if (success && context.mounted) {
+              if (account.id != null) {
+                final success = await ref.read(withdrawalAccountsProvider.notifier).deleteAccount(account.id!);
+                if (success && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Account deleted successfully'), backgroundColor: Colors.black87),
+                  );
+                }
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Account deleted successfully'), backgroundColor: Colors.black87),
+                  const SnackBar(content: Text('Unable to delete: Missing account identifier.'), backgroundColor: Colors.red),
                 );
               }
             },

@@ -3,15 +3,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../ad_slot/presentation/widgets/ad_slot_dropdown_field.dart';
 
+typedef AddAnnouncementCallback = Future<void> Function({
+  required String title,
+  required String audience,
+  String? category,
+  String? actionText,
+  String? actionUrl,
+  required String description,
+});
+
 class AddAnnouncementDialog extends StatefulWidget {
-  final Function({
-    required String title,
-    required String audience,
-    String? category,
-    String? actionText,
-    String? actionUrl,
-    required String description,
-  }) onSubmit;
+  final AddAnnouncementCallback onSubmit;
 
   const AddAnnouncementDialog({
     super.key,
@@ -47,19 +49,23 @@ class _AddAnnouncementDialogState extends State<AddAnnouncementDialog> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final availableHeight = MediaQuery.of(context).size.height - MediaQuery.of(context).viewInsets.bottom;
+
     return Dialog(
       insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
       backgroundColor: theme.cardTheme.color ?? (isDark ? Colors.grey[900] : Colors.white),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.r),
       ),
-      child: Container(
-        width: double.infinity,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: (availableHeight - 48.h).clamp(200.0, double.infinity),
+        ),
         child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(24.w),
-            child: Form(
-              key: _formKey,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.all(24.w),
+          child: Form(
+            key: _formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,9 +236,8 @@ class _AddAnnouncementDialogState extends State<AddAnnouncementDialog> {
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   InputDecoration _buildInputDecoration({required String hintText, required bool isDark}) {
     return InputDecoration(
@@ -285,17 +290,25 @@ class _AddAnnouncementDialogState extends State<AddAnnouncementDialog> {
     );
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      widget.onSubmit(
-        title: _titleController.text,
-        audience: _selectedAudience,
-        category: _categoryController.text.isNotEmpty ? _categoryController.text : null,
-        actionText: _actionTextController.text.isNotEmpty ? _actionTextController.text : null,
-        actionUrl: _actionUrlController.text.isNotEmpty ? _actionUrlController.text : null,
-        description: _descriptionController.text,
-      );
+      final title = _titleController.text.trim();
+      final audience = _selectedAudience;
+      final category = _categoryController.text.trim();
+      final actionText = _actionTextController.text.trim();
+      final actionUrl = _actionUrlController.text.trim();
+      final description = _descriptionController.text.trim();
+
       Navigator.pop(context);
+
+      await widget.onSubmit(
+        title: title,
+        audience: audience,
+        category: category.isNotEmpty ? category : null,
+        actionText: actionText.isNotEmpty ? actionText : null,
+        actionUrl: actionUrl.isNotEmpty ? actionUrl : null,
+        description: description,
+      );
     }
   }
 }

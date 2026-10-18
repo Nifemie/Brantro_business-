@@ -91,13 +91,16 @@ class WalletRepository {
       log('[WalletRepository] Status Code: ${e.response?.statusCode}');
       log('[WalletRepository] Error Response: ${e.response?.data}');
 
-      final errorMessage = e.response?.statusCode == 401
-          ? 'Unauthorized: Please log in again'
-          : e.response?.statusCode == 403
-          ? 'Forbidden: You do not have access to transactions'
-          : e.response?.data['message'] ??
-                e.response?.data['error'] ??
-                'Failed to fetch transactions. Please try again.';
+      String errorMessage = 'Failed to fetch transactions. Please try again.';
+      if (e.response?.statusCode == 401) {
+        errorMessage = 'Unauthorized: Please log in again';
+      } else if (e.response?.statusCode == 403) {
+        errorMessage = 'Forbidden: You do not have access to transactions';
+      } else if (e.response?.data is Map) {
+        errorMessage = e.response?.data['message'] ??
+            e.response?.data['error'] ??
+            errorMessage;
+      }
 
       throw Exception(errorMessage);
     } catch (e) {
@@ -113,21 +116,37 @@ class WalletRepository {
       log('[WalletRepository] Fetching withdrawal accounts');
       final response = await apiClient.get(ApiEndpoints.withdrawalAccountList);
       
-      if (response.data != null && response.data['success'] == true) {
-        final payload = response.data['payload'];
-        // Assume payload is a list or contains a list
+      if (response.data != null) {
+        dynamic payload = response.data;
+        if (response.data is Map) {
+          payload = response.data['payload'] ??
+              response.data['data'] ??
+              response.data['accounts'] ??
+              (response.data['success'] == true ? response.data : null);
+        }
         List<dynamic> data = [];
         if (payload is List) {
           data = payload;
-        } else if (payload != null && payload['page'] is List) {
+        } else if (payload is Map && payload['page'] is List) {
           data = payload['page'];
+        } else if (payload is Map && payload['accounts'] is List) {
+          data = payload['accounts'];
         }
-        return data.map((json) => WithdrawalAccountModel.fromJson(json)).toList();
+        final accounts = data
+            .whereType<Map<String, dynamic>>()
+            .map((json) => WithdrawalAccountModel.fromJson(json))
+            .where((acc) => acc.isActive && acc.status != 'DELETED')
+            .toList();
+        return accounts;
       }
       return [];
     } on DioException catch (e) {
       log('[WalletRepository] Failed to fetch withdrawal accounts: ${e.message}');
-      throw Exception(e.response?.data?['message'] ?? 'Failed to load withdrawal accounts.');
+      String msg = 'Failed to load withdrawal accounts.';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
     }
   }
 
@@ -140,11 +159,11 @@ class WalletRepository {
       );
       
       final isSuccess = response.data != null &&
-          (response.data['success'] == true ||
+          ((response.data is Map && response.data['success'] == true) ||
            response.statusCode == 200 ||
            response.statusCode == 201);
 
-      if (isSuccess) {
+      if (isSuccess && response.data is Map) {
         final payload = response.data['payload'] ??
             response.data['data'] ??
             response.data['account'];
@@ -154,13 +173,16 @@ class WalletRepository {
         }
         return account;
       }
-      final msg = response.data?['message'] ?? 'Failed to add account. Invalid response.';
+      final msg = response.data is Map
+          ? (response.data['message'] ?? 'Failed to add account. Invalid response.')
+          : 'Failed to add account. Invalid response.';
       throw Exception(msg);
     } on DioException catch (e) {
       log('[WalletRepository] Failed to add withdrawal account: ${e.message}');
-      final msg = e.response?.data?['message'] ??
-          e.response?.data?['error'] ??
-          'Failed to add withdrawal account. Please check your bank details.';
+      String msg = 'Failed to add withdrawal account. Please check your bank details.';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
       throw Exception(msg);
     }
   }
@@ -171,12 +193,22 @@ class WalletRepository {
       final response = await apiClient.delete(
         ApiEndpoints.deleteWithdrawalAccount(id),
       );
-      if (response.data == null || response.data['success'] != true) {
+      final isSuccess = response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          (response.data is Map &&
+              (response.data['success'] == true ||
+                  response.data['status'] == 'success' ||
+                  response.data['message'] != null));
+      if (!isSuccess) {
          throw Exception('Failed to delete account.');
       }
     } on DioException catch (e) {
       log('[WalletRepository] Failed to delete withdrawal account: ${e.message}');
-      throw Exception(e.response?.data?['message'] ?? 'Failed to delete withdrawal account.');
+      String msg = 'Failed to delete withdrawal account.';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
     }
   }
 
@@ -186,12 +218,22 @@ class WalletRepository {
       final response = await apiClient.patch(
         ApiEndpoints.defaultWithdrawalAccount(id),
       );
-      if (response.data == null || response.data['success'] != true) {
-         throw Exception('Failed to set default account.');
+      final isSuccess = response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          (response.data is Map &&
+              (response.data['success'] == true ||
+               response.data['status'] == 'success'));
+      if (!isSuccess) {
+         final msg = response.data is Map ? (response.data['message'] ?? 'Failed to set default account.') : 'Failed to set default account.';
+         throw Exception(msg);
       }
     } on DioException catch (e) {
       log('[WalletRepository] Failed to set default account: ${e.message}');
-      throw Exception(e.response?.data?['message'] ?? 'Failed to set default account.');
+      String msg = 'Failed to set default account.';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
     }
   }
 
@@ -211,12 +253,23 @@ class WalletRepository {
         },
       );
       
-      if (response.data == null || response.data['success'] != true) {
-         throw Exception(response.data?['message'] ?? 'Failed to request withdrawal.');
+      final isSuccess = response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          (response.data is Map &&
+              (response.data['success'] == true ||
+               response.data['status'] == 'success'));
+
+      if (!isSuccess) {
+         final msg = response.data is Map ? (response.data['message'] ?? 'Failed to request withdrawal.') : 'Failed to request withdrawal.';
+         throw Exception(msg);
       }
     } on DioException catch (e) {
       log('[WalletRepository] Failed to request withdrawal: ${e.message}');
-      throw Exception(e.response?.data?['message'] ?? 'Failed to request withdrawal.');
+      String msg = 'Failed to request withdrawal.';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
     }
   }
 }

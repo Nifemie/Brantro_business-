@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/wallet_repository.dart';
 import '../data/models/withdrawal_account_model.dart';
 import 'wallet_notifier.dart'; // To get walletRepositoryProvider
 
@@ -44,7 +45,7 @@ class WithdrawalAccountsState {
 }
 
 class WithdrawalAccountsNotifier extends StateNotifier<WithdrawalAccountsState> {
-  final _repository;
+  final WalletRepository _repository;
 
   WithdrawalAccountsNotifier(this._repository) : super(WithdrawalAccountsState.initial());
 
@@ -103,6 +104,7 @@ class WithdrawalAccountsNotifier extends StateNotifier<WithdrawalAccountsState> 
             isVerified: acc.isVerified,
             isActive: acc.isActive,
             isDefault: true,
+            status: acc.status,
             createdAt: acc.createdAt,
             updatedAt: acc.updatedAt,
           );
@@ -116,6 +118,7 @@ class WithdrawalAccountsNotifier extends StateNotifier<WithdrawalAccountsState> 
             isVerified: acc.isVerified,
             isActive: acc.isActive,
             isDefault: false,
+            status: acc.status,
             createdAt: acc.createdAt,
             updatedAt: acc.updatedAt,
           );

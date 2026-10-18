@@ -55,6 +55,13 @@ class RecentTransactionsList extends ConsumerWidget {
         TransactionType mappedType = TransactionType.deposit;
         if (tx.isDebit) mappedType = TransactionType.withdrawal;
         
+        TransactionStatus mappedStatus = TransactionStatus.completed;
+        if (tx.isPending) {
+          mappedStatus = TransactionStatus.pending;
+        } else if (tx.isFailed) {
+          mappedStatus = TransactionStatus.failed;
+        }
+
         final formattedDate = DateFormat('MMM dd, yyyy • hh:mm a').format(tx.createdAt);
 
         return TransactionCard(
@@ -63,7 +70,7 @@ class RecentTransactionsList extends ConsumerWidget {
           amount: '₦${NumberFormat('#,##0.00').format(tx.amount)}',
           date: formattedDate,
           reference: tx.reference,
-          status: TransactionStatus.completed,
+          status: mappedStatus,
           onTap: () {
             context.push('/wallet/transaction-receipt', extra: {'transaction': tx});
           },

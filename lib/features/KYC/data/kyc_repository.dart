@@ -131,4 +131,69 @@ class KycRepository {
       throw Exception(errorMessage);
     }
   }
+
+  /// Get list of KYC verification submissions
+  Future<List<KycRecordModel>> getKycList({int page = 1, int size = 20}) async {
+    try {
+      final response = await apiClient.get(
+        ApiEndpoints.kycList,
+        query: {'page': page, 'size': size},
+      );
+
+      final data = response.data;
+      dynamic rawList;
+      if (data is Map) {
+        rawList = data['payload'] ?? data['data'] ?? data['results'] ?? data['items'];
+      } else {
+        rawList = data;
+      }
+
+      if (rawList is List) {
+        return rawList
+            .whereType<Map>()
+            .map((item) => KycRecordModel.fromJson(
+                  item.map((k, v) => MapEntry(k.toString(), v)),
+                ))
+            .toList();
+      }
+
+      return [];
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['error'] ?? 'Failed to fetch KYC list.')
+          : (e.response?.data?.toString() ?? 'Failed to fetch KYC list.');
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('An unexpected error occurred while fetching KYC list: $e');
+    }
+  }
+
+  /// Override KYC status for a user/submission (Admin/User)
+  Future<Map<String, dynamic>> overrideKycStatus({
+    required dynamic id,
+    required String status,
+  }) async {
+    try {
+      final request = KycOverrideRequest(status: status.toUpperCase());
+      final response = await apiClient.put(
+        ApiEndpoints.kycOverride(id),
+        data: request.toJson(),
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return data;
+      } else if (data is Map) {
+        return data.map((k, v) => MapEntry(k.toString(), v));
+      }
+      return {'success': true, 'data': data};
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['error'] ?? 'Failed to override KYC status.')
+          : (e.response?.data?.toString() ?? 'Failed to override KYC status.');
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('An unexpected error occurred while overriding KYC status: $e');
+    }
+  }
 }

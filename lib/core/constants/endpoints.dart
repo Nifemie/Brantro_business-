@@ -68,9 +68,18 @@ class ApiEndpoints {
   // KYC Endpoints
   static const String kycInitiate = '$apiVersion/kyc/initiate';
   static const String kycStatus = '$apiVersion/kyc/status';
-  static const String kycSubmit = '$apiVersion/kyc/submit';
+  static const String kycStats = '$apiVersion/kyc/stats';
+  static const String kycList = '$apiVersion/kyc/list';
   static const String kycVerifyOtp = '$apiVersion/kyc/verify-otp';
   static const String kycFace = '$apiVersion/kyc/face';
+  static String kycOverride(dynamic id) => '$apiVersion/kyc/$id/override';
+
+  // Announcement Endpoints
+  static const String createAnnouncement = '$apiVersion/announcement';
+  static const String announcementsList = '$apiVersion/announcement/list';
+  static const String searchAnnouncements = '$apiVersion/announcement/search';
+  static String updateAnnouncement(dynamic id) => '$apiVersion/announcement/$id';
+  static String deleteAnnouncement(dynamic id) => '$apiVersion/announcement/$id';
 
   // Contact/Message Endpoints
   static const String sendMessage = '$apiVersion/message';

@@ -100,7 +100,7 @@ class _AddWithdrawalAccountBottomSheetState extends ConsumerState<AddWithdrawalA
                   Expanded(
                     child: ListView.separated(
                       itemCount: filteredBanks.length,
-                      separatorBuilder: (_, __) => Divider(
+                      separatorBuilder: (context, index) => Divider(
                         height: 1,
                         color: isDark ? Colors.white12 : Colors.grey.shade200,
                       ),

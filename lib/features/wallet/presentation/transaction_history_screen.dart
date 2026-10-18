@@ -8,6 +8,7 @@ import 'widgets/transaction_search_bar.dart';
 import 'widgets/transaction_filter_chips.dart';
 import '../logic/transactions_notifier.dart';
 import '../data/models/transaction_model.dart';
+import '../../../controllers/re_useable/app_color.dart';
 
 class TransactionHistoryScreen extends ConsumerStatefulWidget {
   const TransactionHistoryScreen({super.key});
@@ -184,67 +185,90 @@ class _TransactionHistoryScreenState extends ConsumerState<TransactionHistoryScr
               ),
             )
           else if (groups.isEmpty)
-            Expanded(child: _buildEmptyState())
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(transactionsProvider.notifier).fetchTransactions(refresh: true),
+                color: AppColors.primaryColor,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(height: 100.h),
+                    _buildEmptyState(),
+                  ],
+                ),
+              ),
+            )
           else
             Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
-                physics: const BouncingScrollPhysics(),
-                itemCount: groups.length + (transactionsState.isPaginating ? 1 : 0),
-                itemBuilder: (context, gIndex) {
-                  if (gIndex == groups.length) {
-                    return Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.h),
-                        child: const CircularProgressIndicator(),
-                      ),
-                    );
-                  }
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(transactionsProvider.notifier).fetchTransactions(refresh: true),
+                color: AppColors.primaryColor,
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: groups.length + (transactionsState.isPaginating ? 1 : 0),
+                  itemBuilder: (context, gIndex) {
+                    if (gIndex == groups.length) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.h),
+                          child: const CircularProgressIndicator(),
+                        ),
+                      );
+                    }
 
-                  final groupName = groups[gIndex];
-                  final items = groupedData[groupName]!;
+                    final groupName = groups[gIndex];
+                    final items = groupedData[groupName]!;
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        child: Text(
-                          groupName.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w800,
-                            color: isDark
-                                ? Colors.grey[500]
-                                : Colors.grey[600],
-                            letterSpacing: 1.2,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          child: Text(
+                            groupName.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w800,
+                              color: isDark
+                                  ? Colors.grey[500]
+                                  : Colors.grey[600],
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
-                      ),
-                      ...items.map(
-                        (tx) {
-                          TransactionType mappedType = TransactionType.deposit;
-                          if (tx.isDebit) mappedType = TransactionType.withdrawal;
-                          
-                          final formattedDate = DateFormat('MMM dd, yyyy • hh:mm a').format(tx.createdAt);
+                        ...items.map(
+                          (tx) {
+                            TransactionType mappedType = TransactionType.deposit;
+                            if (tx.isDebit) mappedType = TransactionType.withdrawal;
+                            
+                            TransactionStatus mappedStatus = TransactionStatus.completed;
+                            if (tx.isPending) {
+                              mappedStatus = TransactionStatus.pending;
+                            } else if (tx.isFailed) {
+                              mappedStatus = TransactionStatus.failed;
+                            }
 
-                          return TransactionCard(
-                            type: mappedType,
-                            description: tx.description,
-                            amount: '₦${NumberFormat('#,##0.00').format(tx.amount)}',
-                            date: formattedDate,
-                            reference: tx.reference,
-                            status: TransactionStatus.completed,
-                            onTap: () {
-                              context.push('/wallet/transaction-receipt', extra: {'transaction': tx});
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  );
-                },
+                            final formattedDate = DateFormat('MMM dd, yyyy • hh:mm a').format(tx.createdAt);
+
+                            return TransactionCard(
+                              type: mappedType,
+                              description: tx.description,
+                              amount: '₦${NumberFormat('#,##0.00').format(tx.amount)}',
+                              date: formattedDate,
+                              reference: tx.reference,
+                              status: mappedStatus,
+                              onTap: () {
+                                context.push('/wallet/transaction-receipt', extra: {'transaction': tx});
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
         ],

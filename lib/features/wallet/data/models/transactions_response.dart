@@ -30,6 +30,23 @@ class TransactionsResponse {
       );
     }
 
+    if (payloadData is List) {
+      final transactions = payloadData
+          .where((e) => e != null && e is Map<String, dynamic>)
+          .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return TransactionsResponse(
+        success: success,
+        message: message,
+        payload: TransactionsPayload(
+          transactions: transactions,
+          currentPage: '0',
+          size: transactions.length.toString(),
+          totalPages: 1,
+        ),
+      );
+    }
+
     final payload = TransactionsPayload.fromJson(
       payloadData as Map<String, dynamic>,
     );
@@ -56,18 +73,26 @@ class TransactionsPayload {
   });
 
   factory TransactionsPayload.fromJson(Map<String, dynamic> json) {
-    final pageList = json['page'] as List? ?? [];
+    final rawList = json['page'] ??
+        json['transactions'] ??
+        json['content'] ??
+        json['items'] ??
+        json['data'];
+
+    final pageList = rawList is List ? rawList : [];
 
     final transactions = pageList
         .where((e) => e != null && e is Map<String, dynamic>)
         .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
         .toList();
 
+    final parsedTotalPages = int.tryParse(json['totalPages']?.toString() ?? '0') ?? 0;
+
     return TransactionsPayload(
       transactions: transactions,
       currentPage: json['currentPage']?.toString() ?? '0',
       size: json['size']?.toString() ?? '20',
-      totalPages: json['totalPages'] as int? ?? 0,
+      totalPages: parsedTotalPages,
     );
   }
 }

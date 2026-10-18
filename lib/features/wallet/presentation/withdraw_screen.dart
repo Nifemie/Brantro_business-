@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_button.dart';
 import '../logic/withdrawal_accounts_notifier.dart';
@@ -47,11 +48,12 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
   }
 
   void _submit() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
     
-    if (_selectedAccount == null) {
+    if (_selectedAccount == null || _selectedAccount!.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a withdrawal account')),
+        const SnackBar(content: Text('Please select a valid withdrawal account')),
       );
       return;
     }
@@ -66,12 +68,31 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
       return;
     }
 
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final wallet = ref.read(walletProvider).wallet;
+    final currentBalance = wallet?.balanceAmount ?? 0.0;
+    if (amount > currentBalance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Insufficient wallet balance. Available: ₦${NumberFormat('#,##0.00').format(currentBalance)}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final amount = double.tryParse(_amountController.text.trim()) ?? 0;
       final narration = _narrationController.text.trim().isEmpty ? 'Withdrawal' : _narrationController.text.trim();
       
       await ref.read(walletRepositoryProvider).requestWithdrawal(
@@ -109,26 +130,29 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final accountsState = ref.watch(withdrawalAccountsProvider);
+    final activeAccounts = accountsState.accounts
+        .where((acc) => acc.isActive && acc.status != 'DELETED')
+        .toList();
 
     // Sync selected account with latest accounts list
     WithdrawalAccountModel? effectiveAccount;
     if (_selectedAccount != null) {
-      effectiveAccount = accountsState.accounts.cast<WithdrawalAccountModel?>().firstWhere(
-        (acc) => acc?.id == _selectedAccount!.id || acc?.accountNumber == _selectedAccount!.accountNumber,
+      effectiveAccount = activeAccounts.cast<WithdrawalAccountModel?>().firstWhere(
+        (acc) => acc != null && (acc.id == _selectedAccount!.id || acc.accountNumber == _selectedAccount!.accountNumber),
         orElse: () => null,
       );
     }
-    effectiveAccount ??= accountsState.accounts.cast<WithdrawalAccountModel?>().firstWhere(
+    effectiveAccount ??= activeAccounts.cast<WithdrawalAccountModel?>().firstWhere(
       (acc) => acc?.isDefault == true && acc?.isVerified == true,
-      orElse: () => accountsState.accounts.cast<WithdrawalAccountModel?>().firstWhere(
+      orElse: () => activeAccounts.cast<WithdrawalAccountModel?>().firstWhere(
         (acc) => acc?.isVerified == true,
-        orElse: () => accountsState.accounts.isNotEmpty ? accountsState.accounts.first : null,
+        orElse: () => activeAccounts.isNotEmpty ? activeAccounts.first : null,
       ),
     );
     _selectedAccount = effectiveAccount;
 
     // Check if user has at least one verified account and current selection is verified
-    final hasAnyVerified = accountsState.accounts.any((acc) => acc.isVerified);
+    final hasAnyVerified = activeAccounts.any((acc) => acc.isVerified);
     final isSelectedVerified = _selectedAccount?.isVerified ?? false;
     final canWithdraw = hasAnyVerified && isSelectedVerified;
 
@@ -148,14 +172,14 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                     children: [
                       // Verification Warning Card ONLY if no verified account exists or currently selected is unverified
                       if (!accountsState.isLoading &&
-                          accountsState.accounts.isNotEmpty &&
+                          activeAccounts.isNotEmpty &&
                           (!hasAnyVerified || !isSelectedVerified)) ...[
                         Container(
                           padding: EdgeInsets.all(16.w),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(isDark ? 0.15 : 0.1),
+                            color: Colors.amber.withValues(alpha: isDark ? 0.15 : 0.1),
                             borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: Colors.amber.shade700.withOpacity(0.4)),
+                            border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.4)),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,7 +250,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                           hintText: '0.00',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
-                            borderSide: BorderSide(color: AppColors.primaryColor.withOpacity(0.5)),
+                            borderSide: BorderSide(color: AppColors.primaryColor.withValues(alpha: 0.5)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16.r),
@@ -255,7 +279,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                               color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
-                          if (accountsState.accounts.isNotEmpty)
+                          if (activeAccounts.isNotEmpty)
                             TextButton(
                               onPressed: _navigateToAccounts,
                               child: Text('Manage', style: TextStyle(color: AppColors.primaryColor)),
@@ -265,12 +289,12 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                       
                       SizedBox(height: 8.h),
                       
-                      if (accountsState.isLoading && accountsState.accounts.isEmpty)
+                      if (accountsState.isLoading && activeAccounts.isEmpty)
                         const Center(child: CircularProgressIndicator())
-                      else if (accountsState.accounts.isEmpty)
+                      else if (activeAccounts.isEmpty)
                         _buildEmptyAccounts(isDark)
                       else
-                        _buildAccountSelector(accountsState.accounts, isDark),
+                        _buildAccountSelector(activeAccounts, isDark),
                         
                       SizedBox(height: 32.h),
                       
@@ -365,7 +389,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                   Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
-                      color: (isVerified ? Colors.green : Colors.orange).withOpacity(0.12),
+                      color: (isVerified ? Colors.green : Colors.orange).withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -391,7 +415,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryColor.withOpacity(0.12),
+                                  color: AppColors.primaryColor.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(4.r),
                                 ),
                                 child: Text(
@@ -408,7 +432,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                               decoration: BoxDecoration(
-                                color: (isVerified ? Colors.green : Colors.orange).withOpacity(0.12),
+                                color: (isVerified ? Colors.green : Colors.orange).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(4.r),
                               ),
                               child: Text(

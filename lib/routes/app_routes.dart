@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:brantro_business/features/auth/presentation/splashscreen/splashscreen.dart';
 import 'package:brantro_business/features/auth/presentation/introductory/intro_wrapper.dart';
@@ -11,6 +12,7 @@ import 'package:brantro_business/features/auth/presentation/onboarding/forget_pa
 import 'package:brantro_business/features/auth/presentation/onboarding/forget_password/reset_password.dart';
 import 'package:brantro_business/features/dashboard/presentation/screens/dashboard_shell.dart';
 import 'package:brantro_business/features/account/presentation/user_account.dart';
+import 'package:brantro_business/features/wallet/presentation/wallet_screen.dart';
 import 'package:brantro_business/features/wallet/presentation/transaction_history_screen.dart';
 import 'package:brantro_business/features/wallet/presentation/transaction_receipt_screen.dart';
 import 'package:brantro_business/features/wallet/presentation/withdrawal_accounts_screen.dart';
@@ -80,6 +82,35 @@ import 'package:brantro_business/features/auth/presentation/lock_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
+  errorBuilder: (context, state) => Scaffold(
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.orange),
+            const SizedBox(height: 16),
+            const Text(
+              'Page Not Found',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.uri.toString(),
+              style: const TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => context.go('/dashboard'),
+              child: const Text('Back to Dashboard'),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
   redirect: (context, state) async {
     final isLoggedIn = await SessionService.isLoggedIn();
     final loc = state.matchedLocation;
@@ -239,6 +270,11 @@ final router = GoRouter(
       builder: (context, state) => const ChatScreen(),
     ),
     GoRoute(
+      path: '/wallet',
+      name: 'wallet',
+      builder: (context, state) => const WalletScreen(),
+    ),
+    GoRoute(
       path: '/wallet/transactions',
       name: 'wallet-transactions',
       builder: (context, state) => const TransactionHistoryScreen(),
@@ -247,9 +283,15 @@ final router = GoRouter(
       path: '/wallet/transaction-receipt',
       name: 'transaction-receipt',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        final transaction = extra['transaction'] as TransactionModel;
-        return TransactionReceiptScreen(transaction: transaction);
+        final extra = state.extra;
+        if (extra is Map<String, dynamic> && extra['transaction'] is TransactionModel) {
+          return TransactionReceiptScreen(transaction: extra['transaction'] as TransactionModel);
+        } else if (extra is TransactionModel) {
+          return TransactionReceiptScreen(transaction: extra);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Transaction details not found')),
+        );
       },
     ),
 
@@ -271,8 +313,8 @@ final router = GoRouter(
       builder: (context, state) {
         final extra = state.extra;
         Map<String, String>? filters;
-        if (extra is Map<String, dynamic>) {
-          filters = extra.map((key, value) => MapEntry(key, value.toString()));
+        if (extra is Map) {
+          filters = extra.map((key, value) => MapEntry(key.toString(), value.toString()));
         }
         return OrdersScreen(filters: filters, showBackButton: true);
       },
@@ -283,9 +325,36 @@ final router = GoRouter(
       path: '/order-details',
       name: 'order-details',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        final order = extra['order'] as OrderModel;
-        return OrderDetailsScreen(order: order);
+        final extra = state.extra;
+        OrderModel? order;
+        if (extra is OrderModel) {
+          order = extra;
+        } else if (extra is Map && extra['order'] is OrderModel) {
+          order = extra['order'] as OrderModel;
+        }
+        if (order != null) {
+          return OrderDetailsScreen(order: order);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Order details not found')),
+        );
+      },
+    ),
+
+    // Order Details By ID Route (Notification / Deep Links)
+    GoRoute(
+      path: '/orders/details/:orderId',
+      name: 'order-details-by-id',
+      builder: (context, state) {
+        final orderId = state.pathParameters['orderId'];
+        final extra = state.extra;
+        OrderModel? order;
+        if (extra is OrderModel) {
+          order = extra;
+        } else if (extra is Map && extra['order'] is OrderModel) {
+          order = extra['order'] as OrderModel;
+        }
+        return OrderDetailsScreen(order: order, orderId: orderId);
       },
     ),
 
@@ -301,7 +370,8 @@ final router = GoRouter(
       path: '/edit-profile',
       name: 'edit-profile',
       builder: (context, state) {
-        final userData = (state.extra as Map<String, dynamic>?);
+        final raw = state.extra;
+        final userData = raw is Map ? Map<String, dynamic>.from(raw) : null;
         return EditProfileScreen(userData: userData);
       },
     ),
@@ -365,9 +435,19 @@ final router = GoRouter(
       path: '/template-details',
       name: 'template-details',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
-        final template = extra['template'] as TemplateModel;
-        return TemplateDetailsScreen(template: template);
+        final extra = state.extra;
+        TemplateModel? template;
+        if (extra is TemplateModel) {
+          template = extra;
+        } else if (extra is Map && extra['template'] is TemplateModel) {
+          template = extra['template'] as TemplateModel;
+        }
+        if (template != null) {
+          return TemplateDetailsScreen(template: template);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Template details not found')),
+        );
       },
     ),
 
@@ -390,9 +470,19 @@ final router = GoRouter(
       path: '/creative-details',
       name: 'creative-details',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
-        final creative = extra['creative'] as CreativeModel;
-        return CreativeDetailsScreen(creative: creative);
+        final extra = state.extra;
+        CreativeModel? creative;
+        if (extra is CreativeModel) {
+          creative = extra;
+        } else if (extra is Map && extra['creative'] is CreativeModel) {
+          creative = extra['creative'] as CreativeModel;
+        }
+        if (creative != null) {
+          return CreativeDetailsScreen(creative: creative);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Creative details not found')),
+        );
       },
     ),
 
@@ -401,9 +491,19 @@ final router = GoRouter(
       path: '/service-details',
       name: 'service-details',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
-        final service = extra['service'] as ServiceModel;
-        return ServiceDetailsScreen(service: service);
+        final extra = state.extra;
+        ServiceModel? service;
+        if (extra is ServiceModel) {
+          service = extra;
+        } else if (extra is Map && extra['service'] is ServiceModel) {
+          service = extra['service'] as ServiceModel;
+        }
+        if (service != null) {
+          return ServiceDetailsScreen(service: service);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Service details not found')),
+        );
       },
     ),
 
@@ -447,9 +547,11 @@ final router = GoRouter(
       path: '/upload-billboard',
       name: 'upload-billboard',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final isUpdate = extra['isUpdate'] == true;
-        final billboard = extra['billboard'] as BillboardModel?;
+        final billboard = extra['billboard'] is BillboardModel
+            ? extra['billboard'] as BillboardModel
+            : null;
         return UploadBillboardScreen(
           isUpdate: isUpdate,
           billboard: billboard,
@@ -462,9 +564,19 @@ final router = GoRouter(
       path: '/billboard-details',
       name: 'billboard-details',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
-        final billboard = extra['billboard'] as BillboardModel;
-        return BillboardDetailsScreen(billboard: billboard);
+        final extra = state.extra;
+        BillboardModel? billboard;
+        if (extra is BillboardModel) {
+          billboard = extra;
+        } else if (extra is Map && extra['billboard'] is BillboardModel) {
+          billboard = extra['billboard'] as BillboardModel;
+        }
+        if (billboard != null) {
+          return BillboardDetailsScreen(billboard: billboard);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Billboard details not found')),
+        );
       },
     ),
 
@@ -473,7 +585,7 @@ final router = GoRouter(
       path: '/billboard-orders',
       name: 'billboard-orders',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final billboardId = extra['billboardId']?.toString() ?? '';
         return BillboardOrdersScreen(billboardId: billboardId);
       },
@@ -491,9 +603,10 @@ final router = GoRouter(
       path: '/upload-wall',
       name: 'upload-wall',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final isUpdate = extra['isUpdate'] == true;
-        final wall = extra['wall'] as WallModel?;
+        final wall =
+            extra['wall'] is WallModel ? extra['wall'] as WallModel : null;
         return UploadWallScreen(
           isUpdate: isUpdate,
           wall: wall,
@@ -506,9 +619,19 @@ final router = GoRouter(
       path: '/wall-details',
       name: 'wall-details',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
-        final wall = extra['wall'] as WallModel;
-        return WallDetailsScreen(wall: wall);
+        final extra = state.extra;
+        WallModel? wall;
+        if (extra is WallModel) {
+          wall = extra;
+        } else if (extra is Map && extra['wall'] is WallModel) {
+          wall = extra['wall'] as WallModel;
+        }
+        if (wall != null) {
+          return WallDetailsScreen(wall: wall);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Wall details not found')),
+        );
       },
     ),
 
@@ -524,9 +647,10 @@ final router = GoRouter(
       path: '/upload-screen',
       name: 'upload-screen',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final isUpdate = extra['isUpdate'] == true;
-        final screen = extra['screen'] as ScreenModel?;
+        final screen =
+            extra['screen'] is ScreenModel ? extra['screen'] as ScreenModel : null;
         return UploadScreenScreen(
           isUpdate: isUpdate,
           screen: screen,
@@ -539,9 +663,19 @@ final router = GoRouter(
       path: '/screen-details',
       name: 'screen-details',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
-        final screen = extra['screen'] as ScreenModel;
-        return ScreenDetailsScreen(screen: screen);
+        final extra = state.extra;
+        ScreenModel? screen;
+        if (extra is ScreenModel) {
+          screen = extra;
+        } else if (extra is Map && extra['screen'] is ScreenModel) {
+          screen = extra['screen'] as ScreenModel;
+        }
+        if (screen != null) {
+          return ScreenDetailsScreen(screen: screen);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Screen details not found')),
+        );
       },
     ),
 
@@ -557,9 +691,11 @@ final router = GoRouter(
       path: '/upload-vehicle',
       name: 'upload-vehicle',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final isUpdate = extra['isUpdate'] == true;
-        final vehicle = extra['vehicle'] as VehicleModel?;
+        final vehicle = extra['vehicle'] is VehicleModel
+            ? extra['vehicle'] as VehicleModel
+            : null;
         return UploadVehicleScreen(
           isUpdate: isUpdate,
           vehicle: vehicle,
@@ -572,9 +708,19 @@ final router = GoRouter(
       path: '/vehicle-details',
       name: 'vehicle-details',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
-        final vehicle = extra['vehicle'] as VehicleModel;
-        return VehicleDetailsScreen(vehicle: vehicle);
+        final extra = state.extra;
+        VehicleModel? vehicle;
+        if (extra is VehicleModel) {
+          vehicle = extra;
+        } else if (extra is Map && extra['vehicle'] is VehicleModel) {
+          vehicle = extra['vehicle'] as VehicleModel;
+        }
+        if (vehicle != null) {
+          return VehicleDetailsScreen(vehicle: vehicle);
+        }
+        return const Scaffold(
+          body: Center(child: Text('Vehicle details not found')),
+        );
       },
     ),
 
@@ -604,10 +750,12 @@ final router = GoRouter(
       path: '/ad-slots',
       name: 'ad-slots',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final parentId = extra['parentId']?.toString() ?? '';
         final parentType = extra['parentType']?.toString() ?? 'billboard';
-        final parentName = extra['parentName']?.toString() ?? '';
+        final parentName = extra['parentName']?.toString() ??
+            extra['billboardTitle']?.toString() ??
+            '';
         return AdSlotScreen(
           parentId: parentId,
           parentType: parentType,
@@ -621,13 +769,13 @@ final router = GoRouter(
       path: '/create-ad-slot',
       name: 'create-ad-slot',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final parentId = extra['parentId']?.toString() ?? '';
         final parentType = extra['parentType']?.toString() ?? 'billboard';
         final parentName = extra['parentName']?.toString() ?? '';
         final isUpdate = extra['isUpdate'] == true;
         final existingSlot = extra['existingSlot'];
-        
+
         return CreateAdSlotScreen(
           parentId: parentId,
           parentType: parentType,
@@ -643,7 +791,7 @@ final router = GoRouter(
       path: '/ad-campaigns',
       name: 'ad-campaigns',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final parentId = extra['parentId']?.toString() ?? '';
         final parentType = extra['parentType']?.toString() ?? 'billboard';
         final parentName = extra['parentName']?.toString() ?? '';
@@ -667,7 +815,7 @@ final router = GoRouter(
       path: '/ads-slots',
       name: 'ads-slots',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final billboardTitle =
             extra['billboardTitle']?.toString() ?? 'Billboard';
         return AdsSlotsScreen(billboardTitle: billboardTitle);
@@ -689,8 +837,11 @@ final router = GoRouter(
       path: '/kyc/submit',
       name: 'kyc-submit',
       builder: (context, state) {
-        final request = state.extra as KycVerificationRequest;
-        return KycSubmissionScreen(request: request);
+        final extra = state.extra;
+        if (extra is KycVerificationRequest) {
+          return KycSubmissionScreen(request: extra);
+        }
+        return const KycFormScreen();
       },
     ),
     GoRoute(
@@ -702,7 +853,7 @@ final router = GoRouter(
       path: '/kyc/face',
       name: 'kyc-face',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final documentNumber = extra['documentNumber']?.toString() ?? '';
         return FaceVerificationScreen(documentNumber: documentNumber);
       },
@@ -711,7 +862,7 @@ final router = GoRouter(
       path: '/kyc/otp',
       name: 'kyc-otp',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final documentNumber = extra['documentNumber']?.toString() ?? '';
         return KycVerificationScreen(documentNumber: documentNumber);
       },
@@ -720,7 +871,7 @@ final router = GoRouter(
       path: '/kyc/gate',
       name: 'kyc-gate',
       builder: (context, state) {
-        final extra = (state.extra ?? {}) as Map;
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
         final requiredFor = extra['requiredFor']?.toString() ??
             extra['featureName']?.toString() ??
             'accessing this feature';
