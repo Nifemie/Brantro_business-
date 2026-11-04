@@ -35,18 +35,25 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   Future<void> _checkLoginStatus() async {
     final isLoggedIn = await SessionService.isLoggedIn();
 
-    setState(() {
-      _isGuest = !isLoggedIn;
-      _isLoading = false;
-    });
+    if (!isLoggedIn) {
+      if (mounted) {
+        context.go('/signin');
+      }
+      return;
+    }
 
-    // Only fetch wallet and transactions if user is logged in
-    if (isLoggedIn) {
-      Future.microtask(() {
-        ref.read(walletProvider.notifier).fetchWallet();
-        ref.read(transactionsProvider.notifier).fetchTransactions();
+    if (mounted) {
+      setState(() {
+        _isGuest = false;
+        _isLoading = false;
       });
     }
+
+    // Only fetch wallet and transactions if user is logged in
+    Future.microtask(() {
+      ref.read(walletProvider.notifier).fetchWallet();
+      ref.read(transactionsProvider.notifier).fetchTransactions();
+    });
   }
 
   Future<void> _handleRefresh() async {

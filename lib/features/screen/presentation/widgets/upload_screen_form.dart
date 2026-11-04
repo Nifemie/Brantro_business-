@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../core/widgets/option_picker_sheet.dart';
 import '../../../../core/constants/nigerian_locations.dart';
+import '../../../../core/utils/thousands_separator_input_formatter.dart';
+import 'package:flutter/services.dart';
 import '../../../category/logic/category_provider.dart';
 import '../../../category/data/models/category_model.dart';
 
@@ -157,6 +159,7 @@ class UploadScreenForm extends ConsumerWidget {
                 hint: 'Select class',
                 onTap: () => _showClassPicker(context),
                 isDark: isDark,
+                isRequired: false,
               ),
             ),
             SizedBox(width: 12.w),
@@ -167,6 +170,7 @@ class UploadScreenForm extends ConsumerWidget {
                 hint: '45000',
                 isDark: isDark,
                 keyboardType: TextInputType.number,
+                isRequired: false,
               ),
             ),
           ],
@@ -183,6 +187,7 @@ class UploadScreenForm extends ConsumerWidget {
                 hint: '1.789',
                 isDark: isDark,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                isRequired: false,
               ),
             ),
             SizedBox(width: 12.w),
@@ -193,6 +198,7 @@ class UploadScreenForm extends ConsumerWidget {
                 hint: '1.908',
                 isDark: isDark,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                isRequired: false,
               ),
             ),
           ],
@@ -201,22 +207,22 @@ class UploadScreenForm extends ConsumerWidget {
         SizedBox(height: 16.h),
         _buildTextField(
           controller: featuresController,
-          label: 'Features (Optional)',
+          label: 'Features',
           hint: 'Describe features',
           isDark: isDark,
           maxLines: 3,
-          isRequired: false,
+          isRequired: true,
         ),
 
         SizedBox(height: 16.h),
         
         _buildTextField(
           controller: specificationsController,
-          label: 'Specifications (Optional)',
+          label: 'Specifications',
           hint: 'Technical specifications',
           isDark: isDark,
           maxLines: 3,
-          isRequired: false,
+          isRequired: true,
         ),
 
         SizedBox(height: 16.h),
@@ -281,9 +287,12 @@ class UploadScreenForm extends ConsumerWidget {
               child: _buildTextField(
                 controller: rateAmountController,
                 label: 'Rate Amount',
-                hint: '0',
+                hint: '50,000',
+                prefixText: '₦ ',
                 isDark: isDark,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                isRequired: true,
+                inputFormatters: [ThousandsSeparatorInputFormatter()],
               ),
             ),
             SizedBox(width: 12.w),
@@ -305,26 +314,7 @@ class UploadScreenForm extends ConsumerWidget {
         _buildSectionTitle('Media Files', isDark),
         SizedBox(height: 16.h),
         
-        RichText(
-          text: TextSpan(
-            text: 'Thumbnail Image ',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white : AppColors.textPrimary,
-            ),
-            children: [
-              TextSpan(
-                text: '*',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildFieldLabel('Thumbnail Image', true, isDark),
         SizedBox(height: 8.h),
         
         InkWell(
@@ -405,14 +395,7 @@ class UploadScreenForm extends ConsumerWidget {
 
         SizedBox(height: 16.h),
 
-        Text(
-          'Gallery',
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
+        _buildFieldLabel('Gallery', false, isDark),
         SizedBox(height: 8.h),
         
         InkWell(
@@ -529,14 +512,7 @@ class UploadScreenForm extends ConsumerWidget {
 
         SizedBox(height: 16.h),
         
-        Text(
-          'Video Clip (Optional)',
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
+        _buildFieldLabel('Video Clip', true, isDark),
         SizedBox(height: 8.h),
         
         InkWell(
@@ -624,6 +600,39 @@ class UploadScreenForm extends ConsumerWidget {
     );
   }
 
+  Widget _buildFieldLabel(String label, bool isRequired, bool isDark) {
+    final cleanLabel = label.replaceAll(' (Optional)', '').replaceAll(' *', '').trim();
+    return RichText(
+      text: TextSpan(
+        text: cleanLabel,
+        style: TextStyle(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white : AppColors.textPrimary,
+        ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          else
+            TextSpan(
+              text: ' (Optional)',
+              style: TextStyle(
+                color: isDark ? Colors.white38 : Colors.grey[500],
+                fontSize: 12.sp,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -632,23 +641,19 @@ class UploadScreenForm extends ConsumerWidget {
     int maxLines = 1,
     TextInputType? keyboardType,
     bool isRequired = true,
+    List<TextInputFormatter>? inputFormatters,
+    String? prefixText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
+        _buildFieldLabel(label, isRequired, isDark),
         SizedBox(height: 8.h),
         TextFormField(
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           style: TextStyle(
             color: isDark ? Colors.white : AppColors.textPrimary,
           ),
@@ -656,6 +661,12 @@ class UploadScreenForm extends ConsumerWidget {
             hintText: hint,
             hintStyle: TextStyle(
               color: isDark ? Colors.white38 : Colors.grey[400],
+            ),
+            prefixText: prefixText,
+            prefixStyle: TextStyle(
+              color: isDark ? Colors.white70 : AppColors.grey700,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
             ),
             filled: true,
             fillColor: isDark ? Colors.grey[850] : Colors.grey[50],
@@ -691,20 +702,14 @@ class UploadScreenForm extends ConsumerWidget {
     required String hint,
     required VoidCallback? onTap,
     required bool isDark,
+    bool isRequired = true,
   }) {
     final isDisabled = onTap == null;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
+        _buildFieldLabel(label, isRequired, isDark),
         SizedBox(height: 8.h),
         InkWell(
           onTap: isDisabled ? null : onTap,

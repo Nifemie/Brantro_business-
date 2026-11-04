@@ -76,14 +76,14 @@ final profileHeaderProvider = FutureProvider<ProfileHeaderData>((ref) async {
   if (!isLoggedIn) {
     return const ProfileHeaderData(
       avatarUrl: '',
-      fullName: 'Guest',
+      fullName: '',
       email: '',
-      role: 'GUEST',
-      roles: ['GUEST'],
+      role: '',
+      roles: [],
       experience: '0+ Years',
       productions: 0,
       genres: [],
-      userId: 'guest',
+      userId: '',
     );
   }
   

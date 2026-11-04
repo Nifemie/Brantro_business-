@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../core/data/repositories/file_repository.dart';
+import '../../../../../core/utils/thousands_separator_input_formatter.dart';
 import '../../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
 import '../../../logic/template_provider.dart';
@@ -108,8 +109,8 @@ class _UploadTemplateScreenState extends ConsumerState<UploadTemplateScreen> {
         'fileUrl': '',
         'thumbnail': thumbnailUrl,
         'specifications': _specificationsController.text,
-        'price': double.tryParse(_priceController.text) ?? 0.0,
-        'discount': double.tryParse(_discountController.text) ?? 0.0,
+        'price': ThousandsSeparatorInputFormatter.tryParseDouble(_priceController.text) ?? 0.0,
+        'discount': ThousandsSeparatorInputFormatter.tryParseDouble(_discountController.text) ?? 0.0,
         'status': 'ACTIVE',
       };
 

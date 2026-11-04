@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../core/data/repositories/file_repository.dart';
+import '../../../../../core/utils/thousands_separator_input_formatter.dart';
 import '../../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
 import '../../../logic/creative_notifier.dart';
@@ -158,8 +159,8 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
           'format': formState.selectedFormat?.toUpperCase(),
           'fileUrl': fileUrl ?? '',
           'thumbnail': thumbnailUrl,
-          'price': double.tryParse(_priceController.text) ?? 0,
-          'discount': double.tryParse(_discountController.text) ?? 0,
+          'price': ThousandsSeparatorInputFormatter.tryParseDouble(_priceController.text) ?? 0,
+          'discount': ThousandsSeparatorInputFormatter.tryParseDouble(_discountController.text) ?? 0,
           'durationInSeconds': int.tryParse(_durationController.text) ?? 0,
           'width': int.tryParse(_widthController.text) ?? 0,
           'height': int.tryParse(_heightController.text) ?? 0,

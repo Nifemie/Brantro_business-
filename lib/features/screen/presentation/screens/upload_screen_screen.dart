@@ -8,6 +8,7 @@ import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../widgets/upload_screen_form.dart';
 import '../../logic/screen_provider.dart';
 import '../../data/models/screen_model.dart';
+import '../../../../core/utils/thousands_separator_input_formatter.dart';
 
 class UploadScreenScreen extends ConsumerStatefulWidget {
   final bool isUpdate;
@@ -70,7 +71,7 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
       _featuresController.text = s.featuresText;
       _specificationsController.text = s.specifications;
       _addressController.text = s.address;
-      _rateAmountController.text = s.price > 0 ? s.price.toString() : '';
+      _rateAmountController.text = s.price > 0 ? ThousandsSeparatorInputFormatter.format(s.price) : '';
       _totalSlotsController.text = (s.totalAdSlots ?? 1).toString();
       _estimatedReachController.text = (s.estimatedReach ?? 0).toString();
       if (s.latitude != null) _latitudeController.text = s.latitude.toString();
@@ -108,10 +109,6 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
     }
     if (_selectedCategoryId == null) {
       _showError('Category is required');
-      return false;
-    }
-    if (_selectedClass == null) {
-      _showError('Class is required');
       return false;
     }
     if (_descriptionController.text.trim().isEmpty) {
@@ -223,12 +220,19 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
       }
 
       // Prepare form data with uploaded URLs
-      final formData = {
+      final coverageAreas = <String>[
+        if (_selectedCity != null && _selectedCity!.isNotEmpty) _selectedCity!,
+        if (_selectedState != null && _selectedState!.isNotEmpty) _selectedState!,
+      ];
+      if (coverageAreas.isEmpty) {
+        coverageAreas.add(_selectedCountry ?? 'Nigeria');
+      }
+
+      final formData = <String, dynamic>{
         'title': _titleController.text.trim(),
         'type': _selectedType,
-        'class': _selectedClass,
-        'coverageAreas': [],
-        'estimatedReach': [int.tryParse(_estimatedReachController.text.trim()) ?? 0],
+        'coverageAreas': coverageAreas,
+        'estimatedReach': [ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0],
         'categoryId': _selectedCategoryId,
         'description': _descriptionController.text.trim(),
         'address': _addressController.text.trim(),
@@ -237,18 +241,20 @@ class _UploadScreenScreenState extends ConsumerState<UploadScreenScreen> {
         'country': _selectedCountry,
         'latitude': double.tryParse(_latitudeController.text.trim()) ?? 0.0,
         'longitude': double.tryParse(_longitudeController.text.trim()) ?? 0.0,
-        'rate': double.parse(_rateAmountController.text.trim()),
+        'rate': ThousandsSeparatorInputFormatter.tryParseDouble(_rateAmountController.text) ?? 0.0,
         'rateUnit': _selectedRateUnit,
         'status': 'ACTIVE',
-        'totalAdSlots': int.parse(_totalSlotsController.text.trim()),
+        'totalAdSlots': int.tryParse(_totalSlotsController.text.trim()) ?? 1,
+        'features': _featuresController.text.trim().isNotEmpty
+            ? _featuresController.text.trim()
+            : 'Standard screen features',
+        'specifications': _specificationsController.text.trim().isNotEmpty
+            ? _specificationsController.text.trim()
+            : 'Standard screen specifications',
       };
 
-      // Add optional fields
-      if (_featuresController.text.trim().isNotEmpty) {
-        formData['features'] = _featuresController.text.trim();
-      }
-      if (_specificationsController.text.trim().isNotEmpty) {
-        formData['specifications'] = _specificationsController.text.trim();
+      if (_selectedClass != null && _selectedClass!.isNotEmpty) {
+        formData['class'] = _selectedClass;
       }
       if (thumbnailUrl != null) {
         formData['thumbnail'] = thumbnailUrl;

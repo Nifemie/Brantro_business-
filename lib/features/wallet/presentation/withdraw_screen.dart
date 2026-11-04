@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_button.dart';
+import '../../../core/utils/thousands_separator_input_formatter.dart';
 import '../logic/withdrawal_accounts_notifier.dart';
 import '../logic/wallet_notifier.dart';
 import '../../dashboard/presentation/widgets/dashboard_app_bar.dart';
@@ -68,7 +69,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
       return;
     }
 
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    final amount = ThousandsSeparatorInputFormatter.tryParseDouble(_amountController.text.trim()) ?? 0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid amount'), backgroundColor: Colors.red),
@@ -243,6 +244,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                       TextFormField(
                         controller: _amountController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [ThousandsSeparatorInputFormatter()],
                         style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
                         decoration: InputDecoration(
                           prefixText: '₦ ',
@@ -260,7 +262,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                         ),
                         validator: (val) {
                           if (val == null || val.isEmpty) return 'Amount is required';
-                          final amount = double.tryParse(val);
+                          final amount = ThousandsSeparatorInputFormatter.tryParseDouble(val);
                           if (amount == null || amount <= 0) return 'Invalid amount';
                           return null;
                         },

@@ -80,7 +80,10 @@ import 'package:brantro_business/features/KYC/presentation/kyc_gate_screen.dart'
 import 'package:brantro_business/features/KYC/data/kyc_models.dart';
 import 'package:brantro_business/features/auth/presentation/lock_screen.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final router = GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/',
   errorBuilder: (context, state) => Scaffold(
     body: Center(

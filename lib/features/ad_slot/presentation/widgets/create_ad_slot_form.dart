@@ -8,6 +8,7 @@ import 'package:brantro_business/controllers/re_useable/custom_multiselect_dropd
 import 'package:brantro_business/core/service/session_service.dart';
 import 'package:brantro_business/core/data/repositories/file_repository.dart';
 import 'package:brantro_business/core/constants/nigerian_locations.dart';
+import 'package:brantro_business/core/utils/thousands_separator_input_formatter.dart';
 import '../../data/models/ad_slot_constants.dart';
 import '../../data/models/ad_slot_model.dart';
 import 'ad_slot_editor_toolbar.dart';
@@ -138,7 +139,7 @@ class _CreateAdSlotFormState extends ConsumerState<CreateAdSlotForm> {
     if (slot == null) return;
 
     _titleController.text = slot.title ?? slot.slotNumber;
-    _priceController.text = slot.price.toString();
+    _priceController.text = slot.price > 0 ? ThousandsSeparatorInputFormatter.format(slot.price) : '';
     _maxRevisionsController.text = slot.maxRevisions?.toString() ?? '1';
     _descriptionController.text = slot.description ?? '';
 
@@ -492,14 +493,21 @@ class _CreateAdSlotFormState extends ConsumerState<CreateAdSlotForm> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Price (NGN)', required: true),
+                    _buildLabel('Price (₦)', required: true),
                     SizedBox(height: 8.h),
                     TextFormField(
                       controller: _priceController,
                       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: _inputDecoration('0', isDark),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [ThousandsSeparatorInputFormatter()],
+                      decoration: _inputDecoration('0', isDark).copyWith(
+                        prefixText: '₦ ',
+                        prefixStyle: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.black87,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                     ),
                   ],
@@ -794,7 +802,7 @@ class _CreateAdSlotFormState extends ConsumerState<CreateAdSlotForm> {
         'platforms': _selectedPlatforms.map((p) => p.trim()).toList(),
         'contentTypes': _selectedContentTypes,
         'features': _selectedFeatures,
-        'price': double.tryParse(_priceController.text.trim()) ?? 0.0,
+        'price': ThousandsSeparatorInputFormatter.tryParseDouble(_priceController.text.trim()) ?? 0.0,
         'duration': _selectedDuration ?? '7days',
         'maxRevisions': int.tryParse(_maxRevisionsController.text.trim()) ?? 1,
         'coverageArea': _selectedCoverageArea,

@@ -1,4 +1,3 @@
-import 'package:brantro_business/core/constants/template_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:brantro_business/core/network/api_client.dart';
 import '../data/repositories/category_repository.dart';
@@ -62,26 +61,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
       final combinedCategories = [...serviceCategories, ...creativeCategories];
       
       final locationCategories = await _repository.getCategories(type: 'LOCATION');
-      var templateCategories = await _repository.getCategories(type: 'TEMPLATE');
-
-      // Seed default template categories if backend returns none (BRT-025)
-      if (templateCategories.isEmpty) {
-        final now = DateTime.now();
-        templateCategories = TemplateConstants.templateCategories
-            .asMap()
-            .entries
-            .map((entry) => CategoryModel(
-                  id: entry.key + 1,
-                  name: entry.value,
-                  type: 'TEMPLATE',
-                  description: '${entry.value} Templates',
-                  status: 'ACTIVE',
-                  createdById: 1,
-                  createdAt: now,
-                  updatedAt: now,
-                ))
-            .toList();
-      }
+      final templateCategories = await _repository.getCategories(type: 'TEMPLATE');
 
       state = state.copyWith(
         categories: combinedCategories,
@@ -90,25 +70,8 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
         isLoading: false,
       );
     } catch (e) {
-      final now = DateTime.now();
-      final defaultTemplates = TemplateConstants.templateCategories
-          .asMap()
-          .entries
-          .map((entry) => CategoryModel(
-                id: entry.key + 1,
-                name: entry.value,
-                type: 'TEMPLATE',
-                description: '${entry.value} Templates',
-                status: 'ACTIVE',
-                createdById: 1,
-                createdAt: now,
-                updatedAt: now,
-              ))
-          .toList();
-
       state = state.copyWith(
         isLoading: false,
-        templateCategories: state.templateCategories.isNotEmpty ? state.templateCategories : defaultTemplates,
         error: e.toString(),
       );
     }

@@ -8,6 +8,7 @@ import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../widgets/upload_billboard_form.dart';
 import '../../logic/billboard_provider.dart';
 import '../../../../core/data/repositories/file_repository.dart';
+import '../../../../core/utils/thousands_separator_input_formatter.dart';
 
 import '../../data/models/billboard_model.dart';
 
@@ -72,7 +73,7 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
       _featuresController.text = b.featuresText;
       _specificationsController.text = b.specifications;
       _addressController.text = b.address;
-      _rateAmountController.text = b.price > 0 ? b.price.toString() : '';
+      _rateAmountController.text = b.price > 0 ? ThousandsSeparatorInputFormatter.format(b.price) : '';
       _totalSlotsController.text = (b.totalAdSlots ?? 1).toString();
       _estimatedReachController.text = (b.estimatedReach ?? 0).toString();
       if (b.latitude != null) _latitudeController.text = b.latitude.toString();
@@ -110,10 +111,6 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
     }
     if (_selectedType == null) {
       _showError('Type is required');
-      return false;
-    }
-    if (_selectedClass == null) {
-      _showError('Class is required');
       return false;
     }
     if (_selectedCategoryId == null) {
@@ -235,12 +232,19 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
       }
 
       // Prepare form data with uploaded URLs
-      final formData = {
+      final coverageAreas = <String>[
+        if (_selectedCity != null && _selectedCity!.isNotEmpty) _selectedCity!,
+        if (_selectedState != null && _selectedState!.isNotEmpty) _selectedState!,
+      ];
+      if (coverageAreas.isEmpty) {
+        coverageAreas.add(_selectedCountry ?? 'Nigeria');
+      }
+
+      final formData = <String, dynamic>{
         'title': _titleController.text.trim(),
         'type': _selectedType,
-        'class': _selectedClass,
-        'coverageAreas': [],
-        'estimatedReach': [int.tryParse(_estimatedReachController.text.trim()) ?? 0],
+        'coverageAreas': coverageAreas,
+        'estimatedReach': [ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0],
         'categoryId': _selectedCategoryId,
         'description': _descriptionController.text.trim(),
         'address': _addressController.text.trim(),
@@ -249,18 +253,20 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
         'country': _selectedCountry,
         'latitude': double.tryParse(_latitudeController.text.trim()) ?? 0.0,
         'longitude': double.tryParse(_longitudeController.text.trim()) ?? 0.0,
-        'rate': double.parse(_rateAmountController.text.trim()),
+        'rate': ThousandsSeparatorInputFormatter.tryParseDouble(_rateAmountController.text) ?? 0.0,
         'rateUnit': _selectedRateUnit,
         'status': 'ACTIVE',
-        'totalAdSlots': int.parse(_totalSlotsController.text.trim()),
+        'totalAdSlots': int.tryParse(_totalSlotsController.text.trim()) ?? 1,
+        'features': _featuresController.text.trim().isNotEmpty
+            ? _featuresController.text.trim()
+            : 'Standard billboard features',
+        'specifications': _specificationsController.text.trim().isNotEmpty
+            ? _specificationsController.text.trim()
+            : 'Standard billboard specifications',
       };
 
-      // Add optional fields
-      if (_featuresController.text.trim().isNotEmpty) {
-        formData['features'] = _featuresController.text.trim();
-      }
-      if (_specificationsController.text.trim().isNotEmpty) {
-        formData['specifications'] = _specificationsController.text.trim();
+      if (_selectedClass != null && _selectedClass!.isNotEmpty) {
+        formData['class'] = _selectedClass;
       }
       if (thumbnailUrl != null) {
         formData['thumbnail'] = thumbnailUrl;

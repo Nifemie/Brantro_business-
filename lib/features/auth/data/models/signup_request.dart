@@ -128,16 +128,29 @@ class ScreenBillboardInfo {
   });
 
   Map<String, dynamic> toJson() {
+    int? parsedYears;
+    if (yearsOfOperation != null) {
+      final match = RegExp(r'\d+').firstMatch(yearsOfOperation!);
+      if (match != null) {
+        parsedYears = int.tryParse(match.group(0)!);
+      }
+    }
+
     return {
       'businessName': businessName,
       'permitNumber': permitNumber,
       'industry': industry,
       'operatingStates': operatingStates,
-      if (yearsOfOperation != null) 'yearsOfOperation': yearsOfOperation,
+      'operatingCities': operatingStates,
+      if (parsedYears != null)
+        'yearsOfOperation': parsedYears
+      else if (yearsOfOperation != null)
+        'yearsOfOperation': yearsOfOperation,
       if (businessWebsite != null) 'businessWebsite': businessWebsite,
       'businessAddress': businessAddress,
       'idType': idType,
       'idRcNumber': idRcNumber,
+      'idNumber': idRcNumber,
       'tinNumber': tinNumber,
     };
   }

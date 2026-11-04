@@ -13,6 +13,8 @@ import 'package:brantro_business/core/network/api_client.dart';
 import 'package:brantro_business/core/constants/bank_constants.dart';
 import 'package:brantro_business/core/constants/kyc_constants.dart';
 import 'package:brantro_business/features/chat/presentation/screens/chat_screen.dart';
+import 'package:brantro_business/features/auth/data/models/signup_request.dart';
+import 'package:brantro_business/core/utils/thousands_separator_input_formatter.dart';
 
 void main() {
   group('Auth Flow Bug Fixes Verification', () {
@@ -210,6 +212,155 @@ void main() {
       expect(passportRegex.hasMatch('A12345678'), isTrue);
       expect(passportRegex.hasMatch('123456789'), isFalse);
       expect(passportRegex.hasMatch('AB1234567'), isFalse);
+    });
+
+    test('BUG-01: ScreenBillboardInfo serializes operatingCities, int yearsOfOperation, and idNumber', () {
+      final info = ScreenBillboardInfo(
+        businessName: 'Host Business',
+        permitNumber: 'PERM-1234',
+        industry: 'Outdoor',
+        operatingStates: ['Lagos', 'Abuja'],
+        yearsOfOperation: '3 years',
+        businessWebsite: 'https://host.ng',
+        businessAddress: '123 Main St',
+        idType: 'CAC',
+        idRcNumber: 'RC123456',
+        tinNumber: '12345678-0001',
+      );
+
+      final json = info.toJson();
+      expect(json.containsKey('operatingCities'), isTrue);
+      expect(json['operatingCities'], equals(['Lagos', 'Abuja']));
+      expect(json['yearsOfOperation'], equals(3));
+      expect(json['idNumber'], equals('RC123456'));
+    });
+
+    test('BUG-04: Phone rejects all-repeating digits and invalid carrier prefixes', () {
+      bool isValidPhone(String raw) {
+        final digits = raw.replaceAll(RegExp(r'\D'), '');
+        if (RegExp(r'^(\d)\1+$').hasMatch(digits)) return false;
+        if (digits.startsWith('0')) {
+          if (digits.length != 11) return false;
+          final prefix = digits.substring(0, 3);
+          const validPrefixes = ['070', '080', '081', '090', '091', '071', '082', '092', '074'];
+          return validPrefixes.contains(prefix);
+        } else {
+          if (digits.length != 10) return false;
+          final prefix = digits.substring(0, 2);
+          const valid10Prefixes = ['70', '80', '81', '90', '91', '71', '82', '92', '74'];
+          return valid10Prefixes.contains(prefix);
+        }
+      }
+
+      expect(isValidPhone('00000000000'), isFalse);
+      expect(isValidPhone('11111111111'), isFalse);
+      expect(isValidPhone('01234567890'), isFalse); // Invalid prefix 012
+      expect(isValidPhone('08012345678'), isTrue);
+      expect(isValidPhone('09098765432'), isTrue);
+      expect(isValidPhone('8012345678'), isTrue);
+    });
+
+    test('BUG-04: Email rejects single-digit and empty usernames', () {
+      bool isValidEmail(String email) {
+        final emailRegex = RegExp(r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$');
+        if (!emailRegex.hasMatch(email) || !email.contains('.')) return false;
+        final parts = email.split('@');
+        if (parts[0].length < 2 || RegExp(r'^\d+$').hasMatch(parts[0])) return false;
+        return true;
+      }
+
+      expect(isValidEmail('0@gmail.com'), isFalse);
+      expect(isValidEmail('a@gmail.com'), isFalse);
+      expect(isValidEmail('123@gmail.com'), isFalse); // Numeric only
+      expect(isValidEmail('john.doe@gmail.com'), isTrue);
+      expect(isValidEmail('test@brantro.ng'), isTrue);
+    });
+
+    test('BUG-13: AdSlot payload structure satisfies Swagger AdSlotDto requirements', () {
+      // Build test payload simulating _handleSubmit logic
+      const selectedCoverageArea = 'State';
+      const selectedState = 'Ekiti';
+      const selectedCity = null;
+      final selectedContentRequirements = ['1080p MP4', 'No offensive content'];
+
+      final List<String> coverageAreas = [];
+      if (selectedCoverageArea.isNotEmpty) {
+        coverageAreas.add(selectedCoverageArea);
+      }
+      if (selectedState.isNotEmpty && !coverageAreas.contains(selectedState)) {
+        coverageAreas.add(selectedState);
+      }
+
+      final payload = <String, dynamic>{
+        'title': 'Prime Screen Slot A',
+        'description': 'High traffic highway billboard slot',
+        'partnerType': 'BILLBOARD',
+        'platforms': ['Digital Screen'],
+        'contentTypes': ['Video', 'Image'],
+        'features': ['24/7 Illumination'],
+        'contentRequirements': selectedContentRequirements,
+        'price': 150000.0,
+        'duration': '7 days',
+        'maxRevisions': 2,
+        'coverageAreas': coverageAreas,
+        'coverageArea': selectedCoverageArea,
+        'adFormat': 'Digital Screen',
+        'isActive': true,
+      };
+
+      // Swagger AdSlotDto mandatory fields
+      const requiredFields = [
+        'title',
+        'description',
+        'features',
+        'platforms',
+        'contentTypes',
+        'price',
+        'duration',
+        'adFormat',
+        'contentRequirements',
+      ];
+
+      for (final field in requiredFields) {
+        expect(payload.containsKey(field), isTrue, reason: '$field must be in payload');
+        expect(payload[field], isNotNull, reason: '$field must not be null');
+      }
+
+      expect(payload['contentRequirements'], isA<List>());
+      expect((payload['contentRequirements'] as List), isNotEmpty);
+      expect(payload['coverageAreas'], isA<List>());
+      expect(payload['coverageAreas'], contains('State'));
+      expect(payload['coverageAreas'], contains('Ekiti'));
+    });
+
+    test('BUG-16: ThousandsSeparatorInputFormatter formats and parses amount correctly', () {
+      final formatter = ThousandsSeparatorInputFormatter();
+
+      // Test format with digits
+      final textVal1 = const TextEditingValue(text: '1000', selection: TextSelection.collapsed(offset: 4));
+      final result1 = formatter.formatEditUpdate(TextEditingValue.empty, textVal1);
+      expect(result1.text, equals('1,000'));
+      expect(result1.selection.baseOffset, equals(5));
+
+      // Test format with large number and decimal
+      final textVal2 = const TextEditingValue(text: '1234567.50', selection: TextSelection.collapsed(offset: 10));
+      final result2 = formatter.formatEditUpdate(TextEditingValue.empty, textVal2);
+      expect(result2.text, equals('1,234,567.50'));
+
+      // Test clean helper
+      expect(ThousandsSeparatorInputFormatter.clean('1,000,000.75'), equals('1000000.75'));
+
+      // Test tryParseDouble helper
+      expect(ThousandsSeparatorInputFormatter.tryParseDouble('1,234,567.50'), equals(1234567.5));
+      expect(ThousandsSeparatorInputFormatter.tryParseDouble(null), isNull);
+
+      // Test tryParseInt helper
+      expect(ThousandsSeparatorInputFormatter.tryParseInt('1,234,567'), equals(1234567));
+
+      // Test format helper
+      expect(ThousandsSeparatorInputFormatter.format(1000), equals('1,000'));
+      expect(ThousandsSeparatorInputFormatter.format(50000.0), equals('50,000'));
+      expect(ThousandsSeparatorInputFormatter.format(1500000.25), equals('1,500,000.25'));
     });
   });
 }

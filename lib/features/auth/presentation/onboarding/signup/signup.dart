@@ -28,7 +28,6 @@ class _SignupScreenState extends State<SignupScreen> {
     'Creatives',
     'Designer',
     'Talent Manager',
-    'Screen / Billboard',
   ];
 
   @override

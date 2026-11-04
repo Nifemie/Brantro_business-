@@ -332,12 +332,35 @@ class _AttributesFormState extends State<AttributesForm> {
   }
 
   Widget _buildSectionLabel(String label, bool isDark) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: 14.sp,
-        fontWeight: FontWeight.w500,
-        color: isDark ? Colors.white : AppColors.textPrimary,
+    final isRequired = label.contains('*');
+    final cleanLabel = label.replaceAll('*', '').replaceAll('(Optional)', '').trim();
+    return RichText(
+      text: TextSpan(
+        text: cleanLabel,
+        style: TextStyle(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white : AppColors.textPrimary,
+        ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          else
+            TextSpan(
+              text: ' (Optional)',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : Colors.grey[600],
+                fontWeight: FontWeight.normal,
+                fontSize: 12.sp,
+              ),
+            ),
+        ],
       ),
     );
   }

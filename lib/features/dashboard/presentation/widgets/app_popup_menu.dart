@@ -26,6 +26,13 @@ class AppPopupMenu extends ConsumerWidget {
           userId: userId,
         );
 
+        // Profile avatar (menu disabled for now as requested - does not open anything)
+        return CircleAvatar(
+          radius: 16.r,
+          backgroundColor: Colors.transparent,
+          backgroundImage: AvatarHelper.getImageProvider(avatarUrl),
+        );
+        /*
         return PopupMenuButton<String>(
           offset: Offset(0, 50.h),
           color: ref.watch(themeModeProvider) == ThemeMode.dark
@@ -48,6 +55,8 @@ class AppPopupMenu extends ConsumerWidget {
             backgroundImage: AvatarHelper.getImageProvider(avatarUrl),
           ),
           itemBuilder: (context) => [
+            // Personalized Header: commented out
+            /*
             PopupMenuItem(
               enabled: false,
               child: Padding(
@@ -69,6 +78,7 @@ class AppPopupMenu extends ConsumerWidget {
               ),
             ),
             const PopupMenuDivider(),
+            */
             _buildMenuItem(
               value: 'profile',
               icon: Icons.person_outline,
@@ -128,6 +138,7 @@ class AppPopupMenu extends ConsumerWidget {
             }
           },
         );
+        */
       },
     );
   }

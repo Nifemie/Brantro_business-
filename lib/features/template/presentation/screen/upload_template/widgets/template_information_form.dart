@@ -35,24 +35,9 @@ class TemplateInformationForm extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     
     final categoryState = ref.watch(categoryProvider);
-    var categories = categoryState.templateCategories;
-    if (categories.isEmpty) {
-      final now = DateTime.now();
-      categories = TemplateConstants.templateCategories
-          .asMap()
-          .entries
-          .map((entry) => CategoryModel(
-                id: entry.key + 1,
-                name: entry.value,
-                type: 'TEMPLATE',
-                description: '${entry.value} Templates',
-                status: 'ACTIVE',
-                createdById: 1,
-                createdAt: now,
-                updatedAt: now,
-              ))
-          .toList();
-    }
+    final categories = categoryState.templateCategories.isNotEmpty
+        ? categoryState.templateCategories
+        : categoryState.categories;
     
     final selectedCategoryName = categories
         .where((c) => c.id == selectedCategoryId)

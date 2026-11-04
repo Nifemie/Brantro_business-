@@ -13,6 +13,7 @@ import 'package:brantro_business/controllers/re_useable/bottom_nav_bar.dart';
 import 'package:brantro_business/features/dashboard/logic/dashboard_navigation_provider.dart';
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
 import 'package:brantro_business/features/account/logic/profile_provider.dart';
+import 'package:brantro_business/core/service/session_service.dart';
 import 'dart:ui';
 
 class DashboardShell extends ConsumerStatefulWidget {
@@ -55,6 +56,13 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Security Guard: If logged out, immediately navigate to /signin
+    SessionService.isLoggedIn().then((isLoggedIn) {
+      if (!isLoggedIn && mounted) {
+        context.go('/signin');
+      }
+    });
+
     final theme = Theme.of(context);
     final currentIndex = ref.watch(dashboardNavigationProvider);
 

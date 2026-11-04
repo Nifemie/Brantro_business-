@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../../core/widgets/option_picker_sheet.dart';
@@ -31,6 +32,8 @@ class CustomTextField extends StatelessWidget {
   final bool isDark;
   final bool isRequired;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final String? prefixText;
 
   const CustomTextField({
     super.key,
@@ -40,6 +43,8 @@ class CustomTextField extends StatelessWidget {
     required this.isDark,
     this.isRequired = false,
     this.keyboardType,
+    this.inputFormatters,
+    this.prefixText,
   });
 
   @override
@@ -52,6 +57,7 @@ class CustomTextField extends StatelessWidget {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           style: TextStyle(
             color: isDark ? Colors.white : AppColors.textPrimary,
           ),
@@ -60,6 +66,12 @@ class CustomTextField extends StatelessWidget {
             hintStyle: TextStyle(
               fontSize: 14.sp,
               color: isDark ? Colors.white38 : AppColors.grey400,
+            ),
+            prefixText: prefixText,
+            prefixStyle: TextStyle(
+              color: isDark ? Colors.white70 : AppColors.grey700,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),

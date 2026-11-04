@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../../controllers/re_useable/app_color.dart';
+import '../../../../../../core/utils/thousands_separator_input_formatter.dart';
 
 class PricingDetailsForm extends StatelessWidget {
   final TextEditingController priceController;
@@ -79,7 +80,7 @@ class PricingDetailsForm extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // Dollar Sign Prefix
+                      // Naira Sign Prefix
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         decoration: BoxDecoration(
@@ -92,7 +93,7 @@ class PricingDetailsForm extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            '\$',
+                            '₦',
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w600,
@@ -106,9 +107,9 @@ class PricingDetailsForm extends StatelessWidget {
                         child: TextFormField(
                           controller: priceController,
                           style: TextStyle(color: isDark ? Colors.white : AppColors.textPrimary),
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                            ThousandsSeparatorInputFormatter(),
                           ],
                           decoration: InputDecoration(
                             hintText: '0',

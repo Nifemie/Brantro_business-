@@ -10,6 +10,8 @@ import '../../features/wallet/logic/wallet_notifier.dart';
 import '../../features/account/logic/analytics_provider.dart';
 import '../../features/notification/logic/notification_provider.dart';
 import '../../features/wallet/logic/withdrawal_accounts_notifier.dart';
+import '../../features/auth/logic/auth_notifiers.dart';
+import '../../routes/app_routes.dart';
 
 class SessionService {
   late BuildContext context;
@@ -187,7 +189,29 @@ class SessionService {
     WidgetRef ref,
     BuildContext context,
   ) async {
-    // 1. Invalidate all user-specific state providers
+    // 1. Pop any open dialogs/overlays so nothing traps the navigator
+    try {
+      rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+    } catch (_) {}
+
+    // 2. Clear all local storage preferences FIRST so isLoggedIn() immediately returns false
+    await clearSession();
+
+    // 3. Unconditionally navigate directly to /signin root route immediately
+    try {
+      router.go('/signin');
+    } catch (_) {
+      try {
+        if (rootNavigatorKey.currentContext != null) {
+          rootNavigatorKey.currentContext!.go('/signin');
+        } else if (context.mounted) {
+          context.go('/signin');
+        }
+      } catch (_) {}
+    }
+
+    // 4. Invalidate all user and auth state providers after navigation transition
+    ref.invalidate(authNotifierProvider);
     ref.invalidate(dashboardNavigationProvider);
     ref.invalidate(profileHeaderProvider);
     ref.invalidate(walletProvider);
@@ -195,30 +219,42 @@ class SessionService {
     ref.invalidate(notificationProvider);
     ref.invalidate(withdrawalAccountsProvider);
     ref.invalidate(activePersonaProvider);
-
-    // 2. Clear all local storage preferences
-    await clearSession();
-
-    // 3. Navigate directly to /signin root route
-    if (context.mounted) {
-      context.go('/signin');
-    }
   }
 
   /// Complete logout clearing storage, resetting router to /signin
   static Future<void> performLogout({
     BuildContext? context,
   }) async {
+    try {
+      rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+    } catch (_) {}
+
     await clearSession();
-    if (context != null && context.mounted) {
-      context.go('/signin');
+    try {
+      router.go('/signin');
+    } catch (_) {
+      if (rootNavigatorKey.currentContext != null) {
+        rootNavigatorKey.currentContext!.go('/signin');
+      } else if (context != null && context.mounted) {
+        context.go('/signin');
+      }
     }
   }
 
   Future<void> logout() async {
+    try {
+      rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+    } catch (_) {}
+
     await SessionService.clearSession();
-    if (context.mounted) {
-      context.go('/signin');
+    try {
+      router.go('/signin');
+    } catch (_) {
+      if (rootNavigatorKey.currentContext != null) {
+        rootNavigatorKey.currentContext!.go('/signin');
+      } else if (context.mounted) {
+        context.go('/signin');
+      }
     }
   }
 

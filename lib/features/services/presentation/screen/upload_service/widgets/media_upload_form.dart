@@ -90,7 +90,7 @@ class MediaUploadForm extends StatelessWidget {
         SizedBox(height: 16.h),
         
         // Thumbnail Picker
-        _buildLabel('Upload Thumbnail *', isDark),
+        _buildFieldLabel('Upload Thumbnail', isRequired: true, isDark: isDark),
         SizedBox(height: 8.h),
         InkWell(
           onTap: () => _pickThumbnail(context),
@@ -151,7 +151,7 @@ class MediaUploadForm extends StatelessWidget {
         SizedBox(height: 20.h),
         
         // Sample File Picker
-        _buildLabel('Upload Sample File', isDark),
+        _buildFieldLabel('Upload Sample File', isRequired: false, isDark: isDark),
         SizedBox(height: 8.h),
         InkWell(
           onTap: () => _pickSampleFile(context),
@@ -231,7 +231,7 @@ class MediaUploadForm extends StatelessWidget {
         SizedBox(height: 20.h),
         
         // Gallery multi image picker
-        _buildLabel('Gallery (Upload up to 8 images)', isDark),
+        _buildFieldLabel('Gallery (Upload up to 8 images)', isRequired: false, isDark: isDark),
         SizedBox(height: 10.h),
         GridView.builder(
           shrinkWrap: true,
@@ -306,13 +306,34 @@ class MediaUploadForm extends StatelessWidget {
     );
   }
 
-  Widget _buildLabel(String label, bool isDark) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: 14.sp,
-        fontWeight: FontWeight.w500,
-        color: isDark ? Colors.white : AppColors.textPrimary,
+  Widget _buildFieldLabel(String label, {required bool isRequired, required bool isDark}) {
+    return RichText(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white : AppColors.textPrimary,
+        ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          else
+            TextSpan(
+              text: ' (Optional)',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : Colors.grey[600],
+                fontWeight: FontWeight.normal,
+                fontSize: 12.sp,
+              ),
+            ),
+        ],
       ),
     );
   }

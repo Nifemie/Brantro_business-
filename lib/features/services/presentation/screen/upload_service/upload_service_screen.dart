@@ -8,6 +8,7 @@ import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
 import '../../../logic/service_provider.dart';
 import '../../../logic/upload_service_form_provider.dart';
 import '../../../../../core/data/repositories/file_repository.dart';
+import '../../../../../core/utils/thousands_separator_input_formatter.dart';
 import 'widgets/service_info_form.dart';
 import 'widgets/pricing_delivery_form.dart';
 import 'widgets/attributes_form.dart';
@@ -152,14 +153,14 @@ class _UploadServiceScreenState extends ConsumerState<UploadServiceScreen> {
         'type': formState.selectedType?.toUpperCase().replaceAll(' ', '_'),
         'features': featuresList,
         'requirements': requirementsList,
-        'price': double.tryParse(_priceController.text) ?? 0,
+        'price': ThousandsSeparatorInputFormatter.tryParseDouble(_priceController.text) ?? 0,
         'pricingUnit': formState.selectedPricingUnit,
-        'discount': double.tryParse(_discountController.text) ?? 0,
+        'discount': ThousandsSeparatorInputFormatter.tryParseDouble(_discountController.text) ?? 0,
         'coverageAreas': formState.coverageAreas,
-        'estimatedReach': int.tryParse(_estimatedReachController.text) ?? 0,
-        'deliveryTime': int.tryParse(_deliveryTimeController.text) ?? 0,
+        'estimatedReach': ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0,
+        'deliveryTime': ThousandsSeparatorInputFormatter.tryParseInt(_deliveryTimeController.text) ?? 0,
         'deliveryTimeUnit': formState.selectedTimeUnit,
-        'revisionCount': int.tryParse(_revisionCountController.text) ?? 0,
+        'revisionCount': ThousandsSeparatorInputFormatter.tryParseInt(_revisionCountController.text) ?? 0,
         'deliveryFormats': [formState.selectedDeliveryFormat],
         'thumbnail': thumbnailUrl,
         'sampleUrl': sampleUrl,

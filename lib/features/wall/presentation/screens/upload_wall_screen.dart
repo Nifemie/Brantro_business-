@@ -8,6 +8,7 @@ import '../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../widgets/upload_wall_form.dart';
 import '../../logic/wall_provider.dart';
 import '../../data/models/wall_model.dart';
+import '../../../../core/utils/thousands_separator_input_formatter.dart';
 
 class UploadWallScreen extends ConsumerStatefulWidget {
   final bool isUpdate;
@@ -69,7 +70,7 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
       _featuresController.text = w.featuresText;
       _specificationsController.text = w.specifications;
       _addressController.text = w.address;
-      _rateAmountController.text = w.price > 0 ? w.price.toString() : '';
+      _rateAmountController.text = w.price > 0 ? ThousandsSeparatorInputFormatter.format(w.price) : '';
       _totalSlotsController.text = (w.totalAdSlots ?? 1).toString();
       _estimatedReachController.text = (w.estimatedReach ?? 0).toString();
       if (w.latitude != null) _latitudeController.text = w.latitude.toString();
@@ -107,10 +108,6 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
     }
     if (_selectedCategoryId == null) {
       _showError('Category is required');
-      return false;
-    }
-    if (_selectedClass == null) {
-      _showError('Class is required');
       return false;
     }
     if (_descriptionController.text.trim().isEmpty) {
@@ -221,12 +218,19 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
       }
 
       // Prepare form data with uploaded URLs
-      final formData = {
+      final coverageAreas = <String>[
+        if (_selectedCity != null && _selectedCity!.isNotEmpty) _selectedCity!,
+        if (_selectedState != null && _selectedState!.isNotEmpty) _selectedState!,
+      ];
+      if (coverageAreas.isEmpty) {
+        coverageAreas.add(_selectedCountry ?? 'Nigeria');
+      }
+
+      final formData = <String, dynamic>{
         'title': _titleController.text.trim(),
         'type': _selectedType,
-        'class': _selectedClass,
-        'coverageAreas': [],
-        'estimatedReach': [int.tryParse(_estimatedReachController.text.trim()) ?? 0],
+        'coverageAreas': coverageAreas,
+        'estimatedReach': [ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0],
         'categoryId': _selectedCategoryId,
         'description': _descriptionController.text.trim(),
         'address': _addressController.text.trim(),
@@ -235,18 +239,20 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
         'country': _selectedCountry,
         'latitude': double.tryParse(_latitudeController.text.trim()) ?? 0.0,
         'longitude': double.tryParse(_longitudeController.text.trim()) ?? 0.0,
-        'rate': double.parse(_rateAmountController.text.trim()),
+        'rate': ThousandsSeparatorInputFormatter.tryParseDouble(_rateAmountController.text) ?? 0.0,
         'rateUnit': _selectedRateUnit,
         'status': 'ACTIVE',
-        'totalAdSlots': int.parse(_totalSlotsController.text.trim()),
+        'totalAdSlots': int.tryParse(_totalSlotsController.text.trim()) ?? 1,
+        'features': _featuresController.text.trim().isNotEmpty
+            ? _featuresController.text.trim()
+            : 'Standard wall features',
+        'specifications': _specificationsController.text.trim().isNotEmpty
+            ? _specificationsController.text.trim()
+            : 'Standard wall specifications',
       };
 
-      // Add optional fields
-      if (_featuresController.text.trim().isNotEmpty) {
-        formData['features'] = _featuresController.text.trim();
-      }
-      if (_specificationsController.text.trim().isNotEmpty) {
-        formData['specifications'] = _specificationsController.text.trim();
+      if (_selectedClass != null && _selectedClass!.isNotEmpty) {
+        formData['class'] = _selectedClass;
       }
       if (thumbnailUrl != null) {
         formData['thumbnail'] = thumbnailUrl;

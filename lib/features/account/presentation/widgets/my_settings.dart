@@ -85,24 +85,8 @@ class MySettings extends ConsumerWidget {
             ),
           );
 
-          if (shouldLogout == true && context.mounted) {
+          if (shouldLogout == true) {
             await SessionService.performFullLogout(ref, context);
-
-            // Show success message after navigation
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text(
-                      'You have been logged out successfully',
-                    ),
-                    backgroundColor: AppColors.success,
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            });
           }
         } else {
           // Navigate to login screen

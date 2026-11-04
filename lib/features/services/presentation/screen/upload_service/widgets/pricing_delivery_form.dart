@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../../controllers/re_useable/app_color.dart';
+import '../../../../../../core/utils/thousands_separator_input_formatter.dart';
 import '../../../../../../core/widgets/option_picker_sheet.dart';
 
 class PricingDeliveryForm extends StatelessWidget {
@@ -43,20 +45,25 @@ class PricingDeliveryForm extends StatelessWidget {
             Expanded(
               child: _buildTextField(
                 controller: priceController,
-                label: 'Price *',
-                hint: '₦ 0.00',
+                label: 'Price',
+                hint: '0.00',
+                prefixText: '₦ ',
                 isDark: isDark,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [ThousandsSeparatorInputFormatter()],
+                isRequired: true,
               ),
             ),
             SizedBox(width: 12.w),
             Expanded(
               child: _buildTextField(
                 controller: discountController,
-                label: 'Discount (Optional)',
-                hint: '₦ 0.00',
+                label: 'Discount',
+                hint: '0.00',
+                prefixText: '₦ ',
                 isDark: isDark,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [ThousandsSeparatorInputFormatter()],
                 isRequired: false,
               ),
             ),
@@ -67,11 +74,12 @@ class PricingDeliveryForm extends StatelessWidget {
         
         _buildDropdownField(
           context: context,
-          label: 'Pricing Unit *',
+          label: 'Pricing Unit',
           value: selectedPricingUnit,
           hint: 'Select billing cycle...',
           onTap: () => _showPricingUnitPicker(context),
           isDark: isDark,
+          isRequired: true,
         ),
         
         SizedBox(height: 16.h),
@@ -81,21 +89,23 @@ class PricingDeliveryForm extends StatelessWidget {
             Expanded(
               child: _buildTextField(
                 controller: deliveryTimeController,
-                label: 'Delivery Time *',
+                label: 'Delivery Time',
                 hint: 'e.g. 5',
                 isDark: isDark,
                 keyboardType: TextInputType.number,
+                isRequired: true,
               ),
             ),
             SizedBox(width: 12.w),
             Expanded(
               child: _buildDropdownField(
                 context: context,
-                label: 'Time Unit *',
+                label: 'Time Unit',
                 value: selectedTimeUnit,
                 hint: 'Select...',
                 onTap: () => _showTimeUnitPicker(context),
                 isDark: isDark,
+                isRequired: true,
               ),
             ),
           ],
@@ -108,7 +118,7 @@ class PricingDeliveryForm extends StatelessWidget {
             Expanded(
               child: _buildTextField(
                 controller: revisionCountController,
-                label: 'Revision Count (Optional)',
+                label: 'Revision Count',
                 hint: 'e.g. 3',
                 isDark: isDark,
                 keyboardType: TextInputType.number,
@@ -119,7 +129,7 @@ class PricingDeliveryForm extends StatelessWidget {
             Expanded(
               child: _buildTextField(
                 controller: estimatedReachController,
-                label: 'Estimated Reach (Optional)',
+                label: 'Estimated Reach',
                 hint: 'e.g. 10000',
                 isDark: isDark,
                 keyboardType: TextInputType.number,
@@ -129,6 +139,38 @@ class PricingDeliveryForm extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildFieldLabel(String label, {required bool isRequired, required bool isDark}) {
+    return RichText(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white : AppColors.textPrimary,
+        ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          else
+            TextSpan(
+              text: ' (Optional)',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : Colors.grey[600],
+                fontWeight: FontWeight.normal,
+                fontSize: 12.sp,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -149,23 +191,19 @@ class PricingDeliveryForm extends StatelessWidget {
     required String hint,
     required bool isDark,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     bool isRequired = true,
+    String? prefixText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
+        _buildFieldLabel(label, isRequired: isRequired, isDark: isDark),
         SizedBox(height: 8.h),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           style: TextStyle(
             color: isDark ? Colors.white : AppColors.textPrimary,
           ),
@@ -173,6 +211,12 @@ class PricingDeliveryForm extends StatelessWidget {
             hintText: hint,
             hintStyle: TextStyle(
               color: isDark ? Colors.white38 : Colors.grey[400],
+            ),
+            prefixText: prefixText,
+            prefixStyle: TextStyle(
+              color: isDark ? Colors.white70 : AppColors.grey700,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
             ),
             filled: true,
             fillColor: isDark ? Colors.grey[850] : Colors.grey[50],
@@ -208,18 +252,12 @@ class PricingDeliveryForm extends StatelessWidget {
     required String hint,
     required VoidCallback onTap,
     required bool isDark,
+    bool isRequired = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
+        _buildFieldLabel(label, isRequired: isRequired, isDark: isDark),
         SizedBox(height: 8.h),
         InkWell(
           onTap: onTap,

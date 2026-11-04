@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../../controllers/re_useable/app_color.dart';
+import '../../../../../../core/utils/thousands_separator_input_formatter.dart';
 import '../../../../../../core/widgets/option_picker_sheet.dart';
 import '../../../../../category/logic/category_provider.dart';
 import 'form_field_widgets.dart';
@@ -153,10 +154,12 @@ class CreativeInformationForm extends ConsumerWidget {
                         child: CustomTextField(
                           controller: priceController,
                           label: 'Price',
-                          hint: 'e.g. 20000',
+                          hint: '20,000',
+                          prefixText: '₦ ',
                           isRequired: true,
                           isDark: isDark,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [ThousandsSeparatorInputFormatter()],
                         ),
                       ),
                       SizedBox(width: 12.w),
@@ -164,10 +167,12 @@ class CreativeInformationForm extends ConsumerWidget {
                         child: CustomTextField(
                           controller: discountController,
                           label: 'Discount',
-                          hint: 'e.g. 4000',
+                          hint: '4,000',
+                          prefixText: '₦ ',
                           isRequired: false,
                           isDark: isDark,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [ThousandsSeparatorInputFormatter()],
                         ),
                       ),
                     ],
