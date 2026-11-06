@@ -10,6 +10,7 @@ import '../widgets/order_charge_breakdown_card.dart';
 import '../widgets/order_items_card.dart';
 import '../widgets/order_requirements_card.dart';
 import '../widgets/order_rejection_card.dart';
+import '../widgets/order_revision_card.dart';
 import '../../logic/orders_provider.dart';
 
 class OrderDetailsScreen extends ConsumerWidget {
@@ -101,6 +102,11 @@ class OrderDetailsScreen extends ConsumerWidget {
                       SizedBox(height: 16.h),
                       if (currentOrder.itemStatus?.toUpperCase() == 'REJECTED') ...[
                         OrderRejectionCard(order: currentOrder, isDark: isDark),
+                        SizedBox(height: 16.h),
+                      ],
+                      if (currentOrder.itemStatus?.toUpperCase() == 'REVISION_REQUESTED' ||
+                          currentOrder.effectiveStatus.toLowerCase() == 'revision_requested') ...[
+                        OrderRevisionCard(order: currentOrder, isDark: isDark),
                         SizedBox(height: 16.h),
                       ],
                       OrderCustomerCard(order: currentOrder, isDark: isDark),
