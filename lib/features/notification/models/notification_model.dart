@@ -43,17 +43,21 @@ class NotificationModel {
 
     NotificationType notifType = NotificationType.system;
 
-    if (combinedContext.contains('ORDER') || combinedContext.contains('BOOKING')) {
-      notifType = NotificationType.order;
-    } else if (combinedContext.contains('PAYMENT') ||
+    if (combinedContext.contains('REVISION')) {
+      notifType = NotificationType.revision;
+    } else if (titleStr.contains('WALLET') ||
+        titleStr.contains('PAYMENT') ||
+        titleStr.contains('CREDITED') ||
+        titleStr.contains('WITHDRAWAL') ||
+        combinedContext.contains('PAYMENT') ||
         combinedContext.contains('WALLET') ||
         combinedContext.contains('WITHDRAWAL') ||
         combinedContext.contains('CREDITED')) {
       notifType = NotificationType.payment;
+    } else if (combinedContext.contains('ORDER') || combinedContext.contains('BOOKING')) {
+      notifType = NotificationType.order;
     } else if (combinedContext.contains('MESSAGE') || combinedContext.contains('CHAT')) {
       notifType = NotificationType.message;
-    } else if (combinedContext.contains('REVISION')) {
-      notifType = NotificationType.revision;
     }
 
     DateTime parsedDate;

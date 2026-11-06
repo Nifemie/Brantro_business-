@@ -119,4 +119,26 @@ class NotificationRepository {
       return false;
     }
   }
+
+  /// Delete all notifications
+  Future<bool> deleteAllNotifications() async {
+    try {
+      log('[NotificationRepository] Deleting all notifications');
+
+      final response = await apiClient.delete(
+        ApiEndpoints.notificationDeleteAll,
+      );
+
+      if (response.data != null && response.data['success'] == true) {
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      log('[NotificationRepository] Delete all notifications FAILED: ${e.message}');
+      return false;
+    } catch (e) {
+      log('[NotificationRepository] Unexpected error deleting all notifications: $e');
+      return false;
+    }
+  }
 }

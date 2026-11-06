@@ -119,6 +119,22 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     state = state.copyWith(selectedFilter: filter);
   }
 
+  /// Clear / Delete all notifications
+  Future<void> clearAllNotifications() async {
+    final previousList = state.notifications;
+    state = state.copyWith(notifications: []);
+
+    try {
+      final success = await _repository.deleteAllNotifications();
+      if (!success) {
+        log('[NotificationNotifier] Backend deleteAllNotifications returned false');
+      }
+    } catch (e) {
+      log('[NotificationNotifier] Error clearing all notifications: $e');
+      state = state.copyWith(notifications: previousList);
+    }
+  }
+
   /// Remove/Delete notification locally
   void removeNotification(String id) {
     final updated = state.notifications.where((n) => n.id != id).toList();

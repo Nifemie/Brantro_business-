@@ -20,6 +20,8 @@ import 'package:brantro_business/features/wallet/data/models/withdrawal_account_
 import 'package:brantro_business/features/orders/data/models/order_model.dart';
 import 'package:brantro_business/features/wallet/data/models/wallet_model.dart';
 import 'package:brantro_business/features/wallet/data/models/transaction_model.dart';
+import 'package:brantro_business/core/constants/endpoints.dart';
+import 'package:brantro_business/features/notification/models/notification_model.dart';
 
 void main() {
   group('Auth Flow Bug Fixes Verification', () {
@@ -810,6 +812,52 @@ void main() {
         '2026-12-03',
         '2026-12-04',
       ]));
+    });
+
+    test('Notifications: NotificationModel correctly parses Swagger GenericNotificationDto format and classifies types', () {
+      final orderNotifJson = {
+        'id': 1001,
+        'subject': 'New Service Order Received',
+        'body': 'Client User has placed a UGC video order for REF_SO_9988.',
+        'status': 'UNSEEN',
+        'createdAt': '2026-11-06T12:00:00Z',
+        'metadata': {
+          'orderId': 'REF_SO_9988',
+        },
+      };
+
+      final orderNotif = NotificationModel.fromJson(orderNotifJson);
+      expect(orderNotif.id, equals('1001'));
+      expect(orderNotif.title, equals('New Service Order Received'));
+      expect(orderNotif.message, contains('Client User has placed a UGC video order'));
+      expect(orderNotif.isRead, isFalse);
+      expect(orderNotif.status, equals('UNSEEN'));
+      expect(orderNotif.type, equals(NotificationType.order));
+      expect(orderNotif.metadata?['orderId'], equals('REF_SO_9988'));
+
+      final paymentNotifJson = {
+        'id': 1002,
+        'title': 'Wallet Credited',
+        'message': 'Your wallet has been credited with ₦45,000.00 for order milestone.',
+        'status': 'SEEN',
+        'createdAt': '2026-11-06T12:30:00Z',
+      };
+
+      final paymentNotif = NotificationModel.fromJson(paymentNotifJson);
+      expect(paymentNotif.id, equals('1002'));
+      expect(paymentNotif.title, equals('Wallet Credited'));
+      expect(paymentNotif.isRead, isTrue);
+      expect(paymentNotif.type, equals(NotificationType.payment));
+    });
+
+    test('Notifications: Endpoints strictly adhere to Swagger notification contracts', () {
+      expect(ApiEndpoints.notificationList, equals('api/v1/notification/list'));
+      expect(ApiEndpoints.notificationReadAll, equals('api/v1/notification/read-all'));
+      expect(ApiEndpoints.notificationDeleteAll, equals('api/v1/notification'));
+      
+      // Swagger: PUT /api/v1/notification/{id}?status=SEEN
+      final markStatusUrl = ApiEndpoints.markNotificationStatus(42, status: 'SEEN');
+      expect(markStatusUrl, equals('api/v1/notification/42?status=SEEN'));
     });
   });
 }

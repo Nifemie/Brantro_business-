@@ -188,4 +188,5 @@ class ApiEndpoints {
   static String markNotificationStatus(dynamic id, {String status = 'SEEN'}) =>
       '$apiVersion/notification/$id?status=$status';
   static const String notificationReadAll = '$apiVersion/notification/read-all';
+  static const String notificationDeleteAll = '$apiVersion/notification';
 }
