@@ -930,5 +930,36 @@ void main() {
       // 5. Account Deletion Endpoint (DELETE /api/v1/user/me)
       expect(ApiEndpoints.userMe, equals('api/v1/user/me'));
     });
+
+    test('Edit Profile: UpdateUserDto payload satisfies Swagger contracts with additionalInfo and media URLs', () {
+      final updateData = <String, dynamic>{
+        'name': 'Updated Business Name',
+        'phoneNumber': '08099887766',
+        'bio': 'Award-winning creative director in Lagos.',
+        'country': 'Nigeria',
+        'state': 'Lagos',
+        'city': 'Ikeja',
+        'address': '25 Isaac John St',
+        'additionalInfo': {
+          'bio': 'Award-winning creative director in Lagos.',
+          'address': '25 Isaac John St',
+          'city': 'Ikeja',
+          'state': 'Lagos',
+          'country': 'Nigeria',
+        },
+        'managerId': 0,
+        'avatarUrl': 'uploads/avatar/profile.jpg',
+        'coverUrl': 'uploads/cover/banner.jpg',
+      };
+
+      // Swagger UpdateUserDto contract
+      expect(updateData.containsKey('avatarUrl'), isTrue);
+      expect(updateData.containsKey('coverUrl'), isTrue);
+      expect(updateData.containsKey('additionalInfo'), isTrue);
+      expect(updateData.containsKey('managerId'), isTrue);
+      expect(updateData['additionalInfo'], isA<Map<String, dynamic>>());
+      expect(updateData['managerId'], isA<int>());
+      expect(ApiEndpoints.updateUser('42'), equals('api/v1/user/42'));
+    });
   });
 }

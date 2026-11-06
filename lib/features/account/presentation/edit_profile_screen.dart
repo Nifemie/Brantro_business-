@@ -580,7 +580,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         coverUrl = await fileRepo.uploadFile(_newCoverImage!.path, prefix: 'cover');
       }
 
-      // 3. Build update payload
+      // 3. Build update payload adhering to Swagger UpdateUserDto
+      final existingAdditionalInfo = (user != null && user['additionalInfo'] is Map)
+          ? Map<String, dynamic>.from(user['additionalInfo'] as Map)
+          : <String, dynamic>{};
+      existingAdditionalInfo['bio'] = _bioController.text.trim();
+      existingAdditionalInfo['address'] = _addressController.text.trim();
+      existingAdditionalInfo['city'] = _cityController.text.trim();
+      existingAdditionalInfo['state'] = _stateController.text.trim();
+      existingAdditionalInfo['country'] = _countryController.text.trim();
+
       final Map<String, dynamic> updateData = {
         'name': _fullNameController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
@@ -589,6 +598,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'state': _stateController.text.trim(),
         'city': _cityController.text.trim(),
         'address': _addressController.text.trim(),
+        'additionalInfo': existingAdditionalInfo,
+        'managerId': (user != null && user['managerId'] is num) ? (user['managerId'] as num).toInt() : 0,
         if (avatarUrl != null && avatarUrl.isNotEmpty) 'avatarUrl': avatarUrl,
         if (coverUrl != null && coverUrl.isNotEmpty) 'coverUrl': coverUrl,
       };
