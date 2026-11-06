@@ -214,8 +214,13 @@ class OrderModel {
     }
 
     final baseStatus = status.toLowerCase();
-    if (baseStatus == 'paid')
-      return 'pending'; // A paid order is pending work by default
+    if (baseStatus == 'paid') {
+      if (serviceType.toLowerCase() == 'template' ||
+          serviceType.toLowerCase() == 'creative') {
+        return 'completed'; // Ready-made digital assets are instantly fulfilled upon payment
+      }
+      return 'pending'; // A paid custom digital service is pending provider work by default
+    }
     return baseStatus;
   }
 

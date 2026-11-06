@@ -23,13 +23,32 @@ class OrdersRepository {
         if (creativeId != null) 'creativeId': creativeId,
       };
 
-      final response = await apiClient.get(
-        ApiEndpoints.creativeOrdersList,
+      try {
+        final response = await apiClient.get(
+          ApiEndpoints.creativeOrdersList,
+          query: queryParams,
+        );
+
+        if (response.data != null && response.data['success'] == true) {
+          final payload = response.data['payload'];
+          if (payload != null && payload['page'] != null) {
+            final List<dynamic> data = payload['page'];
+            if (data.isNotEmpty) {
+              return data.map((json) => OrderModel.fromCreativeOrderJson(json)).toList();
+            }
+          }
+        }
+      } catch (_) {
+        // Fall back to myCreatives if list endpoint requires elevated permissions or fails
+      }
+
+      final mineResponse = await apiClient.get(
+        ApiEndpoints.myCreatives,
         query: queryParams,
       );
 
-      if (response.data != null && response.data['success'] == true) {
-        final payload = response.data['payload'];
+      if (mineResponse.data != null && mineResponse.data['success'] == true) {
+        final payload = mineResponse.data['payload'];
         if (payload != null && payload['page'] != null) {
           final List<dynamic> data = payload['page'];
           return data.map((json) => OrderModel.fromCreativeOrderJson(json)).toList();
@@ -53,13 +72,32 @@ class OrdersRepository {
         if (templateId != null) 'templateId': templateId,
       };
 
-      final response = await apiClient.get(
-        ApiEndpoints.templateOrdersList,
+      try {
+        final response = await apiClient.get(
+          ApiEndpoints.templateOrdersList,
+          query: queryParams,
+        );
+
+        if (response.data != null && response.data['success'] == true) {
+          final payload = response.data['payload'];
+          if (payload != null && payload['page'] != null) {
+            final List<dynamic> data = payload['page'];
+            if (data.isNotEmpty) {
+              return data.map((json) => OrderModel.fromTemplateOrderJson(json)).toList();
+            }
+          }
+        }
+      } catch (_) {
+        // Fall back to myTemplates if list endpoint requires elevated permissions or fails
+      }
+
+      final mineResponse = await apiClient.get(
+        ApiEndpoints.myTemplates,
         query: queryParams,
       );
 
-      if (response.data != null && response.data['success'] == true) {
-        final payload = response.data['payload'];
+      if (mineResponse.data != null && mineResponse.data['success'] == true) {
+        final payload = mineResponse.data['payload'];
         if (payload != null && payload['page'] != null) {
           final List<dynamic> data = payload['page'];
           return data.map((json) => OrderModel.fromTemplateOrderJson(json)).toList();

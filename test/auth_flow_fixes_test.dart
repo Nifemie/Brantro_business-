@@ -539,5 +539,37 @@ void main() {
       expect(decisionPayload['startDate'], contains('2026-11-07'));
       expect(decisionPayload['endDate'], contains('2026-11-14'));
     });
+
+    test('Templates: OrderModel parses template order json and treats paid templates as completed sales', () {
+      final templateOrderJson = {
+        'id': '201',
+        'paymentRef': 'REF_TMP_9988',
+        'amount': '15000',
+        'status': 'PAID',
+        'createdAt': '2026-11-06T11:00:00Z',
+        'user': {
+          'name': 'Template Buyer',
+          'emailAddress': 'buyer@brand.com',
+          'phoneNumber': '08123456789',
+        },
+        'templates': [
+          {
+            'id': 45,
+            'title': 'Minimalist Instagram Story Pack',
+            'thumbnail': 'templates/minimalist_thumb.jpg',
+            'price': '15000',
+            'designUrl': 'https://canva.com/design/DAG123',
+          }
+        ],
+      };
+
+      final order = OrderModel.fromTemplateOrderJson(templateOrderJson);
+      expect(order.id, equals('REF_TMP_9988'));
+      expect(order.serviceType, equals('template'));
+      expect(order.serviceName, equals('Minimalist Instagram Story Pack'));
+      expect(order.customerName, equals('Template Buyer'));
+      expect(order.amount, equals(15000.0));
+      expect(order.effectiveStatus, equals('completed'));
+    });
   });
 }

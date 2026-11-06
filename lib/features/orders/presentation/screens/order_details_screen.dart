@@ -114,8 +114,8 @@ class OrderDetailsScreen extends ConsumerWidget {
                       OrderItemsCard(order: currentOrder, isDark: isDark),
                       SizedBox(height: 16.h),
                       if (currentOrder.serviceType == 'service' ||
-                          currentOrder.serviceType == 'template' ||
-                          currentOrder.serviceType == 'creative') ...[
+                          (currentOrder.requirementsProvided != null &&
+                              currentOrder.requirementsProvided!.isNotEmpty)) ...[
                         OrderRequirementsCard(
                           order: currentOrder,
                           isDark: isDark,
