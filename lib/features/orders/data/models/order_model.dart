@@ -200,6 +200,8 @@ class OrderModel {
               itemStatusCheck == 'in_progress' ||
               itemStatusCheck == 'accepted')
             return 'in_progress';
+          if (itemStatusCheck == 'revision_requested')
+            return 'revision_requested';
           if (itemStatusCheck == 'delivered') return 'delivered';
           if (itemStatusCheck == 'completed' || itemStatusCheck == 'approved')
             return 'completed';

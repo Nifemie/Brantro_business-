@@ -166,12 +166,27 @@ class _TemplateMarketplaceScreenState extends ConsumerState<TemplateMarketplaceS
                                             ),
                                           );
                                           if (confirm == true) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Template deleted successfully'),
-                                                backgroundColor: Colors.green,
-                                              ),
-                                            );
+                                            final success = await ref
+                                                .read(templateProvider.notifier)
+                                                .deleteTemplate(template.id);
+                                            if (context.mounted) {
+                                              if (success) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Template deleted successfully'),
+                                                    backgroundColor: Colors.green,
+                                                  ),
+                                                );
+                                              } else {
+                                                final errorMsg = ref.read(templateProvider).message ?? 'Failed to delete template';
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(errorMsg),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            }
                                           }
                                         },
                                         onViewDetails: () {

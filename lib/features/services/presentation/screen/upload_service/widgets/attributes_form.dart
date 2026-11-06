@@ -481,10 +481,13 @@ class _AttributesFormState extends State<AttributesForm> {
   Future<void> _showFormatPicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Primary Format',
-        options: ['PNG', 'PDF', 'JPG', 'PSD', 'AI', 'EPS', 'SVG', 'MP4', 'WAV', 'ZIP'],
+        allowCustomInput: true,
+        customInputHint: 'Type format (e.g. FIGMA, BLEND, AI)...',
+        options: ['PNG', 'PDF', 'JPG', 'PSD', 'AI', 'EPS', 'SVG', 'MP4', 'WAV', 'ZIP', 'FIGMA', 'DOCX'],
       ),
     );
     if (result != null) {
@@ -495,9 +498,12 @@ class _AttributesFormState extends State<AttributesForm> {
   Future<void> _showCoverageAreaPicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Coverage Areas',
+        allowCustomInput: true,
+        customInputHint: 'Type custom coverage area or city...',
         options: [
           '##HEADER##GLOBAL',
           'Online',

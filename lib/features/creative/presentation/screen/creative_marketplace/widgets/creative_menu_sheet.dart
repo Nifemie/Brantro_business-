@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-void showCreativeMenuSheet(BuildContext context, String creativeName) {
+void showCreativeMenuSheet(
+  BuildContext context, {
+  required String creativeName,
+  VoidCallback? onEdit,
+  VoidCallback? onDelete,
+  VoidCallback? onViewDetails,
+}) {
   showModalBottomSheet(
     context: context,
-    builder: (context) => CreativeMenuSheet(creativeName: creativeName),
+    builder: (context) => CreativeMenuSheet(
+      creativeName: creativeName,
+      onEdit: onEdit,
+      onDelete: onDelete,
+      onViewDetails: onViewDetails,
+    ),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
     ),

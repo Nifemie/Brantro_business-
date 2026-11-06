@@ -128,4 +128,20 @@ class CreativeNotifier extends StateNotifier<DataState<CreativeModel>> {
       return false;
     }
   }
+
+  Future<bool> deleteCreative(String id) async {
+    try {
+      state = state.copyWith(isInitialLoading: true);
+      await repository.deleteCreative(id);
+      _allRawCreatives.removeWhere((c) => c.id == id);
+      _applyFiltersAndEmit();
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isInitialLoading: false,
+        message: e.toString(),
+      );
+      return false;
+    }
+  }
 }

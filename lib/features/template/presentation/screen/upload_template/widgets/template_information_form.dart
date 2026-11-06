@@ -127,6 +127,8 @@ class TemplateInformationForm extends ConsumerWidget {
                           title: 'Select Type',
                           options: TemplateConstants.fileFormats,
                           selectedOption: selectedType,
+                          allowCustomInput: true,
+                          customInputHint: 'Type template format (e.g. BLENDER, SKETCH)...',
                         ),
                       );
                       

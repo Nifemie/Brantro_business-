@@ -115,6 +115,8 @@ class CustomPickerField extends StatelessWidget {
   final List<String> options;
   final bool isDark;
   final bool isRequired;
+  final bool allowCustomInput;
+  final String? customInputHint;
   final ValueChanged<String>? onChanged;
 
   const CustomPickerField({
@@ -125,6 +127,8 @@ class CustomPickerField extends StatelessWidget {
     required this.options,
     required this.isDark,
     this.isRequired = false,
+    this.allowCustomInput = false,
+    this.customInputHint,
     this.onChanged,
   });
 
@@ -175,11 +179,14 @@ class CustomPickerField extends StatelessWidget {
           onTap: () async {
             final selected = await showModalBottomSheet<String>(
               context: context,
+              isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (context) => OptionPickerSheet(
                 title: 'Select $label',
                 options: options,
                 selectedOption: controller.text,
+                allowCustomInput: allowCustomInput,
+                customInputHint: customInputHint,
               ),
             );
 

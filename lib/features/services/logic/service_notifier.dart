@@ -131,4 +131,20 @@ class ServiceNotifier extends StateNotifier<DataState<ServiceModel>> {
       return false;
     }
   }
+
+  Future<bool> deleteService(String id) async {
+    try {
+      state = state.copyWith(isInitialLoading: true);
+      await repository.deleteService(id);
+      _allRawServices.removeWhere((s) => s.id == id);
+      _applyFiltersAndEmit();
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isInitialLoading: false,
+        message: e.toString(),
+      );
+      return false;
+    }
+  }
 }

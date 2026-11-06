@@ -819,19 +819,25 @@ class UploadBillboardForm extends ConsumerWidget {
   Future<void> _showClassPicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Class',
+        allowCustomInput: true,
+        customInputHint: 'Type custom billboard class...',
         options: [
-          'LED Screen',
-          'LCD Screen',
-          'Video Wall',
-          'Projection Screen',
-          'Mall Screen',
-          'Elevator Screen',
-          'Airport Screen',
-          'Stadium Screen',
-          'UNIPOLAR'
+          'Unipole',
+          'Gantry Billboard',
+          'Bridge Panel',
+          'Rooftop Billboard',
+          'Portrait / Megasite',
+          '48-Sheet Billboard',
+          '96-Sheet Billboard',
+          'LED Digital Billboard',
+          'Backlit Billboard',
+          'Trivision Billboard',
+          'Cantilever Billboard',
+          'Static Billboard',
         ],
       ),
     );

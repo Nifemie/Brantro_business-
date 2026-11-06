@@ -82,6 +82,11 @@ class OrderCardHeader extends StatelessWidget {
           'label': 'InProgress',
           'color': const Color(0xFFF76301), // Orange
         };
+      case 'revision_requested':
+        return {
+          'label': 'Revision Requested',
+          'color': const Color(0xFFD97706), // Amber
+        };
       case 'delivered':
         return {
           'label': 'Delivered',

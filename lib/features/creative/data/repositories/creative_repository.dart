@@ -81,4 +81,36 @@ class CreativeRepository {
       throw Exception('Failed to create creative: ${e.toString()}');
     }
   }
+
+  Future<void> deleteCreative(dynamic id) async {
+    try {
+      log('Deleting creative: id=$id');
+      final response = await _apiClient.delete(
+        ApiEndpoints.deleteCreative(id),
+      );
+
+      final isSuccess = response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          (response.data is Map &&
+              (response.data['success'] == true ||
+                  response.data['status'] == 'success'));
+
+      if (!isSuccess) {
+        final msg = response.data is Map
+            ? (response.data['message'] ?? 'Failed to delete creative')
+            : 'Failed to delete creative';
+        throw Exception(msg);
+      }
+    } on DioException catch (e) {
+      log('Error deleting creative: ${e.message}');
+      String msg = 'Failed to delete creative';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
+    } catch (e) {
+      log('Unexpected error deleting creative: $e');
+      throw Exception('Failed to delete creative: $e');
+    }
+  }
 }

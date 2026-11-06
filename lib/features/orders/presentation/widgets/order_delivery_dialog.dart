@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_button.dart';
+import '../../../../core/data/repositories/file_repository.dart';
 import '../../logic/order_action_notifier.dart';
 
 class OrderDeliveryDialog extends ConsumerStatefulWidget {
@@ -23,12 +25,61 @@ class _OrderDeliveryDialogState extends ConsumerState<OrderDeliveryDialog> {
   final _feedbackController = TextEditingController();
   final _urlController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isUploadingFile = false;
+  String? _pickedFileName;
 
   @override
   void dispose() {
     _feedbackController.dispose();
     _urlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+      );
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+        final fileName = result.files.single.name;
+        setState(() {
+          _isUploadingFile = true;
+          _pickedFileName = fileName;
+        });
+
+        final fileRepo = ref.read(fileRepositoryProvider);
+        final uploadedUrl = await fileRepo.uploadFile(
+          filePath,
+          prefix: 'service-delivery',
+        );
+
+        if (mounted) {
+          setState(() {
+            _urlController.text = uploadedUrl;
+            _isUploadingFile = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('File uploaded successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUploadingFile = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload file: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _submit() {
@@ -171,14 +222,75 @@ class _OrderDeliveryDialogState extends ConsumerState<OrderDeliveryDialog> {
                     ),
                   ),
                 ),
+                SizedBox(height: 12.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isUploadingFile ? null : _pickAndUploadFile,
+                        icon: _isUploadingFile
+                            ? SizedBox(
+                                width: 16.r,
+                                height: 16.r,
+                                child: const CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(Icons.upload_file, size: 18.sp, color: AppColors.primaryColor),
+                        label: Text(
+                          _isUploadingFile
+                              ? 'Uploading File...'
+                              : (_pickedFileName != null ? 'Change File' : 'Upload From Device'),
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.primaryColor),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_pickedFileName != null) ...[
+                  SizedBox(height: 8.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[850] : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 16.sp, color: Colors.green),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            _pickedFileName!,
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 SizedBox(height: 32.h),
 
                 SizedBox(
                   width: double.infinity,
                   child: FullWidthButton(
                     text: 'Submit Delivery',
-                    isLoading: actionState.isLoading,
-                    onPressed: actionState.isLoading ? null : _submit,
+                    isLoading: actionState.isLoading || _isUploadingFile,
+                    onPressed: (actionState.isLoading || _isUploadingFile) ? null : _submit,
                   ),
                 ),
                 SizedBox(height: 16.h),

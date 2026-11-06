@@ -96,4 +96,36 @@ class ServiceRepository {
       throw Exception('Network error. Please check your connection');
     }
   }
+
+  Future<void> deleteService(dynamic id) async {
+    try {
+      log('Deleting service: id=$id');
+      final response = await _apiClient.delete(
+        ApiEndpoints.deleteService(id),
+      );
+
+      final isSuccess = response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          (response.data is Map &&
+              (response.data['success'] == true ||
+                  response.data['status'] == 'success'));
+
+      if (!isSuccess) {
+        final msg = response.data is Map
+            ? (response.data['message'] ?? 'Failed to delete service')
+            : 'Failed to delete service';
+        throw Exception(msg);
+      }
+    } on DioException catch (e) {
+      log('Error deleting service: ${e.message}');
+      String msg = 'Failed to delete service';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
+    } catch (e) {
+      log('Unexpected error deleting service: $e');
+      throw Exception('Failed to delete service: $e');
+    }
+  }
 }

@@ -99,12 +99,19 @@ class _UploadTemplateScreenState extends ConsumerState<UploadTemplateScreen> {
           .where((e) => e.isNotEmpty)
           .toList();
 
+      final featuresList = _featuresController.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
       final payload = {
         'title': _templateNameController.text,
         'description': _descriptionController.text,
         'categoryId': formState.selectedCategoryId,
         'type': formState.selectedType?.toUpperCase().replaceAll(' ', '_'),
         'tags': tags,
+        'features': featuresList,
         'designUrl': designFileUrl ?? '',
         'fileUrl': '',
         'thumbnail': thumbnailUrl,

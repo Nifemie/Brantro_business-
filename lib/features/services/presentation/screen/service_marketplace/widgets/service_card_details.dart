@@ -13,6 +13,7 @@ class ServiceCardDetails extends StatelessWidget {
   final List<String> tags;
   final VoidCallback onViewDetails;
   final VoidCallback onViewOrders;
+  final VoidCallback? onDelete;
 
   const ServiceCardDetails({
     super.key,
@@ -24,6 +25,7 @@ class ServiceCardDetails extends StatelessWidget {
     required this.tags,
     required this.onViewDetails,
     required this.onViewOrders,
+    this.onDelete,
   });
 
   @override
@@ -251,10 +253,10 @@ class ServiceCardDetails extends StatelessWidget {
                     ),
                   ],
                   onSelected: (value) {
-                    // Handle option selection
-                    debugPrint('Selected: $value');
                     if (value == 'View') {
                       onViewDetails();
+                    } else if (value == 'Delete') {
+                      onDelete?.call();
                     }
                   },
                 ),

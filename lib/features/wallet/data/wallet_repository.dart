@@ -5,6 +5,7 @@ import '../../../core/constants/endpoints.dart';
 import 'models/wallet_response.dart';
 import 'models/transactions_response.dart';
 import 'models/withdrawal_account_model.dart';
+import 'models/bank_model.dart';
 
 class WalletRepository {
   final ApiClient apiClient;
@@ -106,6 +107,93 @@ class WalletRepository {
     } catch (e) {
       log('[WalletRepository] Error: $e');
       throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  // --- Banks & Account Verification ---
+
+  /// Search Nigerian banks. [query] is optional and case-insensitive.
+  Future<List<BankModel>> getBanks({String? query}) async {
+    try {
+      log('[WalletRepository] Fetching banks${query != null && query.isNotEmpty ? ' with query: $query' : ''}');
+      final Map<String, dynamic>? queryParams = (query != null && query.trim().isNotEmpty)
+          ? {'q': query.trim()}
+          : null;
+
+      final response = await apiClient.get(
+        ApiEndpoints.banks,
+        query: queryParams,
+      );
+
+      if (response.data != null) {
+        dynamic payload = response.data;
+        if (response.data is Map) {
+          payload = response.data['payload'] ??
+              response.data['data'] ??
+              response.data['banks'];
+        }
+        if (payload is List) {
+          return payload
+              .whereType<Map<String, dynamic>>()
+              .map((json) => BankModel.fromJson(json))
+              .toList();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      log('[WalletRepository] Failed to fetch banks: ${e.message}');
+      String msg = 'Failed to load banks.';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
+    } catch (e) {
+      log('[WalletRepository] Error fetching banks: $e');
+      throw Exception('Failed to load banks.');
+    }
+  }
+
+  /// Resolve bank account name using [bankId] and 10-digit [accountNumber]
+  Future<AccountResolutionResult> resolveAccount({
+    required int bankId,
+    required String accountNumber,
+  }) async {
+    try {
+      log('[WalletRepository] Resolving account: bankId=$bankId, accountNumber=$accountNumber');
+      final response = await apiClient.post(
+        ApiEndpoints.resolveAccount,
+        data: {
+          'bankId': bankId,
+          'accountNumber': accountNumber,
+        },
+      );
+
+      final isSuccess = response.data != null &&
+          ((response.data is Map && response.data['success'] == true) ||
+           response.statusCode == 200 ||
+           response.statusCode == 201);
+
+      if (isSuccess && response.data is Map) {
+        final payload = response.data['payload'] ?? response.data['data'];
+        if (payload != null && payload is Map<String, dynamic>) {
+          return AccountResolutionResult.fromJson(payload);
+        }
+      }
+
+      final msg = response.data is Map
+          ? (response.data['message'] ?? 'Could not verify account name.')
+          : 'Could not verify account name.';
+      throw Exception(msg);
+    } on DioException catch (e) {
+      log('[WalletRepository] Failed to resolve account: ${e.message}');
+      String msg = 'We could not verify this account number for the selected bank';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
+    } catch (e) {
+      log('[WalletRepository] Error resolving account: $e');
+      rethrow;
     }
   }
 

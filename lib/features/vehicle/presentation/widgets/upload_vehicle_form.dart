@@ -757,10 +757,13 @@ class UploadVehicleForm extends ConsumerWidget {
   Future<void> _showTypePicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Vehicle Type',
-        options: ['SEDAN', 'SUV', 'BUS', 'TRUCK', 'KEKE', 'TRANSIT'],
+        allowCustomInput: true,
+        customInputHint: 'Type custom vehicle type (e.g. VAN)...',
+        options: ['SEDAN', 'SUV', 'BUS', 'TRUCK', 'VAN', 'KEKE', 'TRANSIT', 'MOTORCYCLE', 'BOAT'],
       ),
     );
     
@@ -822,19 +825,21 @@ class UploadVehicleForm extends ConsumerWidget {
   Future<void> _showClassPicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Class',
+        allowCustomInput: true,
+        customInputHint: 'Type custom vehicle class...',
         options: [
-          'LED Screen',
-          'LCD Screen',
-          'Video Wall',
-          'Projection Screen',
-          'Mall Screen',
-          'Elevator Screen',
-          'Airport Screen',
-          'Stadium Screen',
-          'UNIPOLAR'
+          'Full Vehicle Wrap',
+          'Partial Vehicle Wrap',
+          'Rear Window (Contravision)',
+          'Side Door Panels',
+          'Rooftop Sign / Lightbox',
+          'Digital Vehicle Screen',
+          'Back Door Wrap',
+          'Bonnet / Hood Branding',
         ],
       ),
     );

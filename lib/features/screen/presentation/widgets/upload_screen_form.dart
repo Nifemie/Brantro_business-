@@ -809,9 +809,12 @@ class UploadScreenForm extends ConsumerWidget {
   Future<void> _showClassPicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Class',
+        allowCustomInput: true,
+        customInputHint: 'Type custom screen class...',
         options: [
           'LED Screen',
           'LCD Screen',
@@ -821,7 +824,9 @@ class UploadScreenForm extends ConsumerWidget {
           'Elevator Screen',
           'Airport Screen',
           'Stadium Screen',
-          'UNIPOLAR'
+          'Interactive Touchscreen',
+          'Bus Shelter Screen',
+          'Transparent LED Display',
         ],
       ),
     );

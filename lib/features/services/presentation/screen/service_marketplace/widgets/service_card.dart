@@ -16,6 +16,7 @@ class ServiceCard extends StatelessWidget {
   final List<String> tags;
   final VoidCallback onViewDetails;
   final VoidCallback onViewOrders;
+  final VoidCallback? onDelete;
 
   const ServiceCard({
     super.key,
@@ -31,6 +32,7 @@ class ServiceCard extends StatelessWidget {
     required this.tags,
     required this.onViewDetails,
     required this.onViewOrders,
+    this.onDelete,
   });
 
   @override
@@ -73,6 +75,7 @@ class ServiceCard extends StatelessWidget {
             tags: tags,
             onViewDetails: onViewDetails,
             onViewOrders: onViewOrders,
+            onDelete: onDelete,
           ),
         ],
       ),

@@ -127,4 +127,20 @@ class TemplateNotifier extends StateNotifier<DataState<TemplateModel>> {
       return false;
     }
   }
+
+  Future<bool> deleteTemplate(String id) async {
+    try {
+      state = state.copyWith(isInitialLoading: true);
+      await repository.deleteTemplate(id);
+      _allRawTemplates.removeWhere((t) => t.id == id);
+      _applyFiltersAndEmit();
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isInitialLoading: false,
+        message: e.toString(),
+      );
+      return false;
+    }
+  }
 }

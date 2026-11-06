@@ -47,15 +47,13 @@ class FaqNotifier extends StateNotifier<FaqState> {
     }
   }
 
-  Future<void> addFaq(String title, String answer) async {
-    state = state.copyWith(isLoading: true);
+  Future<void> addFaq(String title, String answer, {String category = 'GENERAL'}) async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      final newFaq = FaqModel(
-        id: 'faq_${DateTime.now().millisecondsSinceEpoch}',
+      final newFaq = await repository.createFaq(
         title: title,
         answer: answer,
-        createdAt: DateTime.now(),
+        category: category,
       );
       state = state.copyWith(
         faqs: [newFaq, ...state.faqs],
@@ -68,9 +66,9 @@ class FaqNotifier extends StateNotifier<FaqState> {
   }
 
   Future<void> deleteFaq(String id) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      await Future.delayed(const Duration(milliseconds: 400));
+      await repository.deleteFaq(id);
       state = state.copyWith(
         faqs: state.faqs.where((faq) => faq.id != id).toList(),
         isLoading: false,

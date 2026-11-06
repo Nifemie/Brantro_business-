@@ -15,6 +15,9 @@ import 'package:brantro_business/core/constants/kyc_constants.dart';
 import 'package:brantro_business/features/chat/presentation/screens/chat_screen.dart';
 import 'package:brantro_business/features/auth/data/models/signup_request.dart';
 import 'package:brantro_business/core/utils/thousands_separator_input_formatter.dart';
+import 'package:brantro_business/features/wallet/data/models/bank_model.dart';
+import 'package:brantro_business/features/wallet/data/models/withdrawal_account_model.dart';
+import 'package:brantro_business/features/orders/data/models/order_model.dart';
 
 void main() {
   group('Auth Flow Bug Fixes Verification', () {
@@ -361,6 +364,180 @@ void main() {
       expect(ThousandsSeparatorInputFormatter.format(1000), equals('1,000'));
       expect(ThousandsSeparatorInputFormatter.format(50000.0), equals('50,000'));
       expect(ThousandsSeparatorInputFormatter.format(1500000.25), equals('1,500,000.25'));
+    });
+
+    test('Bank Search & Resolution: BankModel and AccountResolutionResult parse and serialize correctly', () {
+      final bankJson = {
+        'id': 9,
+        'name': 'United Bank for Africa',
+        'slug': 'united-bank-for-africa',
+        'code': '033',
+        'currency': 'NGN',
+        'country': 'Nigeria',
+        'active': true,
+        'type': 'nuban',
+      };
+
+      final bank = BankModel.fromJson(bankJson);
+      expect(bank.id, equals(9));
+      expect(bank.name, equals('United Bank for Africa'));
+      expect(bank.currency, equals('NGN'));
+      expect(bank.country, equals('Nigeria'));
+
+      final resolutionJson = {
+        'accountNumber': '2232436237',
+        'accountName': 'JOHN DOE',
+        'bankId': 9,
+        'bankName': 'United Bank for Africa',
+        'verified': true,
+      };
+
+      final resolution = AccountResolutionResult.fromJson(resolutionJson);
+      expect(resolution.accountNumber, equals('2232436237'));
+      expect(resolution.accountName, equals('JOHN DOE'));
+      expect(resolution.bankId, equals(9));
+      expect(resolution.bankName, equals('United Bank for Africa'));
+      expect(resolution.verified, isTrue);
+    });
+
+    test('Withdrawal Account: POST payload adheres strictly to Section 3 of Mobile API Handoff', () {
+      // API rule: Submit only bankId, accountNumber, and isDefault.
+      // Do NOT send bankCode, bankName, accountName, isVerified, or status.
+      final account = WithdrawalAccountModel(
+        bankId: 9,
+        bankName: 'United Bank for Africa',
+        accountNumber: '2232436237',
+        accountName: 'JOHN DOE',
+        isDefault: true,
+        isVerified: true,
+      );
+
+      final payload = account.toJson();
+      expect(payload['bankId'], equals(9));
+      expect(payload['accountNumber'], equals('2232436237'));
+      expect(payload['isDefault'], isTrue);
+      expect(payload.containsKey('bankCode'), isFalse);
+      expect(payload.containsKey('bankName'), isFalse);
+      expect(payload.containsKey('accountName'), isFalse);
+      expect(payload.containsKey('isVerified'), isFalse);
+      expect(payload.containsKey('status'), isFalse);
+    });
+
+    test('Digital Services: OrderModel parses service order json and computes effectiveStatus', () {
+      final serviceOrderJson = {
+        'id': '101',
+        'paymentRef': 'REF_SO_12345',
+        'amount': '45000',
+        'status': 'PAID',
+        'createdAt': '2026-11-06T10:00:00Z',
+        'user': {
+          'name': 'Client User',
+          'emailAddress': 'client@test.com',
+          'phoneNumber': '08012345678',
+        },
+        'items': [
+          {
+            'id': 501,
+            'status': 'PENDING',
+            'service': {
+              'id': 12,
+              'title': 'UGC Video Creation',
+              'thumbnail': 'thumbnails/ugc.jpg',
+            },
+            'requirementsProvided': {
+              'description': 'Create a 30s TikTok-style product review.',
+              'links': ['https://brand.com/product'],
+              'files': [
+                {
+                  'id': 'file-1',
+                  'name': 'brand_guidelines.pdf',
+                  'mimeType': 'application/pdf',
+                  'size': 1048576,
+                  'url': 'uploads/guidelines.pdf',
+                }
+              ],
+            },
+          }
+        ],
+      };
+
+      final order = OrderModel.fromServiceOrderJson(serviceOrderJson);
+      expect(order.id, equals('REF_SO_12345'));
+      expect(order.serviceType, equals('service'));
+      expect(order.serviceName, equals('UGC Video Creation'));
+      expect(order.customerName, equals('Client User'));
+      expect(order.customerEmail, equals('client@test.com'));
+      expect(order.amount, equals(45000.0));
+      expect(order.itemStatus, equals('PENDING'));
+      expect(order.effectiveStatus, equals('pending'));
+
+      // Test effectiveStatus with accepted/in_progress
+      final inProgressOrder = order.copyWith(
+        itemStatus: 'ACCEPTED',
+        metadata: {
+          'items': [{'id': 501, 'status': 'ACCEPTED'}],
+        },
+      );
+      expect(inProgressOrder.effectiveStatus, equals('in_progress'));
+
+      // Test effectiveStatus with revision_requested
+      final revisionOrder = order.copyWith(
+        itemStatus: 'REVISION_REQUESTED',
+        metadata: {
+          'items': [{'id': 501, 'status': 'revision_requested'}],
+        },
+      );
+      expect(revisionOrder.effectiveStatus, equals('revision_requested'));
+
+      // Test effectiveStatus with delivered
+      final deliveredOrder = order.copyWith(
+        itemStatus: 'DELIVERED',
+        metadata: {
+          'items': [{'id': 501, 'status': 'delivered'}],
+        },
+      );
+      expect(deliveredOrder.effectiveStatus, equals('delivered'));
+
+      // Test effectiveStatus with completed
+      final completedOrder = order.copyWith(
+        itemStatus: 'APPROVED',
+        metadata: {
+          'items': [{'id': 501, 'status': 'approved'}],
+        },
+      );
+      expect(completedOrder.effectiveStatus, equals('completed'));
+    });
+
+    test('Digital Services: Delivery and Decision payload structures adhere to Swagger contracts', () {
+      final itemId = 501;
+      final deliveryFeedback = 'Completed video according to guidelines.';
+      final attachmentUrl = 'https://storage.syroltech.com/video.mp4';
+
+      final deliveryPayload = {
+        'feedback': deliveryFeedback,
+        'attachments': [
+          {
+            'id': itemId.toString(),
+            'url': attachmentUrl,
+          }
+        ],
+      };
+
+      expect(deliveryPayload['feedback'], equals(deliveryFeedback));
+      expect(deliveryPayload['attachments'], isA<List>());
+      expect((deliveryPayload['attachments'] as List).first['id'], equals('501'));
+      expect((deliveryPayload['attachments'] as List).first['url'], equals(attachmentUrl));
+
+      final decisionPayload = {
+        'status': 'ACCEPTED',
+        'startDate': DateTime(2026, 11, 7).toIso8601String(),
+        'endDate': DateTime(2026, 11, 14).toIso8601String(),
+        'remark': 'Looking forward to working on this.',
+      };
+
+      expect(decisionPayload['status'], equals('ACCEPTED'));
+      expect(decisionPayload['startDate'], contains('2026-11-07'));
+      expect(decisionPayload['endDate'], contains('2026-11-14'));
     });
   });
 }

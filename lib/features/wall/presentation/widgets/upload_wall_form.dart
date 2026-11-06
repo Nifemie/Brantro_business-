@@ -807,19 +807,21 @@ class UploadWallForm extends ConsumerWidget {
   Future<void> _showClassPicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Class',
+        allowCustomInput: true,
+        customInputHint: 'Type custom wall class...',
         options: [
-          'LED Screen',
-          'LCD Screen',
-          'Video Wall',
-          'Projection Screen',
-          'Mall Screen',
-          'Elevator Screen',
-          'Airport Screen',
-          'Stadium Screen',
-          'UNIPOLAR'
+          'Building Facade',
+          'Brick Wall Mural',
+          'Painted Wall',
+          'Vinyl Wall Wrap',
+          'Concrete Wall Banner',
+          'Side Wall Billboard',
+          'Perimeter Fence Wall',
+          'Glass Wall / Window Vinyl',
         ],
       ),
     );

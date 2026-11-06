@@ -82,13 +82,11 @@ class _OrderDecisionDialogState extends ConsumerState<OrderDecisionDialog> {
       }
     }
 
-    final DateFormat formatter = DateFormat('yyyy-MM-dd');
-    
     ref.read(orderActionNotifierProvider.notifier).makeDecision(
       itemId: widget.itemId,
       decision: widget.isAccept ? 'ACCEPTED' : 'REJECTED',
-      startDate: _startDate != null ? formatter.format(_startDate!) : null,
-      endDate: _endDate != null ? formatter.format(_endDate!) : null,
+      startDate: _startDate?.toIso8601String(),
+      endDate: _endDate?.toIso8601String(),
       remark: _remarkController.text.trim(),
       onSuccess: () {
         Navigator.of(context).pop();

@@ -80,4 +80,36 @@ class TemplateRepository {
       throw Exception('Failed to create template: ${e.toString()}');
     }
   }
+
+  Future<void> deleteTemplate(dynamic id) async {
+    try {
+      log('Deleting template: id=$id');
+      final response = await _apiClient.delete(
+        ApiEndpoints.deleteTemplate(id),
+      );
+
+      final isSuccess = response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          (response.data is Map &&
+              (response.data['success'] == true ||
+                  response.data['status'] == 'success'));
+
+      if (!isSuccess) {
+        final msg = response.data is Map
+            ? (response.data['message'] ?? 'Failed to delete template')
+            : 'Failed to delete template';
+        throw Exception(msg);
+      }
+    } on DioException catch (e) {
+      log('Error deleting template: ${e.message}');
+      String msg = 'Failed to delete template';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
+    } catch (e) {
+      log('Unexpected error deleting template: $e');
+      throw Exception('Failed to delete template: $e');
+    }
+  }
 }

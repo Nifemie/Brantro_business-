@@ -7,6 +7,8 @@ class OptionPickerSheet extends StatefulWidget {
   final List<String> options;
   final String? selectedOption;
   final bool allowMultiple;
+  final bool allowCustomInput;
+  final String? customInputHint;
 
   const OptionPickerSheet({
     super.key,
@@ -14,6 +16,8 @@ class OptionPickerSheet extends StatefulWidget {
     required this.options,
     this.selectedOption,
     this.allowMultiple = false,
+    this.allowCustomInput = false,
+    this.customInputHint,
   });
 
   @override
@@ -22,6 +26,8 @@ class OptionPickerSheet extends StatefulWidget {
 
 class _OptionPickerSheetState extends State<OptionPickerSheet> {
   String? _selectedOption;
+  final _customInputController = TextEditingController();
+  final _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -30,12 +36,29 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
   }
 
   @override
+  void dispose() {
+    _customInputController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submitCustomValue() {
+    final value = _customInputController.text.trim();
+    if (value.isNotEmpty) {
+      Navigator.pop(context, value);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
+      height: MediaQuery.of(context).size.height * 0.75,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.only(
@@ -84,6 +107,61 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
             ),
           ),
 
+          // Custom Input Bar (if enabled)
+          if (widget.allowCustomInput) ...[
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _customInputController,
+                      focusNode: _focusNode,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: widget.customInputHint ?? 'Type your own custom value...',
+                        hintStyle: TextStyle(
+                          fontSize: 13.sp,
+                          color: isDark ? Colors.white38 : AppColors.grey400,
+                        ),
+                        prefixIcon: const Icon(Icons.edit, size: 18),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 10.h,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                      onSubmitted: (_) => _submitCustomValue(),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  ElevatedButton(
+                    onPressed: _submitCustomValue,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Use',
+                      style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8.h),
+          ],
+
           Divider(height: 1, color: isDark ? Colors.grey[800] : AppColors.grey200),
 
           // Options List
@@ -98,7 +176,12 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
 
                 if (isHeader) {
                   return Padding(
-                    padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 16.h, bottom: 8.h),
+                    padding: EdgeInsets.only(
+                      left: 20.w,
+                      right: 20.w,
+                      top: 16.h,
+                      bottom: 8.h,
+                    ),
                     child: Text(
                       displayText,
                       style: TextStyle(
@@ -115,11 +198,9 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
                 return InkWell(
                   onTap: () {
                     setState(() => _selectedOption = option);
-                    // Return selected option after a short delay for visual feedback
-                    Future.delayed(const Duration(milliseconds: 200), () {
-                      if (mounted) {
-                        Navigator.pop(context, option);
-                      }
+                    Future.delayed(const Duration(milliseconds: 150), () {
+                      if (!context.mounted) return;
+                      Navigator.pop(context, option);
                     });
                   },
                   child: Container(
@@ -129,7 +210,7 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primaryColor.withOpacity(0.1)
+                          ? AppColors.primaryColor.withValues(alpha: 0.1)
                           : Colors.transparent,
                       border: Border(
                         left: BorderSide(

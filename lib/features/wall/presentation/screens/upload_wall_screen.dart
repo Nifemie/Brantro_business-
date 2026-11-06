@@ -258,7 +258,7 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
         formData['thumbnail'] = thumbnailUrl;
       }
       if (videoUrl != null) {
-        formData['videoClip'] = videoUrl;
+        formData['videoClip'] = videoUrl ?? '';
       }
       if (uploadedGalleryUrls.isNotEmpty) {
         formData['gallery'] = uploadedGalleryUrls;

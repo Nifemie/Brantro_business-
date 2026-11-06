@@ -266,9 +266,12 @@ class ServiceInfoForm extends ConsumerWidget {
   Future<void> _showTypePicker(BuildContext context) async {
     final result = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const OptionPickerSheet(
         title: 'Select Service Type',
+        allowCustomInput: true,
+        customInputHint: 'Type custom service type...',
         options: [
           '##HEADER##AUDIO',
           'Voice Over',

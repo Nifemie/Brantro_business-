@@ -1,6 +1,7 @@
 class WithdrawalAccountModel {
   final int? id;
   final int? userId;
+  final int? bankId;
   final String bankName;
   final String accountNumber;
   final String accountName;
@@ -14,6 +15,7 @@ class WithdrawalAccountModel {
   WithdrawalAccountModel({
     this.id,
     this.userId,
+    this.bankId,
     required this.bankName,
     required this.accountNumber,
     required this.accountName,
@@ -37,6 +39,7 @@ class WithdrawalAccountModel {
         json['withdrawalAccountId']?.toString() ??
         '');
     final parsedUserId = int.tryParse(json['userId']?.toString() ?? '');
+    final parsedBankId = int.tryParse(json['bankId']?.toString() ?? '');
 
     final isActiveVal = json['isActive'] != false &&
         json['isDeleted'] != true &&
@@ -46,6 +49,7 @@ class WithdrawalAccountModel {
     return WithdrawalAccountModel(
       id: parsedId,
       userId: parsedUserId,
+      bankId: parsedBankId,
       bankName: json['bankName']?.toString() ?? '',
       accountNumber: json['accountNumber']?.toString() ?? '',
       accountName: json['accountName']?.toString() ?? '',
@@ -62,14 +66,24 @@ class WithdrawalAccountModel {
     );
   }
 
+  /// Output JSON for creation/updating adhering to Brantro Mobile API Handoff specification:
+  /// Submit only bankId, accountNumber, and isDefault.
   Map<String, dynamic> toJson() {
-    return {
+    if (bankId != null) {
+      return {
+        'bankId': bankId,
+        'accountNumber': accountNumber,
+        'isDefault': isDefault,
+      };
+    }
+    final map = <String, dynamic>{
       'bankName': bankName,
       'accountNumber': accountNumber,
       'accountName': accountName,
       'isDefault': isDefault,
-      if (status != null) 'status': status,
     };
+    if (status != null) map['status'] = status;
+    return map;
   }
 
   @override

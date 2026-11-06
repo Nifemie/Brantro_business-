@@ -272,7 +272,7 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
         formData['thumbnail'] = thumbnailUrl;
       }
       if (videoUrl != null) {
-        formData['videoClip'] = videoUrl;
+        formData['videoClip'] = videoUrl ?? '';
       }
       if (uploadedGalleryUrls.isNotEmpty) {
         formData['gallery'] = uploadedGalleryUrls;

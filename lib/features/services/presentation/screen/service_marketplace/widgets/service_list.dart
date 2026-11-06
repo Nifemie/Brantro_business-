@@ -59,6 +59,50 @@ class ServiceList extends ConsumerWidget {
           onViewOrders: () {
             context.push('/orders', extra: {'serviceId': service.id});
           },
+          onDelete: () async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Delete Service'),
+                content: Text('Are you sure you want to delete "${service.title}"?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirm == true) {
+              final success = await ref
+                  .read(serviceProvider.notifier)
+                  .deleteService(service.id);
+              if (context.mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Service deleted successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  final errorMsg = ref.read(serviceProvider).message ?? 'Failed to delete service';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMsg),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            }
+          },
         );
       },
     );

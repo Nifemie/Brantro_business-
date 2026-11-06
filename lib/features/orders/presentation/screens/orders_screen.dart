@@ -89,7 +89,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       } else if (selectedFilter == 'failed') {
         return orderStatus == 'failed' || orderStatus == 'cancelled';
       } else if (selectedFilter == 'in_progress') {
-        return orderStatus == 'in_progress' || orderStatus == 'inprogress';
+        return orderStatus == 'in_progress' || orderStatus == 'inprogress' || orderStatus == 'revision_requested';
       } else if (selectedFilter == 'delivered') {
         return orderStatus == 'delivered';
       } else if (selectedFilter == 'completed') {

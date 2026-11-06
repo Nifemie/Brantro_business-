@@ -85,13 +85,18 @@ class ApiEndpoints {
   static const String sendMessage = '$apiVersion/message';
 
   // FAQ Endpoints
+  static const String faq = '$apiVersion/faq';
   static const String faqList = '$apiVersion/faq/list';
+  static String deleteFaq(dynamic id) => '$apiVersion/faq/$id';
+  static String faqDetails(dynamic id) => '$apiVersion/faq/$id';
 
   // Digital Services Endpoints
   static const String createService = '$apiVersion/service';
   static const String servicesList = '$apiVersion/service/list';
   static const String serviceDetails = '$apiVersion/service/details'; // + /:id
   static const String searchServices = '$apiVersion/service/search';
+  static String deleteService(dynamic id) => '$apiVersion/service/$id';
+  static String updateService(dynamic id) => '$apiVersion/service/$id';
 
   // Wallet Endpoints
   static const String walletMe = '$apiVersion/wallet/me';
@@ -107,6 +112,8 @@ class ApiEndpoints {
   static const String createTemplate = '$apiVersion/template';
   static const String templateDetails =
       '$apiVersion/template/details'; // + /:id
+  static String deleteTemplate(dynamic id) => '$apiVersion/template/$id';
+  static String updateTemplate(dynamic id) => '$apiVersion/template/$id';
   static const String templateOrder = '$apiVersion/template-order';
   static String templateOrderDetails(dynamic id) =>
       '$apiVersion/template-order/details/$id';
@@ -117,6 +124,8 @@ class ApiEndpoints {
   static const String creativesList = '$apiVersion/creative/list';
   static const String creativeDetails =
       '$apiVersion/creative/details'; // + /:id
+  static String deleteCreative(dynamic id) => '$apiVersion/creative/$id';
+  static String updateCreative(dynamic id) => '$apiVersion/creative/$id';
   static const String creativeOrder = '$apiVersion/creative-order';
   static String creativeOrderDetails(dynamic id) =>
       '$apiVersion/creative-order/details/$id';
@@ -131,6 +140,10 @@ class ApiEndpoints {
       '$apiVersion/service-order/items/$itemId/cancel';
   static String serviceOrderDetails(dynamic id) =>
       '$apiVersion/service-order/details/$id';
+
+  // Bank Search & Account Resolution Endpoints
+  static const String banks = '$apiVersion/banks';
+  static const String resolveAccount = '$apiVersion/banks/resolve';
 
   // Wallet and Withdrawal Accounts Endpoints
   static const String walletDetails = '$apiVersion/wallet/details';

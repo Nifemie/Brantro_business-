@@ -83,13 +83,32 @@ class OrdersRepository {
         if (serviceId != null) 'serviceId': serviceId,
       };
 
-      final response = await apiClient.get(
-        ApiEndpoints.serviceOrdersList,
+      try {
+        final response = await apiClient.get(
+          ApiEndpoints.serviceOrdersList,
+          query: queryParams,
+        );
+
+        if (response.data != null && response.data['success'] == true) {
+          final payload = response.data['payload'];
+          if (payload != null && payload['page'] != null) {
+            final List<dynamic> data = payload['page'];
+            if (data.isNotEmpty) {
+              return data.map((json) => OrderModel.fromServiceOrderJson(json)).toList();
+            }
+          }
+        }
+      } catch (_) {
+        // Fall back to myServices if list endpoint requires elevated permissions or fails
+      }
+
+      final mineResponse = await apiClient.get(
+        ApiEndpoints.myServices,
         query: queryParams,
       );
 
-      if (response.data != null && response.data['success'] == true) {
-        final payload = response.data['payload'];
+      if (mineResponse.data != null && mineResponse.data['success'] == true) {
+        final payload = mineResponse.data['payload'];
         if (payload != null && payload['page'] != null) {
           final List<dynamic> data = payload['page'];
           return data.map((json) => OrderModel.fromServiceOrderJson(json)).toList();
@@ -236,7 +255,10 @@ class OrdersRepository {
         'feedback': feedback,
         if (attachmentUrl != null && attachmentUrl.isNotEmpty)
           'attachments': [
-            {'url': attachmentUrl}
+            {
+              'id': itemId.toString(),
+              'url': attachmentUrl,
+            }
           ],
       };
 
@@ -265,6 +287,7 @@ class OrdersRepository {
   }) async {
     try {
       final payload = {
+        'remark': reason,
         'reason': reason,
       };
 

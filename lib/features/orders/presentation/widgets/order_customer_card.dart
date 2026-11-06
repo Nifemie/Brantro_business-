@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../data/models/order_model.dart';
 import '../../../../core/network/api_client.dart';
@@ -60,7 +61,7 @@ class OrderCustomerCard extends StatelessWidget {
             _buildLocationBox(city, state, country, address),
           ],
           SizedBox(height: 24.h),
-          _buildContactButtons(),
+          _buildContactButtons(context),
         ],
       ),
     );
@@ -278,18 +279,34 @@ class OrderCustomerCard extends StatelessWidget {
     );
   }
 
-  Widget _buildContactButtons() {
+  Widget _buildContactButtons(BuildContext context) {
     return Row(
       children: [
-        if (order.customerEmail.isNotEmpty)
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => context.push('/chat'),
+            icon: Icon(Icons.chat_bubble_outline_rounded, size: 16.sp, color: Colors.white),
+            label: Text('Chat', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+          ),
+        ),
+        if (order.customerEmail.isNotEmpty) ...[
+          SizedBox(width: 8.w),
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () => _launchEmail(order.customerEmail),
-              icon: Icon(Icons.email_rounded, size: 18.sp, color: Colors.white),
-              label: Text('Email', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
+              icon: Icon(Icons.email_rounded, size: 16.sp, color: Colors.white),
+              label: Text('Email', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                padding: EdgeInsets.symmetric(vertical: 14.h),
+                padding: EdgeInsets.symmetric(vertical: 12.h),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.r),
@@ -297,23 +314,24 @@ class OrderCustomerCard extends StatelessWidget {
               ),
             ),
           ),
-        if (order.customerEmail.isNotEmpty && order.customerPhone.isNotEmpty)
-          SizedBox(width: 12.w),
-        if (order.customerPhone.isNotEmpty)
+        ],
+        if (order.customerPhone.isNotEmpty) ...[
+          SizedBox(width: 8.w),
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => _launchPhone(order.customerPhone),
-              icon: Icon(Icons.phone_rounded, size: 18.sp, color: AppColors.primaryColor),
-              label: Text('Call', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.primaryColor)),
+              icon: Icon(Icons.phone_rounded, size: 16.sp, color: AppColors.primaryColor),
+              label: Text('Call', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, color: AppColors.primaryColor)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: AppColors.primaryColor),
-                padding: EdgeInsets.symmetric(vertical: 14.h),
+                padding: EdgeInsets.symmetric(vertical: 12.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.r),
                 ),
               ),
             ),
           ),
+        ],
       ],
     );
   }
