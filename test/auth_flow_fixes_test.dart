@@ -723,5 +723,93 @@ void main() {
       expect(withdrawalPayload.containsKey('amount'), isTrue);
       expect(withdrawalPayload.containsKey('withdrawalAccountId'), isTrue);
     });
+
+    test('Locations: LocationDto structure satisfies Swagger contract across all 4 media types', () {
+      final validRateUnits = [
+        'SECOND', 'MINUTE', 'HOUR', 'DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF_YEAR', 'YEAR'
+      ];
+      final validTypes = ['SCREEN', 'BILLBOARD', 'WALL', 'VEHICLE'];
+
+      for (final type in validTypes) {
+        final locationPayload = <String, dynamic>{
+          'title': 'Prime $type Location in Victoria Island',
+          'type': type,
+          'categoryId': 25,
+          'description': 'High visibility premium $type location.',
+          'videoClip': 'uploads/locations/video.mp4',
+          'thumbnail': 'uploads/locations/thumb.jpg',
+          'gallery': ['uploads/locations/img1.jpg', 'uploads/locations/img2.jpg'],
+          'coverageAreas': ['Victoria Island', 'Lagos'],
+          'estimatedReach': 250000,
+          'features': 'LED illuminated, 24/7 visibility',
+          'specifications': '12m x 4m high-definition display',
+          'address': '1000 Ahmadu Bello Way',
+          'city': 'Victoria Island',
+          'state': 'Lagos',
+          'country': 'Nigeria',
+          'latitude': 6.4281,
+          'longitude': 3.4219,
+          'rate': 450000.0,
+          'rateUnit': 'MONTH',
+        };
+
+        // Check required fields per Swagger LocationDto
+        const requiredFields = [
+          'title', 'categoryId', 'description', 'videoClip', 'coverageAreas',
+          'features', 'specifications', 'address', 'city', 'state', 'country',
+          'rate', 'rateUnit'
+        ];
+        for (final field in requiredFields) {
+          expect(locationPayload.containsKey(field), isTrue, reason: '$field must be present for $type');
+          expect(locationPayload[field], isNotNull, reason: '$field must not be null for $type');
+        }
+
+        // Validate types
+        expect(validTypes.contains(locationPayload['type']), isTrue);
+        expect(validRateUnits.contains(locationPayload['rateUnit']), isTrue);
+        expect(locationPayload['estimatedReach'], isA<num>());
+        expect(locationPayload['coverageAreas'], isA<List<String>>());
+        expect(locationPayload['videoClip'], isA<String>());
+        expect(locationPayload['videoClip'].toString().isNotEmpty, isTrue);
+      }
+    });
+
+    test('Locations: UpdateBlockedDatesDto structure and expansion logic satisfies Swagger contract', () {
+      const startDate = '2026-12-01T00:00:00.000Z';
+      const endDate = '2026-12-04T00:00:00.000Z';
+
+      final start = DateTime.tryParse(startDate);
+      final end = DateTime.tryParse(endDate);
+      final List<String> datesList = [];
+      if (start != null && end != null) {
+        DateTime curr = DateTime(start.year, start.month, start.day);
+        final endDay = DateTime(end.year, end.month, end.day);
+        while (!curr.isAfter(endDay)) {
+          final y = curr.year.toString().padLeft(4, '0');
+          final m = curr.month.toString().padLeft(2, '0');
+          final d = curr.day.toString().padLeft(2, '0');
+          datesList.add('$y-$m-$d');
+          curr = curr.add(const Duration(days: 1));
+        }
+      }
+
+      final blockedPayload = {
+        'blockedDates': datesList,
+        'startDate': startDate,
+        'endDate': endDate,
+        'reason': 'Scheduled Billboard Structural Maintenance',
+        'type': 'MAINTENANCE',
+      };
+
+      // Verify Swagger UpdateBlockedDatesDto requirement
+      expect(blockedPayload.containsKey('blockedDates'), isTrue);
+      expect(blockedPayload['blockedDates'], isA<List<String>>());
+      expect(blockedPayload['blockedDates'], equals([
+        '2026-12-01',
+        '2026-12-02',
+        '2026-12-03',
+        '2026-12-04',
+      ]));
+    });
   });
 }

@@ -230,7 +230,7 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
         'title': _titleController.text.trim(),
         'type': _selectedType,
         'coverageAreas': coverageAreas,
-        'estimatedReach': [ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0],
+        'estimatedReach': ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0,
         'categoryId': _selectedCategoryId,
         'description': _descriptionController.text.trim(),
         'address': _addressController.text.trim(),
@@ -249,6 +249,7 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
         'specifications': _specificationsController.text.trim().isNotEmpty
             ? _specificationsController.text.trim()
             : 'Standard wall specifications',
+        'videoClip': (videoUrl != null && videoUrl.isNotEmpty) ? videoUrl : (thumbnailUrl ?? ''),
       };
 
       if (_selectedClass != null && _selectedClass!.isNotEmpty) {
@@ -257,8 +258,8 @@ class _UploadWallScreenState extends ConsumerState<UploadWallScreen> {
       if (thumbnailUrl != null) {
         formData['thumbnail'] = thumbnailUrl;
       }
-      if (videoUrl != null) {
-        formData['videoClip'] = videoUrl ?? '';
+      if (videoUrl != null && videoUrl.isNotEmpty) {
+        formData['videoClip'] = videoUrl;
       }
       if (uploadedGalleryUrls.isNotEmpty) {
         formData['gallery'] = uploadedGalleryUrls;

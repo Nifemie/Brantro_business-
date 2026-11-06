@@ -267,7 +267,23 @@ class BillboardRepository {
     String? type,
   }) async {
     try {
+      final start = DateTime.tryParse(startDate);
+      final end = DateTime.tryParse(endDate);
+      final List<String> datesList = [];
+      if (start != null && end != null) {
+        DateTime curr = DateTime(start.year, start.month, start.day);
+        final endDay = DateTime(end.year, end.month, end.day);
+        while (!curr.isAfter(endDay)) {
+          final y = curr.year.toString().padLeft(4, '0');
+          final m = curr.month.toString().padLeft(2, '0');
+          final d = curr.day.toString().padLeft(2, '0');
+          datesList.add('$y-$m-$d');
+          curr = curr.add(const Duration(days: 1));
+        }
+      }
+
       final payload = {
+        'blockedDates': datesList.isNotEmpty ? datesList : [startDate],
         'startDate': startDate,
         'endDate': endDate,
         if (reason != null && reason.isNotEmpty) 'reason': reason,

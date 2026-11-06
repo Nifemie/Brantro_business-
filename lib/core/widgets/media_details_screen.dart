@@ -62,6 +62,8 @@ class MediaDetailsScreen extends ConsumerWidget {
         return 'Wall';
       case 'screen':
         return 'Screen';
+      case 'vehicle':
+        return 'Vehicle';
       default:
         return 'Media';
     }
@@ -78,6 +80,8 @@ class MediaDetailsScreen extends ConsumerWidget {
         return 'WALL DETAILS';
       case 'screen':
         return 'SCREEN DETAILS';
+      case 'vehicle':
+        return 'VEHICLE DETAILS';
       default:
         return 'DETAILS';
     }

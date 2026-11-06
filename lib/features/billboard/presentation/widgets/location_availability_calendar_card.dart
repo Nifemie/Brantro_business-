@@ -39,11 +39,11 @@ class _LocationAvailabilityCalendarCardState
     final List<Map<String, dynamic>> list = [];
     for (final item in widget.blockedDates!) {
       if (item is Map) {
-        final startStr = item['startDate']?.toString();
-        final endStr = item['endDate']?.toString();
-        if (startStr != null && endStr != null) {
+        final startStr = item['startDate']?.toString() ?? item['date']?.toString();
+        final endStr = item['endDate']?.toString() ?? item['date']?.toString();
+        if (startStr != null) {
           final start = DateTime.tryParse(startStr);
-          final end = DateTime.tryParse(endStr);
+          final end = endStr != null ? DateTime.tryParse(endStr) : start;
           if (start != null && end != null) {
             list.add({
               'start': DateTime(start.year, start.month, start.day),
@@ -52,6 +52,16 @@ class _LocationAvailabilityCalendarCardState
               'type': item['type']?.toString() ?? 'MAINTENANCE',
             });
           }
+        }
+      } else if (item is String) {
+        final parsed = DateTime.tryParse(item);
+        if (parsed != null) {
+          list.add({
+            'start': DateTime(parsed.year, parsed.month, parsed.day),
+            'end': DateTime(parsed.year, parsed.month, parsed.day, 23, 59, 59),
+            'reason': 'Blocked Date',
+            'type': 'BLOCKED',
+          });
         }
       }
     }
