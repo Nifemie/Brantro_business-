@@ -926,6 +926,9 @@ void main() {
       final resetJson = resetReq.toJson();
       expect(resetJson['identity'], equals('creator@test.com'));
       expect(resetJson['newPassword'], equals('NewPassword123!'));
+
+      // 5. Account Deletion Endpoint (DELETE /api/v1/user/me)
+      expect(ApiEndpoints.userMe, equals('api/v1/user/me'));
     });
   });
 }

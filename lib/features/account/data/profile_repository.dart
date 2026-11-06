@@ -57,4 +57,23 @@ class ProfileRepository {
       throw Exception('An unexpected error occurred: $e');
     }
   }
+
+  /// Delete current user account: DELETE /api/v1/user/me
+  Future<bool> deleteAccount() async {
+    try {
+      final response = await apiClient.delete(ApiEndpoints.userMe);
+      if (response.data != null && response.data['success'] == true) {
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ??
+            e.response?.data['error'] ??
+            'Failed to delete account. Please try again.',
+      );
+    } catch (e) {
+      throw Exception('An unexpected error occurred: $e');
+    }
+  }
 }

@@ -1,15 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../controllers/re_useable/app_color.dart';
 import '../../../controllers/re_useable/app_texts.dart';
+import '../../../core/service/session_service.dart';
+import '../logic/profile_provider.dart';
 import '../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import 'widgets/settings_shared_widgets.dart';
 
-class AccountManagementScreen extends StatelessWidget {
+class AccountManagementScreen extends ConsumerWidget {
   const AccountManagementScreen({super.key});
 
+  Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Are you sure you want to delete your business account? This action is permanent and cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete Permanently'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        final repo = ref.read(profileRepositoryProvider);
+        await repo.deleteAccount();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Your account has been deleted.'),
+              backgroundColor: AppColors.primaryColor,
+            ),
+          );
+          await SessionService.performFullLogout(ref, context);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete account: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -89,7 +143,7 @@ class AccountManagementScreen extends StatelessWidget {
                     SizedBox(height: 40.h),
                     Center(
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () => _handleDeleteAccount(context, ref),
                         child: Text(
                           'DELETE ACCOUNT',
                           style: AppTexts.labelMedium(color: AppColors.error)

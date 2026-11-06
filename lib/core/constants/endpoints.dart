@@ -37,6 +37,7 @@ class ApiEndpoints {
   static const String getSupportTickets = '$apiVersion/support/tickets';
 
   // Creator & User Endpoints
+  static const String userMe = '$apiVersion/user/me';
   static const String userAnalytics = '$apiVersion/user/me/analytics';
   static const String usersList = '$apiVersion/user/list';
   static const String searchUsers = '$apiVersion/user/search';
