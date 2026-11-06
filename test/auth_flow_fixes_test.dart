@@ -603,5 +603,44 @@ void main() {
       expect(order.amount, equals(35000.0));
       expect(order.effectiveStatus, equals('completed'));
     });
+
+    test('Ad Slots: verifies Host through location payload vs Other Users payload', () {
+      // Host through Location
+      final hostSlotData = {
+        'title': 'Prime Unipole Billboard Face A',
+        'description': '10-second loop on high-traffic expressway billboard',
+        'partnerType': 'BILLBOARD',
+        'platforms': ['BILLBOARD'],
+        'contentTypes': ['IMAGE', 'VIDEO'],
+        'features': ['High Visibility', 'Backlit'],
+        'price': 250000.0,
+        'duration': '30days',
+        'adFormat': 'Billboard Banner',
+        'contentRequirements': ['High Resolution JPG/PNG', '1920x1080'],
+        'locationId': 42,
+      };
+
+      expect(hostSlotData['locationId'], equals(42));
+      expect(hostSlotData['partnerType'], equals('BILLBOARD'));
+      expect(hostSlotData['platforms'], contains('BILLBOARD'));
+
+      // Other Users / Creator
+      final creatorSlotData = {
+        'title': 'Sponsored YouTube Video Segment',
+        'description': '60-second dedicated mid-roll integration',
+        'partnerType': 'INFLUENCER',
+        'platforms': ['YOUTUBE'],
+        'contentTypes': ['VIDEO'],
+        'features': ['Dedicated Mention', 'Link in Description'],
+        'price': 150000.0,
+        'duration': 'Permanent',
+        'adFormat': 'Video Segment',
+        'contentRequirements': ['Talking points', 'Product link'],
+      };
+
+      expect(creatorSlotData.containsKey('locationId'), isFalse);
+      expect(creatorSlotData['partnerType'], equals('INFLUENCER'));
+      expect(creatorSlotData['platforms'], contains('YOUTUBE'));
+    });
   });
 }

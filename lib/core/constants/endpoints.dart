@@ -59,6 +59,7 @@ class ApiEndpoints {
 
   // Ad Slots Endpoints
   static const String adSlotsList = '$apiVersion/adslots/list';
+  static const String myAdSlots = '$apiVersion/adslots/mine';
   static const String searchAdSlots = '$apiVersion/adslots/search';
   static const String createAdSlot = '$apiVersion/adslots';
   static String updateAdSlot(dynamic id) => '$apiVersion/adslots/$id';

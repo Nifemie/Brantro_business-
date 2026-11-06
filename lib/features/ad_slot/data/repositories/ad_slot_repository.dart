@@ -57,7 +57,11 @@ class AdSlotRepository {
     String? locationId,
   }) async {
     try {
-      String url = '${ApiEndpoints.adSlotsList}?page=$page&size=$size';
+      final baseEndpoint = (locationId != null && locationId.trim().isNotEmpty)
+          ? ApiEndpoints.adSlotsList
+          : ApiEndpoints.myAdSlots;
+
+      String url = '$baseEndpoint?page=$page&size=$size';
       if (createdById != null) {
         url += '&createdById=$createdById';
       }
@@ -68,7 +72,18 @@ class AdSlotRepository {
         url += '&locationId=${locationId.trim()}';
       }
       
-      final response = await _apiClient.get(url);
+      Response response;
+      try {
+        response = await _apiClient.get(url);
+      } catch (e) {
+        // Fall back to adSlotsList if myAdSlots returns 404 or fails
+        if (baseEndpoint == ApiEndpoints.myAdSlots) {
+          final fallbackUrl = '${ApiEndpoints.adSlotsList}?page=$page&size=$size${type != null ? '&type=${type.trim().toUpperCase()}' : ''}';
+          response = await _apiClient.get(fallbackUrl);
+        } else {
+          rethrow;
+        }
+      }
  
       if (response.data is Map) {
         if (response.data['success'] == true) {
