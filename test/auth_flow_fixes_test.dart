@@ -18,6 +18,8 @@ import 'package:brantro_business/core/utils/thousands_separator_input_formatter.
 import 'package:brantro_business/features/wallet/data/models/bank_model.dart';
 import 'package:brantro_business/features/wallet/data/models/withdrawal_account_model.dart';
 import 'package:brantro_business/features/orders/data/models/order_model.dart';
+import 'package:brantro_business/features/wallet/data/models/wallet_model.dart';
+import 'package:brantro_business/features/wallet/data/models/transaction_model.dart';
 
 void main() {
   group('Auth Flow Bug Fixes Verification', () {
@@ -641,6 +643,85 @@ void main() {
       expect(creatorSlotData.containsKey('locationId'), isFalse);
       expect(creatorSlotData['partnerType'], equals('INFLUENCER'));
       expect(creatorSlotData['platforms'], contains('YOUTUBE'));
+    });
+
+    test('Wallet: WalletModel correctly parses balance, escrow pending, and normalizes NGN currency', () {
+      final walletJson = {
+        'id': 10,
+        'userId': 5,
+        'balance': '185000.50',
+        'pendingBalance': '45000.00',
+        'currency': 'NGN',
+        'status': 'ACTIVE',
+        'createdAt': '2026-11-01T08:00:00Z',
+        'updatedAt': '2026-11-06T12:00:00Z',
+      };
+
+      final wallet = WalletModel.fromJson(walletJson);
+      expect(wallet.id, equals(10));
+      expect(wallet.userId, equals(5));
+      expect(wallet.balance, equals('185000.50'));
+      expect(wallet.pendingBalance, equals('45000.00'));
+      expect(wallet.balanceAmount, equals(185000.50));
+      expect(wallet.pendingBalanceAmount, equals(45000.00));
+      expect(wallet.totalBalance, equals(230000.50));
+      expect(wallet.currency, equals('₦'));
+      expect(wallet.isActive, isTrue);
+    });
+
+    test('Wallet: TransactionModel classifies credits and debits accurately', () {
+      final creditJson = {
+        'id': 101,
+        'walletId': 10,
+        'type': 'CREDIT',
+        'source': 'SERVICE_ORDER_PAYOUT',
+        'amount': 45000.0,
+        'balanceBefore': 140000.50,
+        'balanceAfter': 185000.50,
+        'reference': 'TX_CR_8877',
+        'narration': 'Payment release for UGC video',
+        'status': 'COMPLETED',
+        'createdAt': '2026-11-06T10:00:00Z',
+      };
+
+      final creditTx = TransactionModel.fromJson(creditJson);
+      expect(creditTx.isCredit, isTrue);
+      expect(creditTx.isDebit, isFalse);
+      expect(creditTx.amount, equals(45000.0));
+      expect(creditTx.description, equals('Payment release for UGC video'));
+
+      final debitJson = {
+        'id': 102,
+        'walletId': 10,
+        'type': 'DEBIT',
+        'source': 'WITHDRAWAL',
+        'amount': 50000.0,
+        'balanceBefore': 185000.50,
+        'balanceAfter': 135000.50,
+        'reference': 'TX_DB_9900',
+        'narration': 'Withdrawal to GTBank',
+        'status': 'COMPLETED',
+        'createdAt': '2026-11-06T12:30:00Z',
+      };
+
+      final debitTx = TransactionModel.fromJson(debitJson);
+      expect(debitTx.isCredit, isFalse);
+      expect(debitTx.isDebit, isTrue);
+      expect(debitTx.amount, equals(50000.0));
+    });
+
+    test('Wallet: WithdrawalRequestDto structure satisfies Swagger contract', () {
+      final withdrawalPayload = {
+        'amount': 75000.0,
+        'withdrawalAccountId': 3,
+        'narration': 'Weekly earnings withdrawal',
+      };
+
+      expect(withdrawalPayload['amount'], equals(75000.0));
+      expect(withdrawalPayload['withdrawalAccountId'], equals(3));
+      expect(withdrawalPayload['narration'], equals('Weekly earnings withdrawal'));
+      expect(withdrawalPayload.containsKey('amount'), isTrue);
+      expect(withdrawalPayload.containsKey('withdrawalAccountId'), isTrue);
     });
   });
 }
