@@ -3,11 +3,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
+import '../../../../core/utils/avatar_helper.dart';
 
 enum MediaCardType { circular, rectangular }
 
 class MediaSelectionCard extends StatelessWidget {
-  final String imagePath;
+  final String? imagePath;
   final bool isAsset;
   final MediaCardType type;
   final VoidCallback onTap;
@@ -16,9 +17,9 @@ class MediaSelectionCard extends StatelessWidget {
 
   const MediaSelectionCard({
     super.key,
-    required this.imagePath,
+    this.imagePath,
     required this.onTap,
-    this.isAsset = true,
+    this.isAsset = false,
     this.type = MediaCardType.rectangular,
     this.label,
     this.imageFile,
@@ -57,6 +58,13 @@ class MediaSelectionCard extends StatelessWidget {
   }
 
   Widget _buildCircularMedia(bool isDark) {
+    ImageProvider provider;
+    if (imageFile != null) {
+      provider = FileImage(imageFile!);
+    } else {
+      provider = AvatarHelper.getImageProvider(imagePath);
+    }
+
     return Container(
       width: 140.w,
       height: 140.w,
@@ -80,17 +88,25 @@ class MediaSelectionCard extends StatelessWidget {
             width: 1,
           ),
         ),
-        child: ClipOval(child: _buildImage(isDark)),
+        child: ClipOval(
+          child: Image(
+            image: provider,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildPlaceholder(isDark),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildRectangularMedia(bool isDark) {
+    final hasImage = imageFile != null || (imagePath != null && imagePath!.trim().isNotEmpty);
+
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey[100],
+          color: isDark ? const Color(0xFF1B2028) : const Color(0xFFE2E8F0),
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
             color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!,
@@ -104,7 +120,7 @@ class MediaSelectionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20.r),
               child: _buildImage(isDark),
             ),
-            // Glassmorphism Change Button in Bottom-Right
+            // Glassmorphism Change / Upload Button in Bottom-Right
             Positioned(
               bottom: 12.h,
               right: 12.w,
@@ -118,9 +134,9 @@ class MediaSelectionCard extends StatelessWidget {
                       vertical: 8.h,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(color: Colors.white.withOpacity(0.15)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -132,7 +148,7 @@ class MediaSelectionCard extends StatelessWidget {
                         ),
                         SizedBox(width: 8.w),
                         Text(
-                          'Change Cover',
+                          hasImage ? 'Change Cover' : 'Upload Cover',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14.sp,
@@ -159,15 +175,18 @@ class MediaSelectionCard extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark),
       );
     }
+    if (imagePath == null || imagePath!.trim().isEmpty) {
+      return _buildPlaceholder(isDark);
+    }
     return isAsset
         ? Image.asset(
-            imagePath,
+            imagePath!,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) =>
                 _buildPlaceholder(isDark),
           )
         : Image.network(
-            imagePath,
+            imagePath!,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) =>
                 _buildPlaceholder(isDark),
@@ -176,12 +195,26 @@ class MediaSelectionCard extends StatelessWidget {
 
   Widget _buildPlaceholder(bool isDark) {
     return Container(
-      color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+      color: isDark ? const Color(0xFF1B2028) : const Color(0xFFE2E8F0),
       child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          color: isDark ? Colors.white24 : Colors.grey[400],
-          size: 32.sp,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              color: isDark ? Colors.white24 : Colors.grey[400],
+              size: 36.sp,
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              'No cover photo',
+              style: TextStyle(
+                color: isDark ? Colors.white38 : Colors.grey[500],
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -191,12 +191,8 @@ class _ProfileMediaSectionState extends ConsumerState<ProfileMediaSection> {
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 4.w),
                   child: MediaSelectionCard(
-                    imagePath: (widget.initialCoverUrl != null &&
-                            widget.initialCoverUrl!.isNotEmpty)
-                        ? widget.initialCoverUrl!
-                        : 'assets/promotions/intro1.jpg',
-                    isAsset: (widget.initialCoverUrl == null ||
-                        widget.initialCoverUrl!.isEmpty),
+                    imagePath: widget.initialCoverUrl,
+                    isAsset: false,
                     imageFile: _coverImage,
                     type: MediaCardType.rectangular,
                     onTap: () => _showPicker(context, 'Cover Thumbnail', false),
@@ -209,12 +205,8 @@ class _ProfileMediaSectionState extends ConsumerState<ProfileMediaSection> {
                   child: Stack(
                     children: [
                       MediaSelectionCard(
-                        imagePath: (widget.initialAvatarUrl != null &&
-                                widget.initialAvatarUrl!.isNotEmpty)
-                            ? widget.initialAvatarUrl!
-                            : 'assets/promotions/logo_design.png',
-                        isAsset: (widget.initialAvatarUrl == null ||
-                            widget.initialAvatarUrl!.isEmpty),
+                        imagePath: widget.initialAvatarUrl,
+                        isAsset: false,
                         imageFile: _profileImage,
                         type: MediaCardType.circular,
                         onTap: () =>

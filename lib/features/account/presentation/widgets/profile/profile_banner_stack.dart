@@ -21,10 +21,13 @@ class ProfileBannerStack extends StatelessWidget {
       userId: profileData.userId,
     );
 
+    final hasBanner = profileData.bannerUrl.trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Banner Image
+        // Banner Image or Clean Empty Placeholder
         Container(
           height: 200.h,
           decoration: BoxDecoration(
@@ -32,14 +35,37 @@ class ProfileBannerStack extends StatelessWidget {
               topLeft: Radius.circular(16.r),
               topRight: Radius.circular(16.r),
             ),
-            image: DecorationImage(
-              image: profileData.bannerUrl.isNotEmpty
-                  ? AvatarHelper.getImageProvider(profileData.bannerUrl)
-                  : const AssetImage('assets/promotions/billboard1.jpg')
-                        as ImageProvider,
-              fit: BoxFit.cover,
-            ),
+            color: isDark ? const Color(0xFF1E232B) : const Color(0xFFE2E8F0),
+            image: hasBanner
+                ? DecorationImage(
+                    image: AvatarHelper.getImageProvider(profileData.bannerUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
           ),
+          child: !hasBanner
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_photo_alternate_outlined,
+                        color: isDark ? Colors.white24 : Colors.grey[400],
+                        size: 36.sp,
+                      ),
+                      SizedBox(height: 6.h),
+                      Text(
+                        'No cover photo added',
+                        style: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.grey[500],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : null,
         ),
 
         // Profile Picture (Overlapping)
