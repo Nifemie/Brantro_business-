@@ -22,6 +22,10 @@ import 'package:brantro_business/features/wallet/data/models/wallet_model.dart';
 import 'package:brantro_business/features/wallet/data/models/transaction_model.dart';
 import 'package:brantro_business/core/constants/endpoints.dart';
 import 'package:brantro_business/features/notification/models/notification_model.dart';
+import 'package:brantro_business/features/auth/data/models/login_request.dart';
+import 'package:brantro_business/features/auth/data/models/verify_otp_request.dart';
+import 'package:brantro_business/features/auth/data/models/forgot_password_request.dart';
+import 'package:brantro_business/features/auth/data/models/reset_password_request.dart';
 
 void main() {
   group('Auth Flow Bug Fixes Verification', () {
@@ -858,6 +862,70 @@ void main() {
       // Swagger: PUT /api/v1/notification/{id}?status=SEEN
       final markStatusUrl = ApiEndpoints.markNotificationStatus(42, status: 'SEEN');
       expect(markStatusUrl, equals('api/v1/notification/42?status=SEEN'));
+    });
+
+    test('Onboarding & Auth: SignUpRequest payload strictly satisfies Swagger UserDto required fields', () {
+      final signup = SignUpRequest(
+        role: 'HOST',
+        accountType: 'BUSINESS',
+        name: 'Test Billboard Host',
+        emailAddress: 'host@brantro.test',
+        phoneNumber: '08012345678',
+        password: 'Password123!',
+        country: 'Nigeria',
+        state: 'Lagos',
+        city: 'Ikeja',
+        address: '10 Allen Avenue',
+      );
+
+      final json = signup.toJson();
+
+      // Swagger UserDto required fields:
+      const requiredFields = [
+        'name',
+        'phoneNumber',
+        'emailAddress',
+        'role',
+        'authProvider',
+        'password',
+        'rate',
+        'rateUnit',
+      ];
+
+      for (final field in requiredFields) {
+        expect(json.containsKey(field), isTrue, reason: '$field must be present in UserDto signup payload');
+        expect(json[field], isNotNull, reason: '$field must not be null');
+      }
+
+      expect(json['rate'], equals(0.0));
+      expect(json['rateUnit'], equals('DAY'));
+      expect(json['authProvider'], equals('INTERNAL'));
+    });
+
+    test('Auth Flow: Login, OTP Verify, and Password Recovery payloads satisfy Swagger DTO contracts', () {
+      // 1. Login (UserAuthDto: username, password, authProvider)
+      final loginReq = LoginRequest(username: 'creator@test.com', password: 'Password123!');
+      final loginJson = loginReq.toJson();
+      expect(loginJson['username'], equals('creator@test.com'));
+      expect(loginJson['password'], equals('Password123!'));
+      expect(loginJson['authProvider'], equals('INTERNAL'));
+
+      // 2. Verify Account OTP (VerifyAccountDto: identity, otp)
+      final otpReq = VerifyOtpRequest(identity: 'creator@test.com', otp: '123456');
+      final otpJson = otpReq.toJson();
+      expect(otpJson['identity'], equals('creator@test.com'));
+      expect(otpJson['otp'], equals('123456'));
+
+      // 3. Forgot Password (ValidateAccountDto: identity)
+      final forgotReq = ForgotPasswordRequest(identity: 'creator@test.com');
+      final forgotJson = forgotReq.toJson();
+      expect(forgotJson['identity'], equals('creator@test.com'));
+
+      // 4. Reset Password (ResetPasswordDto: identity, newPassword)
+      final resetReq = ResetPasswordRequest(identity: 'creator@test.com', newPassword: 'NewPassword123!');
+      final resetJson = resetReq.toJson();
+      expect(resetJson['identity'], equals('creator@test.com'));
+      expect(resetJson['newPassword'], equals('NewPassword123!'));
     });
   });
 }

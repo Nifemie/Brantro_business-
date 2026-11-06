@@ -793,6 +793,8 @@ class SignUpRequest {
   final String? idNumber;
   final String? ninNumber;
   final String? tinNumber;
+  final double rate;
+  final String rateUnit;
 
   SignUpRequest({
     required this.role,
@@ -824,6 +826,8 @@ class SignUpRequest {
     this.idNumber,
     this.ninNumber,
     this.tinNumber,
+    this.rate = 0.0,
+    this.rateUnit = 'DAY',
   });
 
   Map<String, dynamic> toJson() {
@@ -835,6 +839,8 @@ class SignUpRequest {
       'phoneNumber': phoneNumber,
       'password': password,
       'country': country,
+      'rate': rate,
+      'rateUnit': rateUnit,
       if (state != null) 'state': state,
       if (city != null) 'city': city,
       if (address != null) 'address': address,
@@ -916,6 +922,8 @@ class SignUpRequest {
       idNumber: json['idNumber'],
       ninNumber: json['ninNumber'],
       tinNumber: json['tinNumber'],
+      rate: json['rate'] != null ? double.tryParse(json['rate'].toString()) ?? 0.0 : 0.0,
+      rateUnit: json['rateUnit']?.toString() ?? 'DAY',
     );
   }
 
@@ -949,6 +957,8 @@ class SignUpRequest {
     String? idNumber,
     String? ninNumber,
     String? tinNumber,
+    double? rate,
+    String? rateUnit,
   }) {
     return SignUpRequest(
       role: role ?? this.role,
@@ -980,6 +990,8 @@ class SignUpRequest {
       idNumber: idNumber ?? this.idNumber,
       ninNumber: ninNumber ?? this.ninNumber,
       tinNumber: tinNumber ?? this.tinNumber,
+      rate: rate ?? this.rate,
+      rateUnit: rateUnit ?? this.rateUnit,
     );
   }
 }
