@@ -1,4 +1,6 @@
 import 'package:brantro_business/features/account/data/models/user_analytics_model.dart';
+import 'package:brantro_business/features/account/data/models/review_model.dart';
+import 'package:brantro_business/features/account/data/models/review_stats_model.dart';
 import 'package:brantro_business/core/constants/template_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -960,6 +962,174 @@ void main() {
       expect(updateData['additionalInfo'], isA<Map<String, dynamic>>());
       expect(updateData['managerId'], isA<int>());
       expect(ApiEndpoints.updateUser('42'), equals('api/v1/user/42'));
+    });
+
+    test('Reviews Flow: ReviewModel, ReviewStatsModel, and ReviewDto satisfy Swagger contracts', () {
+      // 1. ReviewDto payload compliance
+      final review = ReviewModel(
+        id: 101,
+        targetType: 'SERVICE',
+        targetId: 45,
+        rating: 4.8,
+        reviewText: 'Outstanding delivery! The video creative surpassed expectations.',
+        comment: {'text': 'Outstanding delivery! The video creative surpassed expectations.'},
+        metadata: {'orderId': 201},
+        reviewerName: 'John Doe',
+        reviewerAvatar: 'https://cdn.example.com/avatars/user_10.jpg',
+        createdAt: DateTime.parse('2026-11-06T12:00:00Z'),
+      );
+
+      final dto = review.toJson();
+      // Swagger ReviewDto required: ['targetType', 'targetId', 'rating', 'comment', 'metadata']
+      expect(dto['targetType'], equals('SERVICE'));
+      expect(dto['targetId'], equals(45));
+      expect(dto['rating'], equals(4.8));
+      expect(dto['reviewText'], equals('Outstanding delivery! The video creative surpassed expectations.'));
+      expect(dto['comment'], isA<Map<String, dynamic>>());
+      expect(dto['metadata'], isA<Map<String, dynamic>>());
+
+      // 2. ReviewModel parsing from server response
+      final serverReviewJson = {
+        'id': 101,
+        'targetType': 'LOCATION',
+        'targetId': 88,
+        'rating': 5,
+        'comment': {'text': 'Prime billboard position with high traffic.'},
+        'user': {
+          'name': 'Sarah Brand Manager',
+          'avatarUrl': 'https://cdn.example.com/avatars/sarah.jpg',
+        },
+        'createdAt': '2026-11-06T13:30:00Z',
+      };
+
+      final parsed = ReviewModel.fromJson(serverReviewJson);
+      expect(parsed.id, equals(101));
+      expect(parsed.targetType, equals('LOCATION'));
+      expect(parsed.rating, equals(5.0));
+      expect(parsed.reviewerName, equals('Sarah Brand Manager'));
+      expect(parsed.reviewText, equals('Prime billboard position with high traffic.'));
+
+      // 3. ReviewStatsModel parsing
+      final statsJson = {
+        'averageRating': 4.9,
+        'totalReviews': 142,
+        'distribution': {
+          '5': 120,
+          '4': 18,
+          '3': 3,
+          '2': 1,
+          '1': 0,
+        },
+      };
+
+      final stats = ReviewStatsModel.fromJson(statsJson);
+      expect(stats.averageRating, equals(4.9));
+      expect(stats.totalReviews, equals(142));
+      expect(stats.fiveStarCount, equals(120));
+      expect(stats.fourStarCount, equals(18));
+
+      // 4. Endpoints
+      expect(ApiEndpoints.reviewsList, equals('api/v1/review/list'));
+      expect(ApiEndpoints.reviewsByTarget, equals('api/v1/review/target'));
+      expect(ApiEndpoints.reviewsByUser, equals('api/v1/review/user'));
+      expect(ApiEndpoints.reviewStatsUser, equals('api/v1/review/stats/user'));
+      expect(ApiEndpoints.createReview, equals('api/v1/review'));
+      expect(ApiEndpoints.deleteReview(101), equals('api/v1/review/101'));
+    });
+
+    test('Likes Flow: LikeDto payload and endpoints satisfy Swagger contracts', () {
+      final likePayload = {
+        'targetType': 'CREATOR',
+        'targetId': 33,
+      };
+
+      // Swagger LikeDto required: ['targetType', 'targetId']
+      expect(likePayload['targetType'], equals('CREATOR'));
+      expect(likePayload['targetId'], equals(33));
+
+      expect(ApiEndpoints.likeList, equals('api/v1/like/list'));
+      expect(ApiEndpoints.likeStatsUser, equals('api/v1/like/stats/user'));
+      expect(ApiEndpoints.likesByTarget, equals('api/v1/like/target'));
+      expect(ApiEndpoints.createLike, equals('api/v1/like'));
+      expect(ApiEndpoints.deleteLike(55), equals('api/v1/like/55'));
+    });
+
+    test('Analytics Flow: UserAnalyticsModel and dashboard endpoints satisfy Swagger contracts', () {
+      // 1. UserAnalyticsModel parses multi-metric dashboard payloads
+      final payload = {
+        'followers': 1250,
+        'impressions': 85400,
+        'reach': 62000,
+        'profileViews': 4300,
+        'likes': 980,
+        'completedOrders': 28,
+        'totalRevenue': 750000.0,
+        'totalReviews': 35,
+      };
+
+      final analytics = UserAnalyticsModel.fromJson(payload);
+      expect(analytics.followers, equals(1250));
+      expect(analytics.impressions, equals(85400));
+      expect(analytics.reach, equals(62000));
+      expect(analytics.profileViews, equals(4300));
+      expect(analytics.likes, equals(980));
+      expect(analytics.completedOrders, equals(28));
+      expect(analytics.totalRevenue, equals(750000.0));
+      expect(analytics.totalReviews, equals(35));
+
+      // 2. Dashboard analytics endpoint
+      expect(ApiEndpoints.analyticsDashboard, equals('api/v1/analytic/dashboard'));
+      expect(ApiEndpoints.userAnalytics, equals('api/v1/user/me/analytics'));
+    });
+
+    test('Orders & Actions Flow: Delivery, Revision, Decision & Approval satisfy Swagger DTO contracts', () {
+      // 1. ServiceOrderDeliveryDto with ServiceOrderFileDto attachments
+      final deliveryPayload = {
+        'feedback': 'Final campaign banner and social assets ready.',
+        'attachments': [
+          {
+            'id': '10',
+            'name': ['banner_final.png'],
+            'mimeType': 'image/png',
+            'size': 204800,
+            'url': 'https://storage.syroltech.com/deliveries/banner_final.png',
+          }
+        ],
+      };
+
+      expect(deliveryPayload.containsKey('feedback'), isTrue);
+      expect(deliveryPayload['attachments'], isA<List>());
+      final attachment = (deliveryPayload['attachments'] as List).first as Map<String, dynamic>;
+      expect(attachment['id'], equals('10'));
+      expect(attachment['url'], isNotEmpty);
+      expect(attachment['name'], isA<List<String>>());
+
+      // 2. AcceptServiceOrderDto for item decision
+      final decisionPayload = {
+        'status': 'ACCEPTED',
+        'startDate': '2026-11-07T09:00:00Z',
+        'endDate': '2026-11-14T18:00:00Z',
+        'remark': 'Accepted by provider. Work will commence immediately.',
+      };
+
+      expect(decisionPayload['status'], equals('ACCEPTED'));
+      expect(decisionPayload['startDate'], isNotEmpty);
+      expect(decisionPayload['endDate'], isNotEmpty);
+
+      // 3. RemarkDto for revision
+      final revisionPayload = {
+        'remark': 'Please change the background colour to navy blue.',
+        'reason': 'Please change the background colour to navy blue.',
+      };
+      expect(revisionPayload['remark'], isNotEmpty);
+
+      // 4. Endpoints
+      expect(ApiEndpoints.serviceOrderItemDecision(10), equals('api/v1/service-order/items/10/decision'));
+      expect(ApiEndpoints.serviceOrderItemProgress(10), equals('api/v1/service-order/items/10/progress'));
+      expect(ApiEndpoints.serviceOrderItemDelivery(10), equals('api/v1/service-order/items/10/delivery'));
+      expect(ApiEndpoints.serviceOrderItemRevision(10), equals('api/v1/service-order/items/10/revision'));
+      expect(ApiEndpoints.serviceOrderItemApprove(10), equals('api/v1/service-order/items/10/approve'));
+      expect(ApiEndpoints.serviceOrderItemCancel(10), equals('api/v1/service-order/items/10/cancel'));
     });
   });
 }

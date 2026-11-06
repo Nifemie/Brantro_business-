@@ -33,4 +33,36 @@ class AnalyticsRepository {
       return const UserAnalyticsModel();
     }
   }
+
+  Future<Map<String, dynamic>> fetchDashboardAnalytics({
+    String period = 'MONTHLY',
+    String? category,
+    String? from,
+    String? to,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        ApiEndpoints.analyticsDashboard,
+        query: {
+          'period': period,
+          if (category != null) 'category': category,
+          if (from != null) 'from': from,
+          if (to != null) 'to': to,
+        },
+      );
+      if (response.data != null && response.data['success'] == true) {
+        final payload = response.data['payload'];
+        if (payload is Map<String, dynamic>) {
+          return payload;
+        }
+      }
+      return {};
+    } on DioException catch (e) {
+      log('[AnalyticsRepository] Failed to fetch dashboard analytics: ${e.message}');
+      return {};
+    } catch (e) {
+      log('[AnalyticsRepository] Error fetching dashboard analytics: $e');
+      return {};
+    }
+  }
 }

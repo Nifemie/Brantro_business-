@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../data/models/order_model.dart';
 import '../../logic/orders_provider.dart';
+import '../../logic/order_action_notifier.dart';
 import 'order_decision_dialog.dart';
 import 'order_progress_dialog.dart';
 import 'order_delivery_dialog.dart';
@@ -334,6 +335,16 @@ class OrderActionButtons extends ConsumerWidget {
     );
 
     if (confirmed == true) {
+      final items = order.metadata?['items'] as List<dynamic>? ?? [];
+      if (items.isNotEmpty && items[0]['id'] != null && order.serviceType.toLowerCase() == 'service') {
+        final itemId = items[0]['id'];
+        ref.read(orderActionNotifierProvider.notifier).approveWork(
+          itemId: itemId,
+          remark: 'Order completed',
+          onSuccess: () {},
+          onError: (_) {},
+        );
+      }
       await ref.read(ordersProvider(null).notifier).updateOrderStatus(order.id, 'completed');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

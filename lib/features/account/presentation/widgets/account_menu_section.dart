@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../controllers/re_useable/app_color.dart';
 import '../../../../controllers/re_useable/app_texts.dart';
 import '../../logic/profile_provider.dart';
+import 'reviews_bottom_sheet.dart';
 
 class AccountMenuSection extends ConsumerWidget {
   const AccountMenuSection({super.key});
@@ -125,6 +126,18 @@ class AccountMenuSection extends ConsumerWidget {
             icon: Icons.star_outline,
             label: 'Rating ${profileData.rating.toStringAsFixed(1)}  (${profileData.reviewsCount} reviews)',
             iconColor: AppColors.secondaryColor,
+            trailing: Icon(
+              Icons.chevron_right,
+              size: 20.sp,
+              color: isDark ? Colors.white38 : AppColors.grey500,
+            ),
+            onTap: () {
+              ReviewsBottomSheet.show(
+                context,
+                rating: profileData.rating,
+                reviewsCount: profileData.reviewsCount,
+              );
+            },
           ),
           
           SizedBox(height: 16.h),
@@ -141,12 +154,13 @@ class AccountMenuSection extends ConsumerWidget {
     required Color iconColor,
     Color? valueColor,
     Widget? trailing,
+    VoidCallback? onTap,
   }) {
     return Builder(
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         
-        return Padding(
+        final content = Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           child: Row(
             children: [
@@ -174,6 +188,14 @@ class AccountMenuSection extends ConsumerWidget {
             ],
           ),
         );
+
+        if (onTap != null) {
+          return InkWell(
+            onTap: onTap,
+            child: content,
+          );
+        }
+        return content;
       },
     );
   }

@@ -296,6 +296,9 @@ class OrdersRepository {
             {
               'id': itemId.toString(),
               'url': attachmentUrl,
+              'name': [attachmentUrl.split('/').last],
+              'mimeType': 'application/octet-stream',
+              'size': 0,
             }
           ],
       };
@@ -315,6 +318,63 @@ class OrdersRepository {
       throw Exception('Failed to process request: ${e.response?.data['message'] ?? e.message}');
     } catch (e) {
       log('[OrdersRepository] Error delivering work: $e');
+      throw Exception('An unexpected error occurred.');
+    }
+  }
+
+  Future<void> approveItemWork({
+    required dynamic itemId,
+    String? remark,
+  }) async {
+    try {
+      final payload = {
+        if (remark != null) 'remark': remark,
+      };
+
+      final response = await apiClient.put(
+        ApiEndpoints.serviceOrderItemApprove(itemId),
+        data: payload,
+      );
+
+      if (response.data != null && response.data['success'] == true) {
+        log('[OrdersRepository] Successfully approved work for item $itemId');
+      } else {
+        throw Exception(response.data?['message'] ?? 'Failed to approve work');
+      }
+    } on DioException catch (e) {
+      log('[OrdersRepository] Failed to approve work: ${e.message}');
+      throw Exception('Failed to process request: ${e.response?.data['message'] ?? e.message}');
+    } catch (e) {
+      log('[OrdersRepository] Error approving work: $e');
+      throw Exception('An unexpected error occurred.');
+    }
+  }
+
+  Future<void> cancelItemWork({
+    required dynamic itemId,
+    String? reason,
+  }) async {
+    try {
+      final payload = {
+        if (reason != null) 'reason': reason,
+        if (reason != null) 'remark': reason,
+      };
+
+      final response = await apiClient.put(
+        ApiEndpoints.serviceOrderItemCancel(itemId),
+        data: payload,
+      );
+
+      if (response.data != null && response.data['success'] == true) {
+        log('[OrdersRepository] Successfully cancelled item $itemId');
+      } else {
+        throw Exception(response.data?['message'] ?? 'Failed to cancel item');
+      }
+    } on DioException catch (e) {
+      log('[OrdersRepository] Failed to cancel item: ${e.message}');
+      throw Exception('Failed to process request: ${e.response?.data['message'] ?? e.message}');
+    } catch (e) {
+      log('[OrdersRepository] Error cancelling item: $e');
       throw Exception('An unexpected error occurred.');
     }
   }

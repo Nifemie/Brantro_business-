@@ -99,4 +99,44 @@ class OrderActionNotifier extends StateNotifier<AsyncValue<void>> {
       onError(e.toString().replaceAll('Exception: ', ''));
     }
   }
+
+  Future<void> approveWork({
+    required dynamic itemId,
+    String? remark,
+    required Function() onSuccess,
+    required Function(String) onError,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.approveItemWork(
+        itemId: itemId,
+        remark: remark,
+      );
+      state = const AsyncValue.data(null);
+      onSuccess();
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      onError(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  Future<void> cancelWork({
+    required dynamic itemId,
+    String? reason,
+    required Function() onSuccess,
+    required Function(String) onError,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.cancelItemWork(
+        itemId: itemId,
+        reason: reason,
+      );
+      state = const AsyncValue.data(null);
+      onSuccess();
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      onError(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }

@@ -31,6 +31,8 @@ class ApiEndpoints {
   static String serviceOrderItemProgress(dynamic itemId) => '$apiVersion/service-order/items/$itemId/progress';
   static String serviceOrderItemDelivery(dynamic itemId) => '$apiVersion/service-order/items/$itemId/delivery';
   static String serviceOrderItemRevision(dynamic itemId) => '$apiVersion/service-order/items/$itemId/revision';
+  static String serviceOrderItemApprove(dynamic itemId) => '$apiVersion/service-order/items/$itemId/approve';
+  static String serviceOrderItemCancel(dynamic itemId) => '$apiVersion/service-order/items/$itemId/cancel';
 
   // Support Endpoints
   static const String submitSupportTicket = '$apiVersion/support/ticket';
@@ -39,6 +41,7 @@ class ApiEndpoints {
   // Creator & User Endpoints
   static const String userMe = '$apiVersion/user/me';
   static const String userAnalytics = '$apiVersion/user/me/analytics';
+  static const String analyticsDashboard = '$apiVersion/analytic/dashboard';
   static const String usersList = '$apiVersion/user/list';
   static const String searchUsers = '$apiVersion/user/search';
   static String userDetails(dynamic id) => '$apiVersion/user/details/$id';
@@ -190,4 +193,21 @@ class ApiEndpoints {
       '$apiVersion/notification/$id?status=$status';
   static const String notificationReadAll = '$apiVersion/notification/read-all';
   static const String notificationDeleteAll = '$apiVersion/notification';
+
+  // Review & Ratings Endpoints
+  static const String reviewsList = '$apiVersion/review/list';
+  static const String reviewsByTarget = '$apiVersion/review/target';
+  static const String reviewsByUser = '$apiVersion/review/user';
+  static const String reviewStatsUser = '$apiVersion/review/stats/user';
+  static const String createReview = '$apiVersion/review';
+  static String reviewDetails(dynamic id) => '$apiVersion/review/details/$id';
+  static String deleteReview(dynamic id) => '$apiVersion/review/$id';
+
+  // Likes Endpoints
+  static const String likeList = '$apiVersion/like/list';
+  static const String likesByTarget = '$apiVersion/like/target';
+  static const String likesByUser = '$apiVersion/like/user';
+  static const String likeStatsUser = '$apiVersion/like/stats/user';
+  static const String createLike = '$apiVersion/like';
+  static String deleteLike(dynamic id) => '$apiVersion/like/$id';
 }

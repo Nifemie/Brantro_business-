@@ -148,9 +148,14 @@ final profileHeaderProvider = FutureProvider<ProfileHeaderData>((ref) async {
   
   final phoneNumber = activeUser?['phoneNumber'] ?? '';
   final status = activeUser?['status'] ?? 'ACTIVE';
-  final rating = (activeUser?['averageRating'] ?? 0).toDouble();
-  final reviewsCount = activeUser?['totalReviews'] ?? 0;
-  final followers = activeUser?['followersCount'] ?? 0;
+  final rawRating = activeUser?['averageRating'] ?? activeUser?['rating'] ?? 0;
+  final rating = (rawRating is num) ? rawRating.toDouble() : 0.0;
+  final reviewsCount = (activeUser?['totalReviews'] as num?)?.toInt() ??
+      (activeUser?['reviewsCount'] as num?)?.toInt() ??
+      0;
+  final followers = (activeUser?['followersCount'] as num?)?.toInt() ??
+      (activeUser?['followers'] as num?)?.toInt() ??
+      0;
 
   // Parse multi-role personas
   final List<String> parsedRoles = [];
