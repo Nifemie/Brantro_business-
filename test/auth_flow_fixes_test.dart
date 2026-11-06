@@ -571,5 +571,37 @@ void main() {
       expect(order.amount, equals(15000.0));
       expect(order.effectiveStatus, equals('completed'));
     });
+
+    test('Creatives: OrderModel parses creative order json and treats paid creatives as completed sales', () {
+      final creativeOrderJson = {
+        'id': '301',
+        'paymentRef': 'REF_CRT_5566',
+        'amount': '35000',
+        'status': 'PAID',
+        'createdAt': '2026-11-06T11:30:00Z',
+        'user': {
+          'name': 'Creative Buyer',
+          'emailAddress': 'buyer@agency.com',
+          'phoneNumber': '08098765432',
+        },
+        'creatives': [
+          {
+            'id': 78,
+            'title': '3D Motion Logo Animation',
+            'thumbnail': 'creatives/logo_3d_thumb.jpg',
+            'price': '35000',
+            'fileUrl': 'https://storage.syroltech.com/logo_3d.mp4',
+          }
+        ],
+      };
+
+      final order = OrderModel.fromCreativeOrderJson(creativeOrderJson);
+      expect(order.id, equals('REF_CRT_5566'));
+      expect(order.serviceType, equals('creative'));
+      expect(order.serviceName, equals('3D Motion Logo Animation'));
+      expect(order.customerName, equals('Creative Buyer'));
+      expect(order.amount, equals(35000.0));
+      expect(order.effectiveStatus, equals('completed'));
+    });
   });
 }
