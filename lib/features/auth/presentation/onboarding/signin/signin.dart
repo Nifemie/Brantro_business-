@@ -9,6 +9,7 @@ import 'package:brantro_business/core/utils/color_utils.dart';
 import 'package:brantro_business/controllers/re_useable/app_button.dart';
 import 'package:brantro_business/core/service/session_service.dart';
 import 'package:brantro_business/features/dashboard/logic/dashboard_navigation_provider.dart';
+import 'package:brantro_business/features/account/logic/social_account_provider.dart';
 import '../../../../../core/utils/platform_responsive.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -72,6 +73,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         if (isAllowedRole) {
           // Reset navigation tab to Home
           ref.read(dashboardNavigationProvider.notifier).state = 0;
+          ref.invalidate(socialAccountProvider);
 
           // Role is valid - navigate to dashboard
           if (!mounted) return;

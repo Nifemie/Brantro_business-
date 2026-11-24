@@ -10,6 +10,7 @@ import '../../features/wallet/logic/wallet_notifier.dart';
 import '../../features/account/logic/analytics_provider.dart';
 import '../../features/notification/logic/notification_provider.dart';
 import '../../features/wallet/logic/withdrawal_accounts_notifier.dart';
+import '../../features/account/logic/social_account_provider.dart';
 import '../../features/auth/logic/auth_notifiers.dart';
 import '../../routes/app_routes.dart';
 
@@ -218,6 +219,7 @@ class SessionService {
     ref.invalidate(userAnalyticsProvider);
     ref.invalidate(notificationProvider);
     ref.invalidate(withdrawalAccountsProvider);
+    ref.invalidate(socialAccountProvider);
     ref.invalidate(activePersonaProvider);
   }
 

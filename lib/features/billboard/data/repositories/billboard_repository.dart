@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:brantro_business/core/network/api_client.dart';
 import 'package:brantro_business/core/constants/endpoints.dart';
+import 'package:brantro_business/core/utils/error_sanitizer.dart';
 
 class BillboardRepository {
   final ApiClient apiClient;
@@ -56,11 +57,15 @@ class BillboardRepository {
       String errorMessage = 'Failed to upload file. Please try again.';
 
       if (statusCode == 400) {
-        errorMessage = responseData?['message'] ?? 'Invalid file';
+        final rawMsg = responseData is Map ? (responseData['message'] ?? responseData['error']) : responseData;
+        errorMessage = ErrorSanitizer.sanitize(rawMsg ?? 'Invalid file');
       } else if (statusCode == 413) {
         errorMessage = 'File is too large';
       } else if (responseData is Map) {
-        errorMessage = responseData['message'] ?? responseData['error'] ?? errorMessage;
+        final rawMsg = responseData['message'] ?? responseData['error'];
+        if (rawMsg != null) {
+          errorMessage = ErrorSanitizer.sanitize(rawMsg);
+        }
       }
 
       throw Exception(errorMessage);
@@ -130,7 +135,10 @@ class BillboardRepository {
       print('[BillboardRepository] Update DioException: $e');
       String errorMessage = 'Failed to update location. Please try again.';
       if (responseData is Map) {
-        errorMessage = responseData['message'] ?? responseData['error'] ?? errorMessage;
+        final rawMsg = responseData['message'] ?? responseData['error'];
+        if (rawMsg != null) {
+          errorMessage = ErrorSanitizer.sanitize(rawMsg);
+        }
       }
       throw Exception(errorMessage);
     } catch (e) {
@@ -173,7 +181,8 @@ class BillboardRepository {
       String errorMessage = 'Failed to create location. Please try again.';
 
       if (statusCode == 400) {
-        errorMessage = responseData?['message'] ?? 'Invalid data provided';
+        final rawMsg = responseData is Map ? (responseData['message'] ?? responseData['error']) : responseData;
+        errorMessage = ErrorSanitizer.sanitize(rawMsg ?? 'Invalid data provided');
       } else if (statusCode == 401) {
         errorMessage = 'Unauthorized: Please log in again';
       } else if (statusCode == 403) {
@@ -181,7 +190,10 @@ class BillboardRepository {
       } else if (statusCode != null && statusCode >= 500) {
         errorMessage = 'Server error ($statusCode). Please try again later.';
       } else if (responseData is Map) {
-        errorMessage = responseData['message'] ?? responseData['error'] ?? errorMessage;
+        final rawMsg = responseData['message'] ?? responseData['error'];
+        if (rawMsg != null) {
+          errorMessage = ErrorSanitizer.sanitize(rawMsg);
+        }
       }
 
       throw Exception(errorMessage);

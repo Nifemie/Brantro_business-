@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/constants/endpoints.dart';
 
@@ -54,11 +55,15 @@ class ScreenRepository {
       String errorMessage = 'Failed to upload file. Please try again.';
 
       if (statusCode == 400) {
-        errorMessage = responseData?['message'] ?? 'Invalid file';
+        final rawMsg = responseData is Map ? (responseData['message'] ?? responseData['error']) : responseData;
+        errorMessage = ErrorSanitizer.sanitize(rawMsg ?? 'Invalid file');
       } else if (statusCode == 413) {
         errorMessage = 'File is too large';
       } else if (responseData is Map) {
-        errorMessage = responseData['message'] ?? responseData['error'] ?? errorMessage;
+        final rawMsg = responseData['message'] ?? responseData['error'];
+        if (rawMsg != null) {
+          errorMessage = ErrorSanitizer.sanitize(rawMsg);
+        }
       }
 
       throw Exception(errorMessage);

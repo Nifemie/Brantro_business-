@@ -242,21 +242,19 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
 
       final formData = <String, dynamic>{
         'title': _titleController.text.trim(),
-        'type': _selectedType,
+        'type': _selectedType ?? 'BILLBOARD',
         'coverageAreas': coverageAreas,
         'estimatedReach': ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0,
-        'categoryId': _selectedCategoryId,
+        'categoryId': _selectedCategoryId ?? 25,
         'description': _descriptionController.text.trim(),
         'address': _addressController.text.trim(),
-        'city': _selectedCity,
-        'state': _selectedState,
-        'country': _selectedCountry,
+        'city': _selectedCity ?? '',
+        'state': _selectedState ?? '',
+        'country': _selectedCountry ?? 'Nigeria',
         'latitude': double.tryParse(_latitudeController.text.trim()) ?? 0.0,
         'longitude': double.tryParse(_longitudeController.text.trim()) ?? 0.0,
         'rate': ThousandsSeparatorInputFormatter.tryParseDouble(_rateAmountController.text) ?? 0.0,
-        'rateUnit': _selectedRateUnit,
-        'status': 'ACTIVE',
-        'totalAdSlots': int.tryParse(_totalSlotsController.text.trim()) ?? 1,
+        'rateUnit': _selectedRateUnit ?? 'DAY',
         'features': _featuresController.text.trim().isNotEmpty
             ? _featuresController.text.trim()
             : 'Standard billboard features',
@@ -269,11 +267,8 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
       if (_selectedClass != null && _selectedClass!.isNotEmpty) {
         formData['class'] = _selectedClass;
       }
-      if (thumbnailUrl != null) {
+      if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
         formData['thumbnail'] = thumbnailUrl;
-      }
-      if (videoUrl != null && videoUrl.isNotEmpty) {
-        formData['videoClip'] = videoUrl;
       }
       if (uploadedGalleryUrls.isNotEmpty) {
         formData['gallery'] = uploadedGalleryUrls;

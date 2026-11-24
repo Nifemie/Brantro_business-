@@ -10,12 +10,20 @@ import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
 import '../../../logic/creative_notifier.dart';
 import '../../../logic/creative_provider.dart';
 import '../../../logic/upload_creative_form_provider.dart';
+import 'package:brantro_business/features/creative/data/models/creative_model.dart';
 import 'widgets/creative_attributes_form.dart';
 import 'widgets/creative_file_upload_section.dart';
 import 'widgets/creative_information_form.dart';
 
 class UploadCreativeScreen extends ConsumerStatefulWidget {
-  const UploadCreativeScreen({super.key});
+  final CreativeModel? creative;
+  final bool isUpdate;
+
+  const UploadCreativeScreen({
+    super.key,
+    this.creative,
+    this.isUpdate = false,
+  });
 
   @override
   ConsumerState<UploadCreativeScreen> createState() => _UploadCreativeScreenState();
@@ -33,6 +41,33 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
   final _descriptionController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isUpdate && widget.creative != null) {
+      final c = widget.creative!;
+      _titleController.text = c.name;
+      _descriptionController.text = c.description;
+      _priceController.text = c.price.toStringAsFixed(0);
+      _discountController.text = c.discount.toStringAsFixed(0);
+      _fileSizeController.text = c.fileSizeMB > 0 ? c.fileSizeMB.toString() : '';
+      _durationController.text = c.durationInSeconds > 0 ? c.durationInSeconds.toString() : '';
+      _widthController.text = c.width > 0 ? c.width.toString() : '';
+      _heightController.text = c.height > 0 ? c.height.toString() : '';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final formNotifier = ref.read(uploadCreativeFormProvider.notifier);
+        if (c.type.isNotEmpty) {
+          formNotifier.setType(c.type);
+        }
+        if (c.format.isNotEmpty) {
+          formNotifier.setFormat(c.format);
+        }
+        formNotifier.setFeatures(c.features);
+        formNotifier.setTags(c.tags);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -59,7 +94,7 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const DashboardAppBar(title: 'UPLOAD CREATIVE'),
+            DashboardAppBar(title: widget.isUpdate ? 'EDIT CREATIVE' : 'UPLOAD CREATIVE'),
             
             Expanded(
               child: SingleChildScrollView(

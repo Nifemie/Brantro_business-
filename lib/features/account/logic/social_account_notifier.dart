@@ -10,6 +10,10 @@ class SocialAccountNotifier extends StateNotifier<DataState<SocialAccountModel>>
     fetchAccounts();
   }
 
+  void reset() {
+    state = DataState.initial();
+  }
+
   Future<void> fetchAccounts() async {
     state = state.resetMessage().copyWith(isInitialLoading: true);
     try {

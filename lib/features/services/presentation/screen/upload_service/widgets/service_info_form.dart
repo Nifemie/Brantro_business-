@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../../core/widgets/option_picker_sheet.dart';
 import '../../../../../category/logic/category_provider.dart';
+import '../../../../../account/logic/profile_provider.dart';
 
 class ServiceInfoForm extends ConsumerWidget {
   final GlobalKey<FormState> formKey;
@@ -71,7 +72,7 @@ class ServiceInfoForm extends ConsumerWidget {
                   label: 'Type *',
                   value: selectedType,
                   hint: 'Select...',
-                  onTap: () => _showTypePicker(context),
+                  onTap: () => _showTypePicker(context, ref),
                   isDark: isDark,
                 ),
               ),
@@ -263,41 +264,96 @@ class ServiceInfoForm extends ConsumerWidget {
     );
   }
 
-  Future<void> _showTypePicker(BuildContext context) async {
+  Future<void> _showTypePicker(BuildContext context, WidgetRef ref) async {
+    final profileData = ref.read(profileHeaderProvider).value;
+    final isRadioStation = profileData?.hasRole('RADIO_STATION') ?? false;
+    final isTvStation = profileData?.hasRole('TV_STATION') ?? false;
+
+    final radioOptions = [
+      '##HEADER##RADIO BROADCAST',
+      'Radio Ad Airplay / Commercial Spot',
+      'Radio Jingle Broadcast',
+      'Sponsored Radio Show',
+      'Live On-Air Mention (Hype)',
+      'Radio Interview / Guest Appearance',
+      'Audio Sweeper / Station ID Promo',
+      'Hourly Time Check Sponsorship',
+      'Radio Outside Broadcast (OB)',
+    ];
+
+    final tvOptions = [
+      '##HEADER##TV BROADCAST',
+      'TV Commercial Spot (15s, 30s, 60s)',
+      'Program Sponsorship / Bug Placement',
+      'TV Interview / Studio Appearance',
+      'Ticker Tape / Lower Third Scroll',
+      'TV Jingle / Station Promo',
+      'Infomercial Broadcast',
+    ];
+
+    final audioOptions = [
+      '##HEADER##AUDIO & SOUND PRODUCTION',
+      'Voice Over',
+      'Audio Ad Production',
+      'Jingle Production',
+      'Sound Design',
+      'Podcast Production',
+      'Audio Mixing & Mastering',
+    ];
+
+    final generalOptions = [
+      '##HEADER##DESIGN',
+      'Ui Ux Design',
+      'Packaging Design',
+      'Print Design',
+      'Logo & Brand Identity',
+      '##HEADER##UGC CONTENT',
+      'Ugc Video',
+      'Ugc Photo',
+      'Lifestyle Content',
+      'Unboxing Video',
+      'Product Review',
+      '##HEADER##VIDEO & MOTION',
+      'Video Ad',
+      'Video Editing',
+      'Motion Graphics',
+      'Animated Ad',
+      'Short Form Video',
+      'Long Form Video',
+      'Explainer Video',
+      '##HEADER##WRITING & COPY',
+      'Caption Writing',
+      'Script Writing',
+      'Article & Blog Post',
+    ];
+
+    final options = <String>[];
+    if (isRadioStation) {
+      options.addAll(radioOptions);
+      options.addAll(audioOptions);
+      options.addAll(tvOptions);
+      options.addAll(generalOptions);
+    } else if (isTvStation) {
+      options.addAll(tvOptions);
+      options.addAll(radioOptions);
+      options.addAll(audioOptions);
+      options.addAll(generalOptions);
+    } else {
+      options.addAll(radioOptions);
+      options.addAll(tvOptions);
+      options.addAll(audioOptions);
+      options.addAll(generalOptions);
+    }
+
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const OptionPickerSheet(
+      builder: (context) => OptionPickerSheet(
         title: 'Select Service Type',
         allowCustomInput: true,
         customInputHint: 'Type custom service type...',
-        options: [
-          '##HEADER##AUDIO',
-          'Voice Over',
-          'Audio Ad',
-          'Jingle Production',
-          'Sound Design',
-          '##HEADER##DESIGN',
-          'Ui Ux Design',
-          'Packaging Design',
-          'Print Design',
-          '##HEADER##UGC CONTENT',
-          'Ugc Video',
-          'Ugc Photo',
-          'Lifestyle Content',
-          'Unboxing Video',
-          '##HEADER##VIDEO MOTION',
-          'Video Ad',
-          'Video Editing',
-          'Motion Graphics',
-          'Animated Ad',
-          'Short Form Video',
-          'Long Form Video',
-          'Explainer Video',
-          '##HEADER##WRITING',
-          'Caption Writing',
-        ],
+        options: options,
       ),
     );
     if (result != null) {

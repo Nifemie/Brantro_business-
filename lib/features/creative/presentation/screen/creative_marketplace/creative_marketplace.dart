@@ -141,7 +141,13 @@ class _CreativeMarketplaceScreenState extends ConsumerState<CreativeMarketplaceS
                                         creativeName: creative.name,
                                         onEdit: () {
                                           Navigator.pop(context);
-                                          print('Edit ${creative.name}');
+                                          context.push(
+                                            '/upload-creative',
+                                            extra: {
+                                              'creative': creative,
+                                              'isUpdate': true,
+                                            },
+                                          );
                                         },
                                         onDelete: () async {
                                           Navigator.pop(context);

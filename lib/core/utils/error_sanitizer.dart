@@ -10,7 +10,15 @@ class ErrorSanitizer {
   static String sanitize(dynamic rawError) {
     if (rawError == null) return 'An unexpected error occurred. Please try again.';
 
-    String message = rawError.toString().trim();
+    String message;
+    if (rawError is List) {
+      message = rawError.map((e) => e.toString().trim()).where((s) => s.isNotEmpty).join(', ');
+    } else if (rawError is Map) {
+      final inner = rawError['message'] ?? rawError['error'];
+      message = inner != null ? sanitize(inner) : rawError.toString().trim();
+    } else {
+      message = rawError.toString().trim();
+    }
 
     // Remove Exception: prefix if present
     if (message.startsWith('Exception:')) {

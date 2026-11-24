@@ -18,7 +18,7 @@ class SecuritySettingsSection extends StatelessWidget {
               title: 'Change Password',
               subtitle: 'Reset and update your account password',
               onTap: () {
-                context.push('/forgot-password');
+                context.push('/change-password');
               },
             ),
           ],

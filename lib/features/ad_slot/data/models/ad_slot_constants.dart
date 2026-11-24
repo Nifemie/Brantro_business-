@@ -1,12 +1,14 @@
 class AdSlotConstants {
   static const List<Map<String, String>> partnerTypeOptions = [
-    {'label': 'Influencer', 'value': 'influencer'},
-    {'label': 'Artist', 'value': 'artist'},
-    {'label': 'Radio Station', 'value': 'radio_station'},
-    {'label': 'TV Station', 'value': 'tv_station'},
-    {'label': 'Media House', 'value': 'media_house'},
-    {'label': 'Screen', 'value': 'screen'},
-    {'label': 'Billboard', 'value': 'billboard'},
+    {'label': 'Influencer', 'value': 'INFLUENCER'},
+    {'label': 'Artist', 'value': 'ARTIST'},
+    {'label': 'Radio Station', 'value': 'RADIO_STATION'},
+    {'label': 'TV Station', 'value': 'TV_STATION'},
+    {'label': 'Media House', 'value': 'MEDIA_HOUSE'},
+    {'label': 'Screen', 'value': 'SCREEN'},
+    {'label': 'Billboard', 'value': 'BILLBOARD'},
+    {'label': 'Vehicle', 'value': 'VEHICLE'},
+    {'label': 'Wall', 'value': 'WALL'},
   ];
 
   static const List<Map<String, String>> platformOptions = [
@@ -17,18 +19,27 @@ class AdSlotConstants {
     {'label': 'Facebook', 'value': 'facebook'},
     {'label': 'Snapchat', 'value': 'snapchat'},
     {'label': 'LinkedIn', 'value': 'linkedin'},
+    {'label': 'Radio Broadcast', 'value': 'radio'},
+    {'label': 'TV Broadcast', 'value': 'television'},
+    {'label': 'Digital Screen', 'value': 'screen'},
+    {'label': 'Billboard', 'value': 'billboard'},
   ];
 
   static const List<Map<String, String>> contentTypeOptions = [
-    {'label': 'Post', 'value': 'post'},
-    {'label': 'Story', 'value': 'story'},
-    {'label': 'Reel', 'value': 'reel'},
-    {'label': 'Short Video', 'value': 'short_video'},
-    {'label': 'Long Video', 'value': 'long_video'},
-    {'label': 'Livestream', 'value': 'livestream'},
-    {'label': 'Product Review', 'value': 'product_review'},
-    {'label': 'Brand Mention', 'value': 'brand_mention'},
-    {'label': 'Carousel', 'value': 'carousel'},
+    {'label': 'Post', 'value': 'POST'},
+    {'label': 'Story', 'value': 'STORY'},
+    {'label': 'Reel', 'value': 'REEL'},
+    {'label': 'Song Promotion', 'value': 'SONG_PROMOTION'},
+    {'label': 'Music Video', 'value': 'MUSIC_VIDEO'},
+    {'label': 'Jingle', 'value': 'JINGLE'},
+    {'label': 'Brand Mention', 'value': 'MENTION'},
+    {'label': 'Interview', 'value': 'INTERVIEW'},
+    {'label': 'Banner Ad', 'value': 'BANNER'},
+    {'label': 'Article', 'value': 'ARTICLE'},
+    {'label': 'Radio Play', 'value': 'RADIO_PLAY'},
+    {'label': 'TV Placement', 'value': 'TV_PLACEMENT'},
+    {'label': 'Screen Display', 'value': 'SCREEN_DISPLAY'},
+    {'label': 'Billboard Display', 'value': 'BILLBOARD_DISPLAY'},
   ];
 
   static const List<Map<String, String>> featureOptions = [

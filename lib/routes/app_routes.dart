@@ -27,6 +27,7 @@ import 'package:brantro_business/features/account/presentation/help_support_scre
 import 'package:brantro_business/features/account/presentation/contact_us_screen.dart';
 import 'package:brantro_business/features/account/presentation/terms_of_service_screen.dart';
 import 'package:brantro_business/features/account/presentation/privacy_policy_screen.dart';
+import 'package:brantro_business/features/account/presentation/change_password_screen.dart';
 import 'package:brantro_business/features/template/presentation/screen/template_marketplace/template_marketplace.dart';
 import 'package:brantro_business/features/template/presentation/screen/template_marketplace/template_details_screen.dart';
 import 'package:brantro_business/features/template/data/models/template_model.dart';
@@ -385,6 +386,12 @@ final router = GoRouter(
       name: 'settings',
       builder: (context, state) => const SettingsScreen(),
     ),
+    // Change Password Route (Authenticated)
+    GoRoute(
+      path: '/change-password',
+      name: 'change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
+    ),
     GoRoute(
       path: '/payment-settings',
       name: 'payment-settings',
@@ -510,11 +517,18 @@ final router = GoRouter(
       },
     ),
 
-    // Upload Creative Route
+    // Upload/Edit Creative Route
     GoRoute(
       path: '/upload-creative',
       name: 'upload-creative',
-      builder: (context, state) => const UploadCreativeScreen(),
+      builder: (context, state) {
+        final extra = state.extra is Map ? (state.extra as Map) : const {};
+        final isUpdate = extra['isUpdate'] == true;
+        final creative = extra['creative'] is CreativeModel
+            ? extra['creative'] as CreativeModel
+            : null;
+        return UploadCreativeScreen(creative: creative, isUpdate: isUpdate);
+      },
     ),
 
     // Notifications Route

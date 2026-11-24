@@ -39,6 +39,16 @@ class CreativeList extends ConsumerWidget {
             showCreativeMenuSheet(
               context,
               creativeName: creative.name,
+              onEdit: () {
+                Navigator.pop(context);
+                context.push(
+                  '/upload-creative',
+                  extra: {
+                    'creative': creative,
+                    'isUpdate': true,
+                  },
+                );
+              },
               onViewDetails: () {
                 Navigator.pop(context);
                 context.push('/creative-details', extra: {'creative': creative});

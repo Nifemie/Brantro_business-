@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../utils/error_sanitizer.dart';
 import '../../network/api_client.dart';
 import '../../constants/endpoints.dart';
 
@@ -48,7 +49,7 @@ class FileRepository {
         return fileKey;
       }
 
-      throw Exception(response.data['message'] ?? 'Failed to upload file');
+      throw Exception(ErrorSanitizer.sanitize(response.data['message'] ?? 'Failed to upload file'));
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       final responseData = e.response?.data;
@@ -65,12 +66,15 @@ class FileRepository {
       String errorMessage = 'Failed to upload file. Please try again.';
 
       if (statusCode == 400) {
-        errorMessage = responseData?['message'] ?? 'Invalid file';
+        final rawMsg = responseData is Map ? (responseData['message'] ?? responseData['error']) : responseData;
+        errorMessage = ErrorSanitizer.sanitize(rawMsg ?? 'Invalid file');
       } else if (statusCode == 413) {
         errorMessage = 'File is too large';
       } else if (responseData is Map) {
-        errorMessage =
-            responseData['message'] ?? responseData['error'] ?? errorMessage;
+        final rawMsg = responseData['message'] ?? responseData['error'];
+        if (rawMsg != null) {
+          errorMessage = ErrorSanitizer.sanitize(rawMsg);
+        }
       }
 
       throw Exception(errorMessage);

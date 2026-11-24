@@ -24,6 +24,11 @@ class _SocialAccountsSectionState extends ConsumerState<SocialAccountsSection> {
   void initState() {
     super.initState();
     _loadUserAlias();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(socialAccountProvider.notifier).fetchAccounts();
+      }
+    });
   }
 
   Future<void> _loadUserAlias() async {

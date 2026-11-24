@@ -126,6 +126,56 @@ class _CreateAdSlotFormState extends ConsumerState<CreateAdSlotForm> {
     return 'INFLUENCER';
   }
 
+  static const Set<String> _validContentTypes = {
+    'POST',
+    'STORY',
+    'REEL',
+    'SONG_PROMOTION',
+    'MUSIC_VIDEO',
+    'JINGLE',
+    'MENTION',
+    'INTERVIEW',
+    'BANNER',
+    'ARTICLE',
+    'RADIO_PLAY',
+    'TV_PLACEMENT',
+    'SCREEN_DISPLAY',
+    'BILLBOARD_DISPLAY',
+  };
+
+  String _normalizeContentType(String input) {
+    final cleaned = input.trim().toUpperCase().replaceAll(' ', '_').replaceAll('-', '_');
+    if (_validContentTypes.contains(cleaned)) return cleaned;
+    switch (cleaned) {
+      case 'SHORT_VIDEO':
+        return 'REEL';
+      case 'LONG_VIDEO':
+        return 'MUSIC_VIDEO';
+      case 'LIVESTREAM':
+        return 'INTERVIEW';
+      case 'PRODUCT_REVIEW':
+        return 'POST';
+      case 'BRAND_MENTION':
+        return 'MENTION';
+      case 'CAROUSEL':
+        return 'POST';
+      case 'BANNER_AD':
+        return 'BANNER';
+      case 'RADIO':
+        return 'RADIO_PLAY';
+      case 'TV':
+        return 'TV_PLACEMENT';
+      case 'SCREEN':
+        return 'SCREEN_DISPLAY';
+      case 'BILLBOARD':
+        return 'BILLBOARD_DISPLAY';
+      case 'SONG':
+        return 'SONG_PROMOTION';
+      default:
+        return 'POST';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -154,7 +204,7 @@ class _CreateAdSlotFormState extends ConsumerState<CreateAdSlotForm> {
       _selectedPlatforms = List.from(slot.platforms!);
     }
     if (slot.contentTypes != null) {
-      _selectedContentTypes = List.from(slot.contentTypes!);
+      _selectedContentTypes = slot.contentTypes!.map((c) => _normalizeContentType(c)).toList();
     }
     if (slot.features != null && slot.features!.isNotEmpty) {
       _selectedFeatures = List.from(slot.features!);
@@ -800,7 +850,7 @@ class _CreateAdSlotFormState extends ConsumerState<CreateAdSlotForm> {
         'description': _descriptionController.text.trim(),
         'partnerType': partnerTypeFormatted,
         'platforms': _selectedPlatforms.map((p) => p.trim()).toList(),
-        'contentTypes': _selectedContentTypes,
+        'contentTypes': _selectedContentTypes.map((c) => _normalizeContentType(c)).toList(),
         'features': _selectedFeatures,
         'price': ThousandsSeparatorInputFormatter.tryParseDouble(_priceController.text.trim()) ?? 0.0,
         'duration': _selectedDuration ?? '7days',

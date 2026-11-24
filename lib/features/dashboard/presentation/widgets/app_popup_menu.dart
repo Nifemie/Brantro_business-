@@ -26,13 +26,6 @@ class AppPopupMenu extends ConsumerWidget {
           userId: userId,
         );
 
-        // Profile avatar (menu disabled for now as requested - does not open anything)
-        return CircleAvatar(
-          radius: 16.r,
-          backgroundColor: Colors.transparent,
-          backgroundImage: AvatarHelper.getImageProvider(avatarUrl),
-        );
-        /*
         return PopupMenuButton<String>(
           offset: Offset(0, 50.h),
           color: ref.watch(themeModeProvider) == ThemeMode.dark
@@ -46,8 +39,8 @@ class AppPopupMenu extends ConsumerWidget {
           ),
           padding: EdgeInsets.zero,
           constraints: BoxConstraints(
-            minWidth: MediaQuery.of(context).size.width - 32.w,
-            maxWidth: MediaQuery.of(context).size.width - 32.w,
+            minWidth: 200.w,
+            maxWidth: 240.w,
           ),
           child: CircleAvatar(
             radius: 16.r,
@@ -55,30 +48,6 @@ class AppPopupMenu extends ConsumerWidget {
             backgroundImage: AvatarHelper.getImageProvider(avatarUrl),
           ),
           itemBuilder: (context) => [
-            // Personalized Header: commented out
-            /*
-            PopupMenuItem(
-              enabled: false,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.h),
-                child: FutureBuilder<String?>(
-                  future: SessionService.getUserFullname(),
-                  builder: (context, nameSnapshot) {
-                    final name = nameSnapshot.data ?? 'Welcome!';
-                    return Text(
-                      'Welcome $name!',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryColor,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const PopupMenuDivider(),
-            */
             _buildMenuItem(
               value: 'profile',
               icon: Icons.person_outline,
@@ -90,19 +59,14 @@ class AppPopupMenu extends ConsumerWidget {
               label: 'Messages',
             ),
             _buildMenuItem(
-              value: 'pricing',
-              icon: Icons.folder_outlined,
-              label: 'Pricing',
-            ),
-            _buildMenuItem(
               value: 'help',
               icon: Icons.help_outline,
-              label: 'Help',
+              label: 'Help & Support',
             ),
             _buildMenuItem(
               value: 'lock',
               icon: Icons.lock_outline,
-              label: 'Lock screen',
+              label: 'Lock Screen',
             ),
             const PopupMenuDivider(),
             _buildMenuItem(
@@ -120,11 +84,8 @@ class AppPopupMenu extends ConsumerWidget {
               case 'messages':
                 context.push('/chat');
                 break;
-              case 'pricing':
-                // TODO: Navigate to pricing
-                break;
               case 'help':
-                context.push('/contact-us');
+                context.push('/help-support');
                 break;
               case 'lock':
                 await SessionService.setAppLocked(true);
@@ -138,7 +99,6 @@ class AppPopupMenu extends ConsumerWidget {
             }
           },
         );
-        */
       },
     );
   }

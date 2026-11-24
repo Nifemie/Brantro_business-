@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import '../../logic/dashboard_navigation_provider.dart';
 import 'package:brantro_business/controllers/re_useable/app_texts.dart';
 import 'package:brantro_business/features/dashboard/presentation/widgets/sidebar_drawer_item.dart';
 import 'package:brantro_business/features/dashboard/presentation/widgets/sidebar_expandable_item.dart';
@@ -46,9 +47,30 @@ class SidebarNavigationList extends ConsumerWidget {
             title: item['title'] as String,
             isActive: activeItem == item['title'],
             onTap: () {
-              ref.read(activeNavigationProvider.notifier).state =
-                  item['title'] as String;
+              final title = item['title'] as String;
+              ref.read(activeNavigationProvider.notifier).state = title;
               Navigator.pop(context); // Close drawer
+
+              switch (title) {
+                case 'Transactions':
+                case 'Wallets':
+                  ref.read(dashboardNavigationProvider.notifier).state = 2;
+                  context.go('/dashboard');
+                  break;
+                case 'Complaints':
+                case 'Contact Messages':
+                  context.push('/chat');
+                  break;
+                case 'FAQs':
+                  context.push('/faqs');
+                  break;
+                case 'Announcements':
+                  context.push('/notifications');
+                  break;
+                case 'KYC':
+                  context.push('/kyc-landing');
+                  break;
+              }
             },
           );
         }),

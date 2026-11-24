@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/constants/endpoints.dart';
+import '../../../core/utils/error_sanitizer.dart';
 import 'models/signup_request.dart';
 import 'models/signup_response.dart';
 import 'models/validate_account_request.dart';
@@ -171,10 +172,9 @@ class AuthRepository {
       );
       return forgotPasswordResponse;
     } on DioException catch (e) {
+      final raw = e.response?.data is Map ? (e.response?.data['message'] ?? e.response?.data['error']) : e.response?.data;
       throw Exception(
-        e.response?.data['message'] ??
-            e.response?.data['error'] ??
-            'Failed to process forgot password request. Please try again.',
+        ErrorSanitizer.sanitize(raw ?? 'Failed to process forgot password request. Please try again.'),
       );
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');
@@ -196,10 +196,9 @@ class AuthRepository {
       );
       return resetPasswordResponse;
     } on DioException catch (e) {
+      final raw = e.response?.data is Map ? (e.response?.data['message'] ?? e.response?.data['error']) : e.response?.data;
       throw Exception(
-        e.response?.data['message'] ??
-            e.response?.data['error'] ??
-            'Failed to reset password. Please try again.',
+        ErrorSanitizer.sanitize(raw ?? 'Failed to reset password. Please try again.'),
       );
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');

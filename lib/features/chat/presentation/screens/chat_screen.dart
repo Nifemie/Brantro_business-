@@ -9,7 +9,7 @@ import 'package:brantro_business/features/chat/presentation/widgets/chat_profile
 import 'package:brantro_business/controllers/re_useable/app_color.dart';
 import 'package:brantro_business/features/chat/presentation/widgets/chat_list_drawer.dart';
 
-class ChatScreen extends ConsumerWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   final List<ChatMessage> messages;
 
   const ChatScreen({
@@ -18,7 +18,51 @@ class ChatScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends ConsumerState<ChatScreen> {
+  late final List<ChatMessage> _messages;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _messages = List<ChatMessage>.from(widget.messages);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _sendMessage(String text) {
+    if (text.trim().isEmpty) return;
+    setState(() {
+      _messages.add(
+        ChatMessage(
+          text: text.trim(),
+          timeAgo: 'Just now',
+          sender: MessageSender.me,
+          type: MessageType.text,
+          isRead: true,
+        ),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -31,7 +75,7 @@ class ChatScreen extends ConsumerWidget {
         children: [
           // Chat messages list or Empty State (BRT-021)
           Expanded(
-            child: messages.isEmpty
+            child: _messages.isEmpty
                 ? Center(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 16.h),
@@ -76,16 +120,20 @@ class ChatScreen extends ConsumerWidget {
                     ),
                   )
                 : ListView.builder(
+                    controller: _scrollController,
                     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                    itemCount: messages.length,
+                    itemCount: _messages.length,
                     itemBuilder: (context, index) {
-                      final message = messages[index];
+                      final message = _messages[index];
                       return ChatMessageItem(message: message, isDark: isDark);
                     },
                   ),
           ),
           // Bottom input area
-          ChatInputArea(isDark: isDark),
+          ChatInputArea(
+            isDark: isDark,
+            onSendMessage: _sendMessage,
+          ),
         ],
       ),
     );

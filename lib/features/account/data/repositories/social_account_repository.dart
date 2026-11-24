@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/constants/endpoints.dart';
+import '../../../../core/utils/error_sanitizer.dart';
 import '../models/social_account_model.dart';
 
 class SocialAccountRepository {
@@ -31,10 +32,9 @@ class SocialAccountRepository {
       }
       return [];
     } on DioException catch (e) {
+      final raw = e.response?.data is Map ? (e.response?.data['message'] ?? e.response?.data['error']) : e.response?.data;
       throw Exception(
-        e.response?.data['message'] ??
-            e.response?.data['error'] ??
-            'Failed to fetch social accounts. Please try again.',
+        ErrorSanitizer.sanitize(raw ?? 'Failed to fetch social accounts. Please try again.'),
       );
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');
@@ -70,10 +70,9 @@ class SocialAccountRepository {
       }
       throw Exception('Failed to parse social account response');
     } on DioException catch (e) {
+      final raw = e.response?.data is Map ? (e.response?.data['message'] ?? e.response?.data['error']) : e.response?.data;
       throw Exception(
-        e.response?.data['message'] ??
-            e.response?.data['error'] ??
-            'Failed to add social account. Please try again.',
+        ErrorSanitizer.sanitize(raw ?? 'Failed to add social account. Please try again.'),
       );
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');
@@ -89,10 +88,9 @@ class SocialAccountRepository {
       }
       throw Exception('Failed to delete social account');
     } on DioException catch (e) {
+      final raw = e.response?.data is Map ? (e.response?.data['message'] ?? e.response?.data['error']) : e.response?.data;
       throw Exception(
-        e.response?.data['message'] ??
-            e.response?.data['error'] ??
-            'Failed to delete social account. Please try again.',
+        ErrorSanitizer.sanitize(raw ?? 'Failed to delete social account. Please try again.'),
       );
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');
