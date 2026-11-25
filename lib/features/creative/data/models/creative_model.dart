@@ -26,6 +26,8 @@ class CreativeModel {
   final String ownerAddress;
   final String ownerLocation;
   final String? category;
+  final int? categoryId;
+  final String? fileUrl;
   final DateTime createdAt;
 
   CreativeModel({
@@ -45,6 +47,8 @@ class CreativeModel {
     required this.format,
     this.fileFormat,
     this.category,
+    this.categoryId,
+    this.fileUrl,
     required this.fileSizeMB,
     required this.durationInSeconds,
     required this.width,
@@ -92,6 +96,9 @@ class CreativeModel {
       format: json['format'] ?? '',
       fileFormat: json['fileFormat'],
       category: json['category']?.toString() ?? json['type']?.toString(),
+      categoryId: int.tryParse(json['categoryId']?.toString() ??
+          (json['category'] is Map ? json['category']['id']?.toString() ?? '' : '')),
+      fileUrl: json['fileUrl']?.toString() ?? json['url']?.toString(),
       fileSizeMB: sizeMB,
       durationInSeconds: int.tryParse(json['durationInSeconds']?.toString() ?? '') ?? 0,
       width: w,

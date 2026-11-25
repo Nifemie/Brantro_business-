@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../../controllers/re_useable/app_color.dart';
 import '../../../../../core/data/repositories/file_repository.dart';
 import '../../../../../core/utils/thousands_separator_input_formatter.dart';
 import '../../../../dashboard/presentation/widgets/dashboard_app_bar.dart';
 import '../../../../dashboard/presentation/widgets/sidebar_menu.dart';
-import '../../../logic/creative_notifier.dart';
 import '../../../logic/creative_provider.dart';
 import '../../../logic/upload_creative_form_provider.dart';
 import 'package:brantro_business/features/creative/data/models/creative_model.dart';
@@ -57,6 +55,9 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
       _heightController.text = c.height > 0 ? c.height.toString() : '';
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final formNotifier = ref.read(uploadCreativeFormProvider.notifier);
+        if (c.categoryId != null) {
+          formNotifier.setCategory(c.categoryId);
+        }
         if (c.type.isNotEmpty) {
           formNotifier.setType(c.type);
         }
@@ -65,6 +66,12 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
         }
         formNotifier.setFeatures(c.features);
         formNotifier.setTags(c.tags);
+        if (c.image.isNotEmpty) {
+          formNotifier.setThumbnailPath(c.image);
+        }
+        if (c.fileUrl != null && c.fileUrl!.isNotEmpty) {
+          formNotifier.setCreativeFileUrl(c.fileUrl);
+        }
       });
     }
   }
@@ -165,17 +172,31 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
 
         final fileRepository = ref.read(fileRepositoryProvider);
         
-        final thumbnailUrl = await fileRepository.uploadFile(
-          formState.thumbnailPath!,
-          prefix: 'creative-thumbnail',
-        );
+        String? thumbnailUrl = formState.thumbnailPath;
+        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+          if (!thumbnailUrl.startsWith('http://') && !thumbnailUrl.startsWith('https://')) {
+            thumbnailUrl = await fileRepository.uploadFile(
+              thumbnailUrl,
+              prefix: 'creative-thumbnail',
+            );
+          }
+        } else if (widget.creative != null && widget.creative!.image.isNotEmpty) {
+          thumbnailUrl = widget.creative!.image;
+        }
 
         String? fileUrl = formState.creativeFileUrl;
-        if (formState.creativeFilePath != null) {
-          fileUrl = await fileRepository.uploadFile(
-            formState.creativeFilePath!,
-            prefix: 'creative-file',
-          );
+        if (formState.creativeFilePath != null && formState.creativeFilePath!.isNotEmpty) {
+          final p = formState.creativeFilePath!;
+          if (!p.startsWith('http://') && !p.startsWith('https://')) {
+            fileUrl = await fileRepository.uploadFile(
+              p,
+              prefix: 'creative-file',
+            );
+          } else {
+            fileUrl = p;
+          }
+        } else if (widget.creative != null && widget.creative!.fileUrl != null && widget.creative!.fileUrl!.isNotEmpty) {
+          fileUrl = widget.creative!.fileUrl;
         }
 
         if (fileUrl == null || fileUrl.isEmpty) {
@@ -188,12 +209,12 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
 
         final payload = {
           'title': _titleController.text,
-          'categoryId': formState.selectedCategoryId,
+          'categoryId': formState.selectedCategoryId ?? (widget.creative?.categoryId ?? 1),
           'description': _descriptionController.text,
           'type': formState.selectedType?.toUpperCase(),
           'format': formState.selectedFormat?.toUpperCase(),
-          'fileUrl': fileUrl ?? '',
-          'thumbnail': thumbnailUrl,
+          'fileUrl': fileUrl,
+          if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) 'thumbnail': thumbnailUrl,
           'price': ThousandsSeparatorInputFormatter.tryParseDouble(_priceController.text) ?? 0,
           'discount': ThousandsSeparatorInputFormatter.tryParseDouble(_discountController.text) ?? 0,
           'durationInSeconds': int.tryParse(_durationController.text) ?? 0,
@@ -205,22 +226,25 @@ class _UploadCreativeScreenState extends ConsumerState<UploadCreativeScreen> {
           'status': 'ACTIVE',
         };
 
-        final success = await ref.read(creativeProvider.notifier).createCreative(payload);
+        final success = widget.isUpdate && widget.creative != null
+            ? await ref.read(creativeProvider.notifier).updateCreative(widget.creative!.id, payload)
+            : await ref.read(creativeProvider.notifier).createCreative(payload);
 
         if (mounted) {
           context.pop(); // Remove loading dialog
 
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Creative uploaded successfully!'),
+              SnackBar(
+                content: Text(widget.isUpdate ? 'Creative updated successfully!' : 'Creative uploaded successfully!'),
                 backgroundColor: Colors.green,
               ),
             );
             ref.read(uploadCreativeFormProvider.notifier).reset();
             context.go('/creative-marketplace');
           } else {
-            final error = ref.read(creativeProvider).message ?? 'Failed to upload creative';
+            final error = ref.read(creativeProvider).message ??
+                (widget.isUpdate ? 'Failed to update creative' : 'Failed to upload creative');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(error), backgroundColor: Colors.red),
             );

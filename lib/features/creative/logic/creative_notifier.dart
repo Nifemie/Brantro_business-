@@ -129,6 +129,25 @@ class CreativeNotifier extends StateNotifier<DataState<CreativeModel>> {
     }
   }
 
+  Future<bool> updateCreative(String id, Map<String, dynamic> data) async {
+    try {
+      state = state.copyWith(isInitialLoading: true, message: null);
+      final success = await repository.updateCreative(id, data);
+      if (success) {
+        await refreshCreatives();
+        state = state.copyWith(isInitialLoading: false);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        isInitialLoading: false,
+        message: e.toString(),
+      );
+      return false;
+    }
+  }
+
   Future<bool> deleteCreative(String id) async {
     try {
       state = state.copyWith(isInitialLoading: true);

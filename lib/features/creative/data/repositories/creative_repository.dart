@@ -82,6 +82,38 @@ class CreativeRepository {
     }
   }
 
+  Future<bool> updateCreative(dynamic id, Map<String, dynamic> data) async {
+    try {
+      log('Updating creative $id with data: $data');
+      final response = await _apiClient.put(
+        ApiEndpoints.updateCreative(id),
+        data: data,
+      );
+
+      final isSuccess = response.statusCode == 200 ||
+          (response.data is Map &&
+              (response.data['success'] == true ||
+                  response.data['status'] == 'success'));
+
+      if (isSuccess) {
+        log('Creative updated successfully');
+        return true;
+      }
+      throw Exception(
+          response.data is Map ? (response.data['message'] ?? 'Failed to update creative') : 'Failed to update creative');
+    } on DioException catch (e) {
+      log('Error updating creative: ${e.message}');
+      String msg = 'Failed to update creative';
+      if (e.response?.data is Map) {
+        msg = e.response?.data['message'] ?? e.response?.data['error'] ?? msg;
+      }
+      throw Exception(msg);
+    } catch (e) {
+      log('Unexpected error updating creative: $e');
+      throw Exception('Failed to update creative: $e');
+    }
+  }
+
   Future<void> deleteCreative(dynamic id) async {
     try {
       log('Deleting creative: id=$id');
