@@ -43,7 +43,7 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
   final _longitudeController = TextEditingController();
   
   String? _selectedType = 'BILLBOARD';
-  int? _selectedCategoryId = 25;
+  int? _selectedCategoryId = 2;
   String? _selectedClass;
   String? _selectedCountry;
   String? _selectedState;
@@ -244,8 +244,10 @@ class _UploadBillboardScreenState extends ConsumerState<UploadBillboardScreen> {
         'title': _titleController.text.trim(),
         'type': _selectedType ?? 'BILLBOARD',
         'coverageAreas': coverageAreas,
-        'estimatedReach': ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 0,
-        'categoryId': _selectedCategoryId ?? 25,
+        'estimatedReach': [
+          (ThousandsSeparatorInputFormatter.tryParseInt(_estimatedReachController.text) ?? 1000).toString()
+        ],
+        'categoryId': _selectedCategoryId ?? 2,
         'description': _descriptionController.text.trim(),
         'address': _addressController.text.trim(),
         'city': _selectedCity ?? '',
